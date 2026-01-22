@@ -26,7 +26,7 @@ body {
 /* Header */
 .header {
   background-color: transparent;
-  padding: 24px 0 0;
+  padding: 16px 0 0;
   width: 100%;
 }
 
@@ -36,9 +36,9 @@ body {
   font-family: 'Pretendard', 'Arial Rounded MT Bold', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 400;
-  line-height: 32px;
+  line-height: 24px;
   color: #000;
   letter-spacing: -0.02em;
 }
@@ -47,7 +47,7 @@ body {
   height: 1px;
   background-color: var(--divider);
   width: 100%;
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 /* Main Content */
@@ -56,7 +56,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 48px 16px;
+  padding: 40px 16px;
   /* 로그인 영역은 더 따뜻한(크리미) 회색 톤 */
   background-color: var(--app-bg);
 }
@@ -67,16 +67,16 @@ body {
   padding: 0;
   border-radius: 0;
   width: 100%;
-  max-width: 392px;
+  max-width: 320px;
   box-shadow: none;
 }
 
 .login-title {
   text-align: center;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
   color: #000;
-  margin-bottom: 40px;
+  margin-bottom: 28px;
   letter-spacing: -0.02em;
 }
 
@@ -91,7 +91,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .form-group:last-of-type {
@@ -99,18 +99,18 @@ body {
 }
 
 .form-label {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #000;
   margin-bottom: 0.25rem;
 }
 
 .form-input {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 2px solid #000000;
   border-radius: 6px;
-  font-size: 16px;
-  line-height: 16px;
+  font-size: 14px;
+  line-height: 14px;
   width: 100%;
   background-color: #ffffff;
   color: #000;
@@ -137,11 +137,11 @@ body {
 
 /* Buttons */
 .btn {
-  height: 48px;
+  height: 44px;
   padding: 0 16px;
   border: none;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
