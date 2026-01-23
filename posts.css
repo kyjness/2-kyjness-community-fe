@@ -1,0 +1,189 @@
+/* ============================================
+   게시글 목록 페이지 전용 스타일
+   (login.css의 공통 스타일을 상속받음)
+   ============================================ */
+
+/* 게시글 목록 헤더 - 사용자 아이콘을 위한 relative 포지셔닝 */
+.posts-header {
+  position: relative;
+}
+
+/* 사용자 아이콘 버튼 - 제목 오른쪽 옆에 배치 */
+.posts-user-btn {
+  position: absolute;
+  left: 50%;
+  top: 24px;
+  /* 제목 중앙(50%)에서 오른쪽으로 300px 이동하여 제목 옆에 배치 */
+  transform: translateX(calc(-50% + 300px));
+  width: 60px;
+  height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  z-index: 10;
+}
+
+/* 사용자 프로필 이미지 */
+.posts-user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.posts-user-btn:hover {
+  opacity: 0.7;
+}
+
+.posts-user-btn:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+/* 게시글 목록 메인 콘텐츠 영역 */
+.posts-main {
+  align-items: flex-start;
+  padding: 40px 16px;
+}
+
+/* 게시글 목록 컨테이너 */
+.posts-container {
+  background-color: transparent;
+  width: 100%;
+  max-width: 592px;  /* Frame 6 사양에 맞춘 너비 */
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* 인사말 섹션 */
+.posts-greeting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.posts-greeting-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.posts-greeting-text p {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 140%;
+  color: #000000;
+  margin: 0;
+}
+
+.posts-greeting-text p:first-child {
+  margin-bottom: 4px;
+}
+
+/* 게시글 작성 버튼 */
+.posts-write-btn {
+  width: auto;
+  height: 48px;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+/* 게시글 목록 */
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 게시글 카드 - Frame 6 사양 적용 */
+.post-card {
+  background-color: #FFFFFF;
+  border: none;
+  border-radius: 0;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  max-width: 592px;
+  min-height: 135px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Frame 6 그림자 사양: X: 3px, Y: 4px, Blur: 4px, Spread: 0px, Color: #CCCCCC, Opacity: 25% */
+  box-shadow: 3px 4px 4px 0px rgba(204, 204, 204, 0.25);
+}
+
+.post-card:hover {
+  box-shadow: 3px 4px 8px 0px rgba(204, 204, 204, 0.35);
+  transform: translateY(-2px);
+}
+
+/* 게시글 제목 */
+.post-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 140%;
+  color: #000000;
+  margin: 0;
+}
+
+/* 게시글 메타데이터 (좋아요, 댓글, 조회수) */
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #666666;
+}
+
+.post-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 게시글 타임스탬프 */
+.post-timestamp {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #666666;
+  margin-left: auto;
+}
+
+/* 게시글 작성자 정보 */
+.post-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.post-author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #C4C4C4;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.post-author-name {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #000000;
+}
