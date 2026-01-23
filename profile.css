@@ -1,0 +1,312 @@
+/* ============================================
+   회원정보수정 페이지 전용 스타일
+   (login.css의 공통 스타일을 상속받음)
+   ============================================ */
+
+/* 회원정보수정 헤더 - 사용자 메뉴를 위한 relative 포지셔닝 */
+.profile-header {
+  position: relative;
+}
+
+/* 사용자 메뉴 컨테이너 */
+.profile-user-menu {
+  position: absolute;
+  left: 50%;
+  top: 24px;
+  /* 제목 중앙(50%)에서 오른쪽으로 300px 이동하여 제목 옆에 배치 */
+  transform: translateX(calc(-50% + 300px));
+  z-index: 20;
+}
+
+/* 사용자 아이콘 버튼 */
+.profile-user-btn {
+  width: 60px;
+  height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 사용자 프로필 이미지 */
+.profile-user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-user-btn:hover {
+  opacity: 0.7;
+}
+
+.profile-user-btn:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+/* 드롭다운 메뉴 */
+.profile-dropdown {
+  position: absolute;
+  top: 70px;
+  right: 0;
+  background-color: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.profile-dropdown.show {
+  display: flex;
+}
+
+.profile-dropdown-item {
+  padding: 12px 16px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #000000;
+  text-decoration: none;
+  border-bottom: 1px solid #F0F0F0;
+  transition: background-color 0.2s;
+}
+
+.profile-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.profile-dropdown-item:hover {
+  background-color: #F5F5F5;
+}
+
+/* 회원정보수정 메인 콘텐츠 영역 */
+.profile-main {
+  align-items: center;
+  padding: 40px 16px;
+}
+
+/* 회원정보수정 컨테이너 */
+.profile-container {
+  background-color: transparent;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* 회원정보수정 페이지 제목 */
+.profile-title {
+  text-align: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #000000;
+  margin: 0 0 40px 0;
+  display: block;
+}
+
+/* 회원정보수정 폼 */
+.profile-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ============================================
+   프로필 사진 섹션
+   ============================================ */
+
+.profile-photo-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.profile-photo-group .profile-label {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #000000;
+}
+
+/* 프로필 사진 래퍼 - 편집 버튼 포함 */
+.profile-avatar-wrapper {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 10px auto 0;
+}
+
+/* 프로필 사진 원형 컨테이너 */
+.profile-avatar {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background-color: #C4C4C4;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* 편집 버튼 */
+.profile-edit-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 6px 12px;
+  background-color: #E0E0E0;
+  color: #000000;
+  border: none;
+  border-radius: 20px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.profile-edit-btn:hover {
+  background-color: #D0D0D0;
+}
+
+/* ============================================
+   입력 필드 그룹 (이메일, 닉네임)
+   ============================================ */
+
+.profile-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 입력 필드 라벨 */
+.profile-label {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #000000;
+  margin-bottom: 0;
+}
+
+/* 입력 필드 */
+.profile-input {
+  padding: 12px 16px;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  height: 48px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  line-height: 100%;
+  width: 100%;
+  background-color: #F4F5F7;
+  color: #000000;
+  font-weight: 400;
+  letter-spacing: 0%;
+  box-sizing: border-box;
+}
+
+/* 읽기 전용 입력 필드 */
+.profile-input-readonly {
+  background-color: #FFFFFF;
+  cursor: default;
+}
+
+.profile-input::placeholder {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #000000;
+  opacity: 1;
+}
+
+.profile-input:focus {
+  outline: none;
+  border-color: #000000;
+}
+
+.profile-input-readonly:focus {
+  border-color: #000000;
+}
+
+/* 에러 메시지 */
+.profile-helper-text {
+  font-family: 'Inter', 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #FF0000;
+  margin-top: 4px;
+  display: none;
+}
+
+.profile-helper-text.show {
+  display: block;
+}
+
+/* ============================================
+   버튼 스타일
+   ============================================ */
+
+/* 수정하기 버튼 */
+.profile-submit-btn {
+  width: 100%;
+  height: 48px;
+  margin-top: 8px;
+}
+
+/* 회원 탈퇴 버튼 */
+.profile-withdraw-btn {
+  width: 100%;
+  background-color: transparent;
+  color: #000000;
+  border: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 100%;
+  letter-spacing: 0%;
+  cursor: pointer;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.profile-withdraw-btn:hover {
+  opacity: 0.8;
+}
+
+/* 수정완료 버튼 */
+.profile-complete-btn {
+  width: 100%;
+  height: 48px;
+  margin-top: 8px;
+}
