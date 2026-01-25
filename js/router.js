@@ -4,27 +4,34 @@
  */
 
 import { isLoggedIn } from './state.js';
-import { renderLoginPage } from './pages/loginPage.js';
-import { renderSignupPage } from './pages/signupPage.js';
-import { renderPostListPage } from './pages/postListPage.js';
-import { renderPostDetailPage } from './pages/postDetailPage.js';
-import { renderMyPage } from './pages/myPage.js';
+import { renderLogin } from './pages/login.js';
+import { renderSignup } from './pages/signup.js';
+import { renderPostList } from './pages/postList.js';
+import { renderEditProfile } from './pages/editProfile.js';
+import { renderChangePassword } from './pages/changePassword.js';
+import { renderPostDetail } from './pages/postDetail.js';
+import { renderEditPost } from './pages/editPost.js';
+import { renderNewPost } from './pages/newPost.js';
 
 // 개발 모드: true로 설정하면 인증 없이 모든 페이지 접근 가능
-const DEV_MODE = false; // 배포 시 false로 변경하세요!
+const DEV_MODE = true; // 배포 시 false로 변경하세요!
 
 // 라우트 정의 (경로 -> 렌더링 함수 매핑)
 const routes = {
-  '/': renderPostListPage,           // 메인(게시글 목록)
-  '/login': renderLoginPage,         // 로그인
-  '/signup': renderSignupPage,       // 회원가입
-  '/posts': renderPostListPage,      // 게시글 목록
-  '/posts/:id': renderPostDetailPage, // 게시글 상세
-  '/my': renderMyPage,               // 마이페이지(프로필 수정)
+  '/': renderPostList,           // 메인(게시글 목록)
+  '/login': renderLogin,         // 로그인
+  '/signup': renderSignup,       // 회원가입
+  '/posts': renderPostList,      // 게시글 목록
+  '/profile/edit': renderEditProfile,  // 회원정보수정
+  '/profile/password': renderChangePassword,  // 비밀번호 변경
+  '/posts/:id': renderPostDetail, // 게시글 상세
+  '/posts/:id/edit': renderEditPost, // 게시글 수정
+  '/posts/new': renderNewPost, // 게시글 작성
+  
 };
 
 // 인증이 필요한 경로 목록
-const authRequiredRoutes = ['/', '/posts', '/my', '/posts/:id'];
+const authRequiredRoutes = ['/', '/posts', '/profile/edit', '/profile/password', '/posts/:id', '/posts/:id/edit', '/posts/new'];
 
 /**
  * 현재 URL 해시를 파싱하여 경로와 파라미터를 반환합니다
@@ -33,8 +40,16 @@ const authRequiredRoutes = ['/', '/posts', '/my', '/posts/:id'];
 function parseHash() {
   const hash = window.location.hash.slice(1) || '/'; // '#' 제거
   
-  // 동적 경로 매칭 (예: /posts/:id)
+  // 1. 정확한 경로 매칭 먼저 확인 (동적 경로보다 우선)
+  if (routes[hash]) {
+    return { path: hash, params: {} };
+  }
+  
+  // 2. 동적 경로 매칭 (예: /posts/:id)
   for (const route in routes) {
+    // 동적 경로만 체크 (정확한 경로는 이미 위에서 체크함)
+    if (!route.includes(':')) continue;
+    
     const routePattern = route.replace(/:\w+/g, '([^/]+)'); // :id -> 정규식
     const regex = new RegExp(`^${routePattern}$`);
     const match = hash.match(regex);
@@ -108,18 +123,18 @@ function render404() {
       text-align: center;
       padding: 20px;
     ">
-      <h1 style="font-size: 72px; margin: 0; color: #000;">404</h1>
-      <p style="font-size: 24px; margin: 16px 0; color: #666;">페이지를 찾을 수 없습니다</p>
+      <h1 style="font-size: 48px; margin: 0; color: #000;">404</h1>
+      <p style="font-size: 16px; margin: 12px 0; color: #666;">페이지를 찾을 수 없습니다</p>
       <button 
         onclick="window.location.hash='/'" 
         style="
-          margin-top: 24px;
-          padding: 12px 24px;
+          margin-top: 20px;
+          padding: 10px 20px;
           background-color: #aca0eb;
           color: white;
           border: none;
           border-radius: 6px;
-          font-size: 16px;
+          font-size: 14px;
           cursor: pointer;
         "
       >

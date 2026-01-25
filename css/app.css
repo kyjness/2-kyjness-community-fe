@@ -17,8 +17,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 200px;
-  font-size: 18px;
+  min-height: 160px;
+  font-size: 14px;
   color: #666;
 }
 
@@ -41,8 +41,8 @@
    ============================================ */
 .error-message {
   color: #ff0000;
-  font-size: 16px;
-  margin-top: 8px;
+  font-size: 13px;
+  margin-top: 6px;
   display: none;
 }
 
@@ -72,23 +72,23 @@
 
 .modal-content {
   background-color: white;
-  padding: 32px;
+  padding: 24px;
   border-radius: 8px;
-  max-width: 500px;
+  max-width: 420px;
   width: 90%;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .modal-title {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .modal-body {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .modal-buttons {
@@ -117,11 +117,11 @@
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-width: 160px;
+  min-width: 140px;
   display: none;
   flex-direction: column;
   z-index: 100;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .dropdown-menu.show {
@@ -129,8 +129,8 @@
 }
 
 .dropdown-item {
-  padding: 12px 16px;
-  font-size: 16px;
+  padding: 10px 14px;
+  font-size: 14px;
   color: #000;
   text-decoration: none;
   border-bottom: 1px solid #f0f0f0;
@@ -154,32 +154,32 @@
    댓글 목록 스타일
    ============================================ */
 .comments-section {
-  margin-top: 40px;
-  padding-top: 24px;
+  margin-top: 28px;
+  padding-top: 20px;
   border-top: 2px solid #000;
 }
 
 .comments-title {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .comment-form {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .comment-textarea {
   width: 100%;
-  min-height: 100px;
-  padding: 16px;
+  min-height: 80px;
+  padding: 12px 14px;
   border: 1px solid #000;
   border-radius: 4px;
   font-family: 'Pretendard', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   resize: vertical;
   background-color: #F4F5F7;
 }
@@ -191,12 +191,12 @@
 
 .comment-submit-btn {
   align-self: flex-end;
-  padding: 12px 24px;
+  padding: 10px 20px;
   background-color: #aca0eb;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -208,11 +208,11 @@
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .comment-item {
-  padding: 16px;
+  padding: 12px;
   background-color: #f9f9f9;
   border-radius: 4px;
 }
@@ -220,13 +220,13 @@
 .comment-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .comment-avatar {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: #c4c4c4;
   object-fit: cover;
@@ -234,29 +234,29 @@
 
 .comment-author {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .comment-date {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
   margin-left: auto;
 }
 
 .comment-content {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
   color: #000;
 }
 
 .comment-actions {
-  margin-top: 12px;
+  margin-top: 10px;
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .comment-action-btn {
-  font-size: 14px;
+  font-size: 12px;
   color: #666;
   background: none;
   border: none;
@@ -272,59 +272,59 @@
    게시글 상세 페이지 스타일
    ============================================ */
 .post-detail-container {
-  max-width: 800px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 28px 16px;
 }
 
 .post-detail-header {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
   border-bottom: 2px solid #000;
 }
 
 .post-detail-title {
-  font-size: 32px;
+  font-size: 22px;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .post-detail-meta {
   display: flex;
   align-items: center;
-  gap: 16px;
-  font-size: 14px;
+  gap: 12px;
+  font-size: 12px;
   color: #666;
 }
 
 .post-detail-author {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .post-detail-avatar {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: #c4c4c4;
   object-fit: cover;
 }
 
 .post-detail-content {
-  font-size: 18px;
-  line-height: 1.8;
-  margin-bottom: 32px;
-  min-height: 200px;
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 24px;
+  min-height: 160px;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .post-detail-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
-  padding: 16px 0;
+  padding: 14px 0;
   border-top: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
 }
@@ -332,13 +332,13 @@
 .post-like-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  gap: 5px;
+  padding: 6px 14px;
   background-color: transparent;
   border: 1px solid #aca0eb;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   color: #aca0eb;
 }
 
@@ -355,13 +355,13 @@
 .post-action-group {
   margin-left: auto;
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .post-edit-btn,
 .post-delete-btn {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 6px 12px;
+  font-size: 13px;
   border-radius: 4px;
   cursor: pointer;
   border: none;
@@ -390,12 +390,16 @@
    ============================================ */
 @media (max-width: 768px) {
   .header-title {
-    font-size: 36px !important;
+    font-size: 18px !important;
   }
   
   .login-title,
   .signup-title {
-    font-size: 32px !important;
+    font-size: 24px !important;
+  }
+  
+  .profile-title {
+    font-size: 22px !important;
   }
   
   .posts-container {
@@ -403,14 +407,14 @@
   }
   
   .post-detail-container {
-    padding: 20px 16px;
+    padding: 20px 12px;
   }
   
   .post-detail-title {
-    font-size: 24px;
+    font-size: 18px;
   }
   
   .post-detail-content {
-    font-size: 16px;
+    font-size: 14px;
   }
 }

@@ -8,98 +8,110 @@ import { navigateTo } from '../router.js';
 /**
  * 회원가입 페이지 렌더링
  */
-export function renderSignupPage() {
+export function renderSignup() {
   const root = document.getElementById('app-root');
   
   root.innerHTML = `
-    <header class="signup-header">
-      <a href="#/login" class="signup-back">
+    <header class="header">
+      <a href="#/login" class="btn-back">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
       </a>
-      <h1 class="header-title">아무 말 대잔치</h1>
+      <h1 class="header-title">
+        <span id="header-title-link">아무 말 대잔치</span>
+      </h1>
       <div class="header-divider"></div>
     </header>
     
-    <main class="signup-main main">
-      <div class="signup-container">
-        <h2 class="signup-title">회원가입</h2>
+    <main class="main">
+      <div class="form-container">
+        <h2 class="form-title">회원가입</h2>
         
-        <form id="signup-form" class="signup-form">
+        <form id="form" class="form">
           <!-- 프로필 사진 업로드 -->
-          <div class="signup-profile-group">
-            <label class="signup-label">프로필 사진</label>
-            <div class="signup-avatar-wrapper">
-              <div class="signup-avatar" id="avatar-preview">
-                <div class="signup-plus"></div>
-                <img id="avatar-img" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
-              </div>
-              <input type="file" id="profile-image" accept="image/*" style="display: none;" />
+          <div class="profile-group form-group">
+           <label class="form-label">프로필 사진</label>
+           <span class="helper-text" id="profile-error">*helper text</span>
+
+           <div class="avatar-wrapper">
+            <div class="btn avatar" id="signup-avatar-preview">
+             <div class="plus"></div>
+             <img
+               id="avatar-img"
+               style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+             />
             </div>
-            <span class="signup-helper-text" id="profile-error" style="display: none;"></span>
+
+            <input
+             type="file"
+             id="profile-image"
+             accept="image/*"
+             style="display: none;"
+            />
+           </div>
           </div>
           
           <!-- 이메일 -->
-          <div class="signup-form-group">
-            <label for="email" class="signup-label">이메일</label>
+          <div class="form-group">
+            <label for="email" class="form-label">이메일*</label>
             <input 
               type="email" 
               id="email" 
               name="email" 
-              class="signup-input" 
+              class="form-input" 
               placeholder="이메일을 입력하세요"
               required 
             />
-            <span class="signup-helper-text" id="email-error" style="display: none;"></span>
+            <span class="helper-text" id="email-error">*helper text</span>
           </div>
           
           <!-- 비밀번호 -->
-          <div class="signup-form-group">
-            <label for="password" class="signup-label">비밀번호</label>
+          <div class="form-group">
+            <label for="password" class="form-label">비밀번호*</label>
             <input 
               type="password" 
               id="password" 
               name="password" 
-              class="signup-input" 
+              class="form-input" 
               placeholder="비밀번호를 입력하세요"
               required 
             />
-            <span class="signup-helper-text" id="password-error" style="display: none;"></span>
+            <span class="helper-text" id="password-error">*helper text</span>
           </div>
           
           <!-- 비밀번호 확인 -->
-          <div class="signup-form-group">
-            <label for="password-confirm" class="signup-label">비밀번호 확인</label>
+          <div class="form-group">
+            <label for="password-confirm" class="form-label">비밀번호 확인*</label>
             <input 
               type="password" 
               id="password-confirm" 
               name="password-confirm" 
-              class="signup-input" 
+              class="form-input" 
               placeholder="비밀번호를 다시 입력하세요"
               required 
             />
-            <span class="signup-helper-text" id="password-confirm-error" style="display: none;"></span>
+            <span class="helper-text" id="password-confirm-error">*helper text</span>
           </div>
           
           <!-- 닉네임 -->
-          <div class="signup-form-group">
-            <label for="nickname" class="signup-label">닉네임</label>
+          <div class="form-group">
+            <label for="nickname" class="form-label">닉네임*</label>
             <input 
               type="text" 
               id="nickname" 
               name="nickname" 
-              class="signup-input" 
+              class="form-input" 
               placeholder="닉네임을 입력하세요"
               required 
             />
-            <span class="signup-helper-text" id="nickname-error" style="display: none;"></span>
+            <span class="helper-text" id="nickname-error">*helper text</span>
           </div>
           
-          <button type="submit" class="signup-submit-btn btn btn-primary">회원가입</button>
+          <button type="submit" class="btn btn-primary">회원가입</button>
           
-          <button type="button" id="login-link" class="signup-login-link">
-            이미 회원이신가요? 로그인하러 가기
+          <button type="button" id="login-link" class="btn btn-secondary">
+            로그인하러 가기
           </button>
         </form>
       </div>
@@ -114,9 +126,9 @@ export function renderSignupPage() {
  * 회원가입 페이지 이벤트 리스너 등록
  */
 function attachSignupEvents() {
-  const form = document.getElementById('signup-form');
+  const form = document.getElementById('form');
   const loginLink = document.getElementById('login-link');
-  const avatarWrapper = document.querySelector('.signup-avatar');
+  const avatarWrapper = document.querySelector('.avatar-wrapper');
   const profileInput = document.getElementById('profile-image');
   const avatarImg = document.getElementById('avatar-img');
   
@@ -128,10 +140,26 @@ function attachSignupEvents() {
     navigateTo('/login');
   });
   
-  // 프로필 사진 클릭 시 파일 선택
-  avatarWrapper.addEventListener('click', () => {
-    profileInput.click();
-  });
+  // + 아이콘 클릭 시 파일 선택 (+ 아이콘 부근에서만 클릭 가능)
+  const plusIcon = document.querySelector('.plus');
+  if (plusIcon) {
+    plusIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileInput.click();
+    });
+  }
+  
+  // 원의 다른 영역 클릭 시 아무 동작 안 함
+  const avatarPreview = document.getElementById('signup-avatar-preview');
+  if (avatarPreview) {
+    avatarPreview.addEventListener('click', (e) => {
+      // + 아이콘이 아닌 영역을 클릭한 경우에만 이벤트 전파 중단
+      if (e.target !== plusIcon && !plusIcon.contains(e.target)) {
+        e.stopPropagation();
+        // 아무 동작 안 함
+      }
+    });
+  }
   
   // 프로필 사진 선택 시 미리보기
   profileInput.addEventListener('change', (e) => {
@@ -141,11 +169,19 @@ function attachSignupEvents() {
       reader.onload = (event) => {
         avatarImg.src = event.target.result;
         avatarImg.style.display = 'block';
-        document.querySelector('.signup-plus').style.display = 'none';
+        document.querySelector('.plus').style.display = 'none';
       };
       reader.readAsDataURL(file);
     }
   });
+  
+  // 헤더 제목 클릭 → 게시글 목록으로 이동
+  const headerTitle = document.getElementById('header-title-link');
+  if (headerTitle) {
+    headerTitle.addEventListener('click', () => {
+      navigateTo('/posts');
+    });
+  }
 }
 
 /**
@@ -193,7 +229,7 @@ async function handleSignup(e) {
   
   if (hasError) return;
   
-  const submitBtn = form.querySelector('.signup-submit-btn');
+  const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;
   
   try {
@@ -247,7 +283,7 @@ function showFieldError(elementId, message) {
  * 모든 에러 메시지 초기화
  */
 function clearErrors() {
-  const errorElements = document.querySelectorAll('.signup-helper-text');
+  const errorElements = document.querySelectorAll('.helper-text');
   errorElements.forEach(el => {
     el.textContent = '';
     el.style.display = 'none';

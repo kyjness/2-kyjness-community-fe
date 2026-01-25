@@ -15,7 +15,9 @@ export function renderHeader() {
   
   return `
     <header class="posts-header header">
-      <h1 class="header-title">아무 말 대잔치</h1>
+      <h1 class="header-title">
+        <span id="header-title-link">아무 말 대잔치</span>
+      </h1>
       <div class="header-divider"></div>
       
       <!-- 사용자 메뉴 -->
@@ -73,6 +75,14 @@ export function initHeaderEvents() {
   document.addEventListener('click', () => {
     userDropdown.classList.remove('show');
   });
+  
+  // 헤더 제목 클릭 → 게시글 목록으로 이동
+  const headerTitle = document.getElementById('header-title-link');
+  if (headerTitle) {
+    headerTitle.addEventListener('click', () => {
+      navigateTo('/posts');
+    });
+  }
 }
 
 /**

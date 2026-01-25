@@ -9,20 +9,22 @@ import { navigateTo } from '../router.js';
 /**
  * 로그인 페이지 렌더링
  */
-export function renderLoginPage() {
+export function renderLogin() {
   const root = document.getElementById('app-root');
   
   root.innerHTML = `
     <header class="header">
-      <h1 class="header-title">아무 말 대잔치</h1>
+      <h1 class="header-title">
+        <span id="header-title-link">아무 말 대잔치</span>
+      </h1>
       <div class="header-divider"></div>
     </header>
     
     <main class="main">
-      <div class="login-container">
-        <h2 class="login-title">로그인</h2>
+      <div class="form-container">
+        <h2 class="form-title">로그인</h2>
         
-        <form id="login-form" class="login-form">
+        <form id="form" class="form">
           <div class="form-group">
             <label for="email" class="form-label">이메일</label>
             <input 
@@ -45,9 +47,8 @@ export function renderLoginPage() {
               placeholder="비밀번호를 입력하세요"
               required 
             />
+            <span class="helper-text" id="error-message">*helper text</span>
           </div>
-          
-          <span class="helper-text" id="error-message" style="display: none;"></span>
           
           <button type="submit" class="btn btn-primary">로그인</button>
           
@@ -67,8 +68,38 @@ export function renderLoginPage() {
  * 로그인 페이지 이벤트 리스너 등록
  */
 function attachLoginEvents() {
-  const form = document.getElementById('login-form');
+  const form = document.getElementById('form');
   const signupBtn = document.getElementById('signup-btn');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const errorMessage = document.getElementById('error-message');
+  
+  // 입력란 포커스 시 기본 helper text 숨기기
+  if (emailInput) {
+    emailInput.addEventListener('focus', () => {
+      if (errorMessage && errorMessage.textContent === '*helper text') {
+        errorMessage.style.display = 'none';
+      }
+    });
+    emailInput.addEventListener('blur', () => {
+      if (errorMessage && errorMessage.textContent === '*helper text') {
+        errorMessage.style.display = 'block';
+      }
+    });
+  }
+  
+  if (passwordInput) {
+    passwordInput.addEventListener('focus', () => {
+      if (errorMessage && errorMessage.textContent === '*helper text') {
+        errorMessage.style.display = 'none';
+      }
+    });
+    passwordInput.addEventListener('blur', () => {
+      if (errorMessage && errorMessage.textContent === '*helper text') {
+        errorMessage.style.display = 'block';
+      }
+    });
+  }
   
   // 로그인 폼 제출
   form.addEventListener('submit', handleLogin);
@@ -77,6 +108,14 @@ function attachLoginEvents() {
   signupBtn.addEventListener('click', () => {
     navigateTo('/signup');
   });
+  
+  // 헤더 제목 클릭 → 게시글 목록으로 이동
+  const headerTitle = document.getElementById('header-title-link');
+  if (headerTitle) {
+    headerTitle.addEventListener('click', () => {
+      navigateTo('/posts');
+    });
+  }
 }
 
 /**

@@ -29,7 +29,10 @@ export const api = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: '요청 실패' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+      const errorMessage = typeof error.detail === 'string' 
+        ? error.detail 
+        : error.detail?.message || error.message || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -47,7 +50,10 @@ export const api = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: '요청 실패' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+      const errorMessage = typeof error.detail === 'string' 
+        ? error.detail 
+        : error.detail?.message || error.message || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -61,7 +67,10 @@ export const api = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: '요청 실패' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+      const errorMessage = typeof error.detail === 'string' 
+        ? error.detail 
+        : error.detail?.message || error.message || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return response.json();
