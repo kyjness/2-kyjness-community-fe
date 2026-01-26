@@ -4,6 +4,7 @@
  */
 
 import { isLoggedIn } from './state.js';
+import { DEV_MODE } from './constants.js';
 import { renderLogin } from './pages/login.js';
 import { renderSignup } from './pages/signup.js';
 import { renderPostList } from './pages/postList.js';
@@ -13,25 +14,29 @@ import { renderPostDetail } from './pages/postDetail.js';
 import { renderEditPost } from './pages/editPost.js';
 import { renderNewPost } from './pages/newPost.js';
 
-// 개발 모드: true로 설정하면 인증 없이 모든 페이지 접근 가능
-const DEV_MODE = true; // 배포 시 false로 변경하세요!
-
 // 라우트 정의 (경로 -> 렌더링 함수 매핑)
 const routes = {
-  '/': renderPostList,           // 메인(게시글 목록)
-  '/login': renderLogin,         // 로그인
-  '/signup': renderSignup,       // 회원가입
-  '/posts': renderPostList,      // 게시글 목록
-  '/profile/edit': renderEditProfile,  // 회원정보수정
-  '/profile/password': renderChangePassword,  // 비밀번호 변경
+  '/': renderPostList, // 메인(게시글 목록)
+  '/login': renderLogin, // 로그인
+  '/signup': renderSignup, // 회원가입
+  '/posts': renderPostList, // 게시글 목록
+  '/profile/edit': renderEditProfile, // 회원정보수정
+  '/profile/password': renderChangePassword, // 비밀번호 변경
   '/posts/:id': renderPostDetail, // 게시글 상세
   '/posts/:id/edit': renderEditPost, // 게시글 수정
   '/posts/new': renderNewPost, // 게시글 작성
-  
 };
 
 // 인증이 필요한 경로 목록
-const authRequiredRoutes = ['/', '/posts', '/profile/edit', '/profile/password', '/posts/:id', '/posts/:id/edit', '/posts/new'];
+const authRequiredRoutes = [
+  '/',
+  '/posts',
+  '/profile/edit',
+  '/profile/password',
+  '/posts/:id',
+  '/posts/:id/edit',
+  '/posts/new',
+];
 
 /**
  * 현재 URL 해시를 파싱하여 경로와 파라미터를 반환합니다
@@ -39,33 +44,33 @@ const authRequiredRoutes = ['/', '/posts', '/profile/edit', '/profile/password',
  */
 function parseHash() {
   const hash = window.location.hash.slice(1) || '/'; // '#' 제거
-  
+
   // 1. 정확한 경로 매칭 먼저 확인 (동적 경로보다 우선)
   if (routes[hash]) {
     return { path: hash, params: {} };
   }
-  
+
   // 2. 동적 경로 매칭 (예: /posts/:id)
   for (const route in routes) {
     // 동적 경로만 체크 (정확한 경로는 이미 위에서 체크함)
     if (!route.includes(':')) continue;
-    
+
     const routePattern = route.replace(/:\w+/g, '([^/]+)'); // :id -> 정규식
     const regex = new RegExp(`^${routePattern}$`);
     const match = hash.match(regex);
-    
+
     if (match) {
       // 파라미터 추출
       const params = {};
-      const paramNames = (route.match(/:\w+/g) || []).map(p => p.slice(1));
+      const paramNames = (route.match(/:\w+/g) || []).map((p) => p.slice(1));
       paramNames.forEach((name, i) => {
         params[name] = match[i + 1];
       });
-      
+
       return { path: route, params };
     }
   }
-  
+
   return { path: hash, params: {} };
 }
 
@@ -75,7 +80,7 @@ function parseHash() {
 export function route() {
   const { path, params } = parseHash();
   const renderPage = routes[path];
-  
+
   // 개발 모드가 아닐 때만 인증 체크
   if (!DEV_MODE) {
     // 인증이 필요한 경로인데 로그인하지 않은 경우
@@ -83,14 +88,14 @@ export function route() {
       navigateTo('/login');
       return;
     }
-    
+
     // 로그인 상태에서 로그인/회원가입 페이지 접근 시 메인으로 리다이렉트
     if ((path === '/login' || path === '/signup') && isLoggedIn()) {
       navigateTo('/posts');
       return;
     }
   }
-  
+
   // 해당 경로의 페이지 렌더링
   if (renderPage) {
     renderPage(params);
@@ -150,7 +155,7 @@ function render404() {
 export function initRouter() {
   // 해시 변경 시 라우팅
   window.addEventListener('hashchange', route);
-  
+
   // 초기 라우팅
   route();
 }

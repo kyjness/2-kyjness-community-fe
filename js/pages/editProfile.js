@@ -5,6 +5,9 @@
 import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
+import { renderHeader, initHeaderEvents } from '../components/header.js';
+import { fileToBase64 } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
 
 /**
  * 회원정보 수정 페이지 렌더링
@@ -14,37 +17,14 @@ export function renderEditProfile() {
   const user = getUser();
 
   root.innerHTML = `
-    <header class="header">
-      <h1 class="header-title">
-        <span id="header-title-link">아무 말 대잔치</span>
-      </h1>
-
-      <!-- 오른쪽 상단 프로필 -->
-      <div class="header-profile-wrapper" id="header-profile-btn">
-        <div class="profile-avatar">
-          <img
-            src="${user?.profileImage || './imt.png'}"
-            class="profile-avatar-img"
-          />
-        </div>
-      </div>
-
-      <!-- 드롭다운 -->
-      <div class="profile-dropdown" id="profile-dropdown">
-        <button id="go-mypage">회원정보수정</button>
-        <button id="go-password">비밀번호수정</button>
-        <button id="logout-btn">로그아웃</button>
-      </div>
-
-      <div class="header-divider"></div>
-    </header>
+    ${renderHeader()}
 
     <main class="main">
       <div class="form-container profile-edit">
         <h2 class="form-title">회원정보수정</h2>
 
         <form id="form" class="form">
-                    <!-- 1) 프로필 사진 -->
+          <!-- 1) 프로필 사진 -->
           <div class="form-group signup-profile-group">
             <label class="form-label">프로필 사진*</label>
 
@@ -57,7 +37,7 @@ export function renderEditProfile() {
                 <div class="avatar-img-wrapper">
                   <img
                     id="avatar-img"
-                    src="${user?.profileImage || './imt.png'}"
+                    src="${user?.profileImage || user?.profileImageUrl || DEFAULT_PROFILE_IMAGE}"
                     alt="프로필 이미지"
                   />
                 </div>
@@ -154,6 +134,7 @@ export function renderEditProfile() {
     </div>
   `;
 
+  initHeaderEvents();
   attachEditProfileEvents();
 }
 
@@ -162,8 +143,6 @@ export function renderEditProfile() {
  */
 function attachEditProfileEvents() {
   const form = document.getElementById('form');
-  const profileBtn = document.getElementById('header-profile-btn');
-  const dropdown = document.getElementById('profile-dropdown');
   const avatarArea = document.getElementById('avatar-area');
   const profileInput = document.getElementById('profile-image');
   const avatarImg = document.getElementById('avatar-img');
@@ -176,7 +155,9 @@ function attachEditProfileEvents() {
   const deleteModalConfirm = document.getElementById('delete-modal-confirm');
 
   // 폼 제출 → 회원정보 수정
-  form.addEventListener('submit', handleProfileUpdate);
+  if (form) {
+    form.addEventListener('submit', handleProfileUpdate);
+  }
 
   // 하단 "수정완료" 버튼도 같은 동작 수행
   if (editCompleteBtn) {
@@ -186,84 +167,63 @@ function attachEditProfileEvents() {
   }
 
   // "변경" 버튼 클릭 → 파일 선택 (변경 버튼만 클릭 가능)
-  avatarChangeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    profileInput.click();
-  });
+  if (avatarChangeBtn && profileInput) {
+    avatarChangeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileInput.click();
+    });
+  }
 
   // 원의 다른 영역 클릭 시 아무 동작 안 함 (변경 버튼만 클릭 가능)
-  avatarArea.addEventListener('click', (e) => {
-    // 변경 버튼이 아닌 영역을 클릭한 경우에만 이벤트 전파 중단
-    if (e.target !== avatarChangeBtn && !avatarChangeBtn.contains(e.target)) {
-      e.stopPropagation();
-      // 아무 동작 안 함
-    }
-  });
+  if (avatarArea && avatarChangeBtn) {
+    avatarArea.addEventListener('click', (e) => {
+      // 변경 버튼이 아닌 영역을 클릭한 경우에만 이벤트 전파 중단
+      if (e.target !== avatarChangeBtn && !avatarChangeBtn.contains(e.target)) {
+        e.stopPropagation();
+      }
+    });
+  }
 
   // 프로필 사진 선택 시 미리보기
-  profileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  if (profileInput && avatarImg) {
+    profileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      avatarImg.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // 드롭다운 토글
-  profileBtn.addEventListener('click', () => {
-    dropdown.classList.toggle('visible');
-  });
-
-  // 드롭다운 내부 이동
-  document.getElementById('go-mypage').addEventListener('click', () => {
-    navigateTo('/profile/edit');
-  });
-
-  document.getElementById('go-password').addEventListener('click', () => {
-    navigateTo('/profile/password');
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    clearUser();
-    navigateTo('/login');
-  });
-
-  // 드롭다운 바깥 클릭 시 닫기
-  document.addEventListener('click', (e) => {
-    if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.remove('visible');
-    }
-  });
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        avatarImg.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   // 회원 탈퇴 버튼 → 모달 열기
-  deleteBtn.addEventListener('click', () => {
-    openDeleteModal(deleteModal);
-  });
+  if (deleteBtn && deleteModal) {
+    deleteBtn.addEventListener('click', () => {
+      openDeleteModal(deleteModal);
+    });
+  }
 
   // 모달 취소/확인
-  deleteModalCancel.addEventListener('click', () => {
-    closeDeleteModal(deleteModal);
-  });
+  if (deleteModalCancel && deleteModal) {
+    deleteModalCancel.addEventListener('click', () => {
+      closeDeleteModal(deleteModal);
+    });
+  }
 
-  deleteModalConfirm.addEventListener('click', async () => {
-    await handleDeleteAccount();
-  });
+  if (deleteModalConfirm) {
+    deleteModalConfirm.addEventListener('click', async () => {
+      await handleDeleteAccount();
+    });
+  }
 
   // 모달 바깥 클릭 시 닫기
-  deleteModal.addEventListener('click', (e) => {
-    if (e.target === deleteModal) {
-      closeDeleteModal(deleteModal);
-    }
-  });
-
-  // 헤더 제목 클릭 → 게시글 목록으로 이동
-  const headerTitle = document.getElementById('header-title-link');
-  if (headerTitle) {
-    headerTitle.addEventListener('click', () => {
-      navigateTo('/posts');
+  if (deleteModal) {
+    deleteModal.addEventListener('click', (e) => {
+      if (e.target === deleteModal) {
+        closeDeleteModal(deleteModal);
+      }
     });
   }
 }
@@ -295,8 +255,7 @@ async function handleProfileUpdate(e) {
     // 프로필 이미지 선택된 경우 Base64로 전송
     const file = document.getElementById('profile-image').files[0];
     if (file) {
-      const base64Image = await fileToBase64(file);
-      payload.profileImage = base64Image;
+      payload.profileImage = await fileToBase64(file);
     }
 
     // 백엔드의 내 정보 수정 API
@@ -352,14 +311,4 @@ function clearNicknameError() {
   const el = document.getElementById('nickname-error');
   if (!el) return;
   el.textContent = '*helper text'; // 기본 helper text로 되돌리기
-}
-
-/* 파일 → Base64 */
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }

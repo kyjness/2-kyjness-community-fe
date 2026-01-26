@@ -4,7 +4,8 @@
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
-import { getUser, clearUser } from '../state.js';
+import { renderHeader, initHeaderEvents } from '../components/header.js';
+import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
 
 /** 해시(#/posts/123)에서 postId 추출 */
 function getPostIdFromHash() {
@@ -20,7 +21,6 @@ function getPostIdFromHash() {
  */
 export async function renderPostDetail(param) {
   const root = document.getElementById('app-root');
-  const user = getUser();
 
   let postId = null;
   if (typeof param === 'string' || typeof param === 'number') {
@@ -32,38 +32,7 @@ export async function renderPostDetail(param) {
   if (!postId) postId = getPostIdFromHash();
 
   root.innerHTML = `
-    <header class="header">
-      <!-- 뒤로가기 버튼 -->
-      <a href="javascript:void(0);" class="btn-back" id="btn-back">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </a>
-
-      <!-- 제목 -->
-      <h1 class="header-title">
-        <span id="header-title-link">아무 말 대잔치</span>
-      </h1>
-
-      <!-- 오른쪽 상단 프로필 -->
-      <div class="header-profile-wrapper" id="header-profile-btn">
-        <div class="profile-avatar">
-          <img
-            src="${user?.profileImage || './imt.png'}"
-            class="profile-avatar-img"
-          />
-        </div>
-      </div>
-
-      <!-- 드롭다운 -->
-      <div class="profile-dropdown" id="profile-dropdown">
-        <button id="go-mypage">회원정보수정</button>
-        <button id="go-password">비밀번호수정</button>
-        <button id="logout-btn">로그아웃</button>
-      </div>
-
-      <div class="header-divider"></div>
-    </header>
+    ${renderHeader({ showBackButton: true })}
 
     <main class="main post-detail-main">
       <div class="post-detail-container">
@@ -124,66 +93,15 @@ export async function renderPostDetail(param) {
     </div>
   `;
 
-  attachHeaderEvents();
+  initHeaderEvents();
   if (postId) {
     attachModalEvents(postId);
     await loadPostDetail(postId);
   } else {
     const card = document.getElementById('post-detail-card');
-    if (card) card.innerHTML = '<p class="post-list-message">유효하지 않은 게시글입니다.</p>';
-  }
-}
-
-/* =========================
-   헤더 / 드롭다운 공통 이벤트
-   ========================= */
-
-function attachHeaderEvents() {
-  const backBtn = document.getElementById('btn-back');
-  const headerTitle = document.getElementById('header-title-link');
-  const profileBtn = document.getElementById('header-profile-btn');
-  const dropdown = document.getElementById('profile-dropdown');
-
-  /** 뒤로가기 → 게시글 목록 */
-  if (backBtn) {
-    backBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      navigateTo('/posts');
-    });
-  }
-
-  /** 헤더 제목 클릭 → 게시글 목록 */
-  if (headerTitle) {
-    headerTitle.addEventListener('click', () => {
-      navigateTo('/posts');
-    });
-  }
-
-  /** 프로필 드롭다운 */
-  if (profileBtn && dropdown) {
-    profileBtn.addEventListener('click', () => {
-      dropdown.classList.toggle('visible');
-    });
-
-    document.getElementById('go-mypage').addEventListener('click', () => {
-      navigateTo('/profile/edit');
-    });
-
-    document.getElementById('go-password').addEventListener('click', () => {
-      navigateTo('/profile/password');
-    });
-
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      clearUser();
-      navigateTo('/login');
-    });
-
-    // 바깥 클릭 시 드롭다운 닫기
-    document.addEventListener('click', (e) => {
-      if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.classList.remove('visible');
-      }
-    });
+    if (card)
+      card.innerHTML =
+        '<p class="post-list-message">유효하지 않은 게시글입니다.</p>';
   }
 }
 
@@ -200,7 +118,9 @@ function attachModalEvents(postId) {
 
   const commentDeleteModal = document.getElementById('comment-delete-modal');
   const commentDeleteCancel = document.getElementById('comment-delete-cancel');
-  const commentDeleteConfirm = document.getElementById('comment-delete-confirm');
+  const commentDeleteConfirm = document.getElementById(
+    'comment-delete-confirm',
+  );
 
   // 게시글 삭제 모달
   postDeleteCancel.addEventListener('click', () => {
@@ -266,61 +186,69 @@ function closeModal(modal) {
    게시글 상세 데이터 로딩
    ========================= */
 
-// 개발 모드: API 실패 시 더미 데이터 표시 여부
-const DEV_MODE_DUMMY = true;
+// 개발 모드: API 실패 시 더미 데이터 표시 여부 (배포 시 false로 변경)
+const DEV_MODE_DUMMY = false;
 
 async function loadPostDetail(postId) {
   const card = document.getElementById('post-detail-card');
   if (!card) return;
   if (!postId) {
-    card.innerHTML = '<p class="post-list-message">유효하지 않은 게시글입니다.</p>';
+    card.innerHTML =
+      '<p class="post-list-message">유효하지 않은 게시글입니다.</p>';
     return;
   }
 
-  card.innerHTML = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
+  card.innerHTML =
+    '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
 
   try {
     // 게시글 상세 조회 (백엔드에서 조회수 자동 증가)
     const response = await api.get(`/posts/${postId}`);
-    
+
     // API 응답 구조: { code: "POST_RETRIEVED", data: {...} }
     const postData = response.data || response;
-    
+
     // 백엔드 필드명을 프론트엔드 필드명으로 변환
     const normalizedPost = {
       id: postData.postId,
       title: postData.title || '',
       content: postData.content || '',
       author_nickname: postData.author?.nickname || '',
-      author_profile_image: postData.author?.profileImageUrl || null,
+      author_profile_image:
+        postData.author?.profileImageUrl ||
+        postData.author?.profileImage ||
+        DEFAULT_PROFILE_IMAGE,
       created_at: postData.createdAt || '',
       image_url: postData.file?.fileUrl || postData.file?.url || null,
       likes: postData.likeCount || 0,
       views: postData.hits || 0,
       isMine: postData.isMine || false,
     };
-    
+
     // 댓글 목록 조회
     let comments = [];
     try {
       const commentsResponse = await api.get(`/posts/${postId}/comments`);
       const commentsData = commentsResponse.data || commentsResponse;
-      comments = (Array.isArray(commentsData) ? commentsData : []).map(c => ({
-        id: c.commentId,
-        author_nickname: c.author?.nickname || '',
-        author_profile_image: c.author?.profileImageUrl || null,
-        created_at: c.createdAt || '',
-        content: c.content || '',
-        isMine: c.isMine || false,
-      }));
+      comments = (Array.isArray(commentsData) ? commentsData : []).map(
+        (c) => ({
+          id: c.commentId,
+          author_nickname: c.author?.nickname || '',
+          author_profile_image:
+            c.author?.profileImageUrl || c.author?.profileImage || null,
+          created_at: c.createdAt || '',
+          content: c.content || '',
+          isMine: c.isMine || false,
+        }),
+      );
     } catch (commentError) {
       console.warn('댓글 조회 실패:', commentError);
     }
-    
+
     renderPostDetailCard(normalizedPost, comments, postId);
   } catch (error) {
     console.error('게시글 상세 조회 실패:', error);
-    
+
     // 개발 모드에서는 더미 데이터 표시
     if (DEV_MODE_DUMMY) {
       console.warn('개발 모드: 더미 데이터를 표시합니다.');
@@ -331,7 +259,8 @@ async function loadPostDetail(postId) {
         author_profile_image: null,
         created_at: new Date().toLocaleString('ko-KR'),
         image_url: null,
-        content: '게시글 내용입니다. API 서버가 실행되지 않아 더미 데이터를 표시하고 있습니다. 이 내용은 실제 게시글 내용이 표시되어야 하는 부분입니다.',
+        content:
+          '게시글 내용입니다. API 서버가 실행되지 않아 더미 데이터를 표시하고 있습니다. 이 내용은 실제 게시글 내용이 표시되어야 하는 부분입니다.',
         likes: 0,
         views: 1,
         isMine: true,
@@ -342,7 +271,8 @@ async function loadPostDetail(postId) {
           author_nickname: '댓글 작성자 1',
           author_profile_image: null,
           created_at: new Date().toLocaleString('ko-KR'),
-          content: '첫 번째 댓글입니다. 댓글 기능이 잘 작동하는지 확인할 수 있습니다.',
+          content:
+            '첫 번째 댓글입니다. 댓글 기능이 잘 작동하는지 확인할 수 있습니다.',
           isMine: true,
         },
         {
@@ -350,7 +280,8 @@ async function loadPostDetail(postId) {
           author_nickname: '댓글 작성자 2',
           author_profile_image: null,
           created_at: new Date().toLocaleString('ko-KR'),
-          content: '두 번째 댓글입니다. 수정과 삭제 버튼이 보이는 댓글입니다.',
+          content:
+            '두 번째 댓글입니다. 수정과 삭제 버튼이 보이는 댓글입니다.',
           isMine: true,
         },
       ];
@@ -381,7 +312,7 @@ function renderPostDetailCard(post, comments, postId) {
       <div class="post-detail-meta">
         <div class="post-detail-meta-left">
           <div class="post-detail-author-img">
-            <img src="${post.author_profile_image || './imt.png'}" alt="작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+            <img src="${post.author_profile_image || DEFAULT_PROFILE_IMAGE}" alt="작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
           </div>
           <div class="post-detail-meta-text">
             <span class="post-detail-author-name">
@@ -451,7 +382,7 @@ function renderPostDetailCard(post, comments, postId) {
             placeholder="댓글을 남겨주세요!"
           ></textarea>
           <div class="comment-write-box-divider"></div>
-          <button type="submit" class="btn btn-submit comment-submit-btn">
+          <button type="submit" class="btn btn-submit">
             댓글 등록
           </button>
         </form>
@@ -464,7 +395,7 @@ function renderPostDetailCard(post, comments, postId) {
             (c) => `
           <article class="comment-item" data-comment-id="${c.id}">
             <div class="comment-avatar">
-              <img src="${c.author_profile_image || './imt.png'}" alt="댓글 작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+              <img src="${c.author_profile_image || DEFAULT_PROFILE_IMAGE}" alt="댓글 작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
             </div>
             <div class="comment-body">
               <div class="comment-header">
@@ -495,7 +426,7 @@ function renderPostDetailCard(post, comments, postId) {
                 c.isEditing
                   ? `
               <form class="comment-edit-form" data-comment-id="${c.id}">
-                <textarea class="comment-edit-textarea" style="width:100%;min-height:60px;padding:8px;border:1px solid #e0e0e0;border-radius:4px;font-size:14px;">${c.content}</textarea>
+                <textarea class="comment-edit-textarea" style="width:100%;min-height:60px;padding:8px;border:1px solid #e0e0e0;border-radius:4px;font-size:14px;resize:none;">${c.content}</textarea>
                 <div style="display:flex;gap:8px;margin-top:8px;">
                   <button type="submit" class="comment-action-btn" style="border:1px solid var(--primary);">저장</button>
                   <button type="button" class="comment-action-btn comment-edit-cancel-btn" data-comment-id="${c.id}" style="border:1px solid var(--primary);">취소</button>
@@ -506,7 +437,7 @@ function renderPostDetailCard(post, comments, postId) {
               }
             </div>
           </article>
-        `
+        `,
           )
           .join('')}
       </section>
@@ -530,7 +461,9 @@ function attachPostBodyEvents(postId) {
   const likeStatBox = document.getElementById('like-stat-box');
 
   if (postEditBtn && postId) {
-    postEditBtn.addEventListener('click', () => navigateTo(`/posts/${postId}/edit`));
+    postEditBtn.addEventListener('click', () =>
+      navigateTo(`/posts/${postId}/edit`),
+    );
   }
 
   if (postDeleteBtn) {
@@ -543,17 +476,22 @@ function attachPostBodyEvents(postId) {
     likeStatBox.addEventListener('click', async () => {
       const likeCountEl = document.getElementById('like-count');
       if (!likeCountEl) return;
-      const currentCount = parseInt(likeCountEl.textContent) || 0;
       try {
-        await api.post(`/posts/${postId}/like`);
-        likeCountEl.textContent = currentCount + 1;
+        // 백엔드 API는 /posts/{post_id}/likes (복수형)
+        const response = await api.post(`/posts/${postId}/likes`);
+        // 서버에서 반환하는 실제 좋아요 수 사용
+        if (response.data && response.data.likeCount !== undefined) {
+          likeCountEl.textContent = response.data.likeCount;
+        }
       } catch (err) {
         console.error('좋아요 실패:', err);
-        // 좋아요 취소일 수도 있음
+        // 이미 좋아요를 눌렀다면 취소 시도
         try {
-          await api.delete(`/posts/${postId}/like`);
-          likeCountEl.textContent = Math.max(0, currentCount - 1);
+          await api.delete(`/posts/${postId}/likes`);
+          // 좋아요 취소 후 게시글 다시 로드하여 정확한 수치 반영
+          await loadPostDetail(postId);
         } catch (deleteErr) {
+          console.error('좋아요 취소 실패:', deleteErr);
           alert(err.message || '좋아요 처리에 실패했습니다.');
         }
       }
@@ -607,7 +545,7 @@ function attachPostBodyEvents(postId) {
         editForm.className = 'comment-edit-form';
         editForm.dataset.commentId = commentId;
         editForm.innerHTML = `
-          <textarea class="comment-edit-textarea" style="width:100%;min-height:60px;padding:8px;border:1px solid #e0e0e0;border-radius:4px;font-size:14px;">${content}</textarea>
+          <textarea class="comment-edit-textarea" style="width:100%;min-height:60px;padding:8px;border:1px solid #e0e0e0;border-radius:4px;font-size:14px;resize:none;">${content}</textarea>
           <div style="display:flex;gap:8px;margin-top:8px;">
             <button type="submit" class="comment-action-btn" style="border:1px solid var(--primary);">저장</button>
             <button type="button" class="comment-action-btn comment-edit-cancel-btn" data-comment-id="${commentId}" style="border:1px solid var(--primary);">취소</button>
@@ -626,10 +564,12 @@ function attachPostBodyEvents(postId) {
             alert(err.message || '댓글 수정에 실패했습니다.');
           }
         });
-        editForm.querySelector('.comment-edit-cancel-btn').addEventListener('click', () => {
-          editForm.remove();
-          contentEl.style.display = 'block';
-        });
+        editForm
+          .querySelector('.comment-edit-cancel-btn')
+          .addEventListener('click', () => {
+            editForm.remove();
+            contentEl.style.display = 'block';
+          });
         return;
       }
 

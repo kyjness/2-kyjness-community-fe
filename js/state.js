@@ -5,7 +5,7 @@
 
 // 전역 상태 객체
 const state = {
-  user: null,        // 로그인한 사용자 정보 { id, email, nickname, profileImageUrl }
+  user: null, // 로그인한 사용자 정보 { id, email, nickname, profileImageUrl }
   isLoggedIn: false, // 로그인 여부
 };
 
@@ -30,7 +30,7 @@ export function getUser() {
 export function setUser(userData) {
   state.user = userData;
   state.isLoggedIn = true;
-  
+
   // 로컬 스토리지에 저장 (새로고침 시에도 유지)
   if (userData) {
     localStorage.setItem('user', JSON.stringify(userData));
@@ -43,7 +43,7 @@ export function setUser(userData) {
 export function clearUser() {
   state.user = null;
   state.isLoggedIn = false;
-  
+
   // 로컬 스토리지에서 제거
   localStorage.removeItem('user');
 }

@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000';
+import { BASE_URL } from './constants.js';
 
 export const api = {
   async get(endpoint) {
@@ -6,7 +6,7 @@ export const api = {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
     });
 
     if (!response.ok) {
@@ -24,14 +24,17 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-      credentials: 'include'
+      credentials: 'include',
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: '요청 실패' }));
-      const errorMessage = typeof error.detail === 'string' 
-        ? error.detail 
-        : error.detail?.message || error.message || `HTTP error! status: ${response.status}`;
+      const errorMessage =
+        typeof error.detail === 'string'
+          ? error.detail
+          : error.detail?.message ||
+            error.message ||
+            `HTTP error! status: ${response.status}`;
       throw new Error(errorMessage);
     }
 
@@ -45,14 +48,17 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-      credentials: 'include'
+      credentials: 'include',
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: '요청 실패' }));
-      const errorMessage = typeof error.detail === 'string' 
-        ? error.detail 
-        : error.detail?.message || error.message || `HTTP error! status: ${response.status}`;
+      const errorMessage =
+        typeof error.detail === 'string'
+          ? error.detail
+          : error.detail?.message ||
+            error.message ||
+            `HTTP error! status: ${response.status}`;
       throw new Error(errorMessage);
     }
 
@@ -62,17 +68,20 @@ export const api = {
   async delete(endpoint) {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'DELETE',
-      credentials: 'include'
+      credentials: 'include',
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: '요청 실패' }));
-      const errorMessage = typeof error.detail === 'string' 
-        ? error.detail 
-        : error.detail?.message || error.message || `HTTP error! status: ${response.status}`;
+      const errorMessage =
+        typeof error.detail === 'string'
+          ? error.detail
+          : error.detail?.message ||
+            error.message ||
+            `HTTP error! status: ${response.status}`;
       throw new Error(errorMessage);
     }
 
     return response.json();
-  }
+  },
 };

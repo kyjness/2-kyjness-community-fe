@@ -60,3 +60,35 @@ logs
 # Cursor
 .cursorignore
 .cursorindexingignore
+
+# ESLint
+.eslintrc*
+.eslintignore
+
+# Prettier
+.prettierrc*
+.prettierignore
+
+# Editor backup files
+*.bak
+*.backup
+*~
+
+# Windows specific
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS specific
+.AppleDouble
+.LSOverride
+._*
+
+# Linux specific
+*~
+.directory
+.Trash-*
+
+# Project specific
+*.local
+.DS_Store

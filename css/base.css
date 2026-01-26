@@ -40,7 +40,7 @@ body {
 
 .header {
   background-color: transparent;
-  padding: 24px 0 0;
+  padding: 18px 0 0;
   width: 100%;
   position: relative;
 }
@@ -49,14 +49,14 @@ body {
 .header-title {
   text-align: center;
   font-family: 'NanumSquareRound';
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 400;
   line-height: 100%;
   color: #000000;
   letter-spacing: 0%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   /* 기본 커서는 default */
   cursor: default;
 }
@@ -72,7 +72,7 @@ body {
   height: 1px;
   background-color: var(--divider);
   width: 100%;
-  margin-top: 16px;
+  margin-top: 12px;
   display: block;
 }
 
@@ -275,19 +275,18 @@ body {
   color: #111111;
 }
 
-/*수정완료, 댓글 등록 버튼 스타일*/
+/*게시글 작성, 댓글 등록 버튼 스타일*/
 /* 게시글 작성 버튼 */
 .btn-submit {
   background-color: var(--primary);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
-  padding: 8px 20px;
-  border-radius: 12px;
+  padding: 8px 28px;
+  border-radius: 20px;
   cursor: pointer;
   border: none;
   display: inline-block;
-  align-self: center;
   margin: 4px 0 20px;
 }
 
@@ -295,7 +294,7 @@ body {
   background-color: #9b8ee0;
 }
 
-/* 게시글이 있을 때 오른쪽 정렬 */
+/* 오른쪽 정렬 */
 .btn-submit.right {
   align-self: flex-end;
 }
@@ -760,7 +759,7 @@ body {
    ============================================ */
 
    .post-detail-main {
-    align-items: flex-start;  /* 위에서부터 시작 */
+    align-items: flex-start;
   }
   
   /* 전체 래퍼 */
@@ -833,7 +832,7 @@ body {
     min-width: 46px;
     height: 27px;
     border-radius: 6px;
-    border: 1px solid var(--primary);
+    border: 1px solid #000000;
     background-color: #ffffff;
     font-size: 12px;
     font-family: 'Pretendard';
@@ -884,30 +883,11 @@ body {
     margin-bottom: 28px;
   }
   
-  /* 댓글 입력창 위 구분선 */
-  .comment-divider {
-    height: 1px;
-    background-color: #D9D9D9;
-    width: 100%;
-    margin-bottom: 20px;
-    display: block;
-  }
-  
-  /* 댓글 입력창 내부 구분선 (입력란과 버튼 사이) */
-  .comment-write-box-divider {
-    height: 1px;
-    background-color: #D9D9D9;
-    width: 100%;
-    margin: 10px 0;
-    display: block;
-  }
-  
   .post-detail-stat-box {
     width: 96px;
     height: 64px;
     border-radius: 12px;
     background: #D9D9D9;
-    box-shadow: none;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -923,28 +903,47 @@ body {
   
   .post-detail-stat-label {
     font-size: 12px;
+    font-weight: 700;
     color: #000000;
   }
   
-  /* 댓글 작성 영역 */
-  .comment-write-box {
-    margin-top: 4px;
-    padding: 16px 20px 0;
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: none;
+  /* 댓글 입력 위 구분선 */
+  .comment-divider {
+    height: 1px;
+    background-color: #D9D9D9;
+    width: 100%;
+    margin-bottom: 12px;
+    display: block;
   }
   
+  /* 댓글 입력칸과 버튼 사이 구분선 - 양옆 끝까지 */
+  .comment-write-box-divider {
+    height: 1px;
+    background-color: #D9D9D9;
+    width: calc(100% + 40px); /* 양옆 padding 20px씩 상쇄 */
+    margin: 8px -20px;
+    display: block;
+  }
+  
+  /* 댓글 작성 영역 카드 */
+  .comment-write-box {
+    margin-top: 4px;
+    padding: 12px 20px 10px;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  
+  /* form 레이아웃 */
   .comment-form {
     display: flex;
     flex-direction: column;
   }
   
-  /* 댓글 입력창: 테두리/색 없음 (연한 배경만) */
+  /* textarea 스타일 */
   .comment-write-box .comment-textarea,
   .comment-write-box .form-input.comment-textarea {
     min-height: 80px;
-    resize: vertical;
+    resize: none;
     border: none;
     outline: none;
     box-shadow: none;
@@ -957,30 +956,26 @@ body {
     outline: none;
   }
   
-  .comment-write-box .comment-textarea:focus::placeholder,
-  .comment-write-box .form-input.comment-textarea:focus::placeholder {
-    opacity: 0;
-  }
-  
   .comment-write-box .comment-textarea::placeholder,
   .comment-write-box .form-input.comment-textarea::placeholder {
     transition: opacity 0.2s;
   }
   
-  /* 댓글 등록 버튼 – 공통 .btn, .btn-submit 활용 */
-  .comment-submit-btn {
-    margin-top: 10px;
-    margin-bottom: 0;
-    align-self: flex-end;
+  .comment-write-box .comment-textarea:focus::placeholder,
+  .comment-write-box .form-input.comment-textarea:focus::placeholder {
+    opacity: 0;
   }
   
-  .comment-write-box {
-    padding-bottom: 8px;
+  /* 댓글 등록 버튼: 오른쪽 정렬 + 아래쪽 여백 제거 */
+  .comment-form .btn-submit {
+    align-self: flex-end;   /* ← 오른쪽으로 붙이기 */
+    margin-top: 8px;
+    margin-bottom: 0;
   }
   
   /* 댓글 리스트 */
   .comment-list {
-    margin-top: 20px;
+    margin-top: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -992,8 +987,7 @@ body {
     gap: 10px;
     padding: 12px 16px;
     border-radius: 12px;
-    background: #ffffff;
-    box-shadow: none;
+    background: transparent !important;
   }
   
   .comment-avatar {
@@ -1034,7 +1028,7 @@ body {
     color: #777777;
   }
   
-  /* 댓글 수정/삭제 버튼 – 게시글 수정/삭제와 동일한 연한 보라 테두리 */
+  /* 댓글 수정/삭제 버튼 */
   .comment-header-actions {
     display: flex;
     gap: 8px;
@@ -1045,7 +1039,7 @@ body {
     min-width: 46px;
     height: 27px;
     border-radius: 6px;
-    border: 1px solid var(--primary) !important;
+    border: 1px solid #000000 !important;
     background-color: #ffffff !important;
     font-size: 12px;
     font-family: 'Pretendard';
@@ -1064,6 +1058,11 @@ body {
   .comment-content {
     font-size: 14px;
     line-height: 1.5;
+  }
+  
+  /* 댓글 수정 textarea */
+  .comment-edit-textarea {
+    resize: none;
   }  
 
 /* ============================================
@@ -1079,12 +1078,63 @@ body {
 .new-post-form .form-textarea {
   height: auto;
   min-height: 260px;
-  resize: vertical;
+  resize: none;
 }
 
 /* 제목/내용 placeholder 색상 (#838486) */
 .new-post-form .form-input::placeholder {
   color: #838486;
+}
+
+/* 게시글 작성/수정 페이지 입력창은 박스가 아니라 '선' 스타일 */
+.new-post-form .form-input {
+  border-width: 0 0 1px 0;   /* 아래쪽 선만 보이게 */
+  border-radius: 0;
+  background-color: #F4F5F7;
+  padding-left: 0;           /* 양 옆 여백 줄여서 라인 느낌 */
+  padding-right: 0;
+  height: 40px;              /* 살짝 더 높게 (원하면 조절 가능) */
+}
+
+/* 게시글 작성/수정 페이지 입력창 — 위/아래 선 스타일 */
+.new-post-form .form-input {
+  border-top: 1px solid #D9D9D9;      /* 위 라인 */
+  border-bottom: 1px solid #D9D9D9;   /* 아래 라인 */
+  border-left: none;
+  border-right: none;
+
+  border-radius: 0;
+  background-color: #F4F5F7;
+
+  padding: 10px 0;                    /* 상하 여백 */
+  height: auto;
+}
+
+/* textarea (내용)도 동일하게 적용 */
+.new-post-form .form-textarea {
+  border-top: 1px solid #D9D9D9;
+  border-bottom: 1px solid #D9D9D9;
+  border-left: none;
+  border-right: none;
+
+  border-radius: 0;
+  background-color: #F4F5F7;
+
+  padding: 10px 0;
+  min-height: 260px;
+  resize: vertical;
+}
+
+/* textarea는 위에서 min-height만 쓰고, 같은 선 스타일 유지 */
+.new-post-form .form-textarea {
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  background-color: #F4F5F7;
+  padding-left: 0;
+  padding-right: 0;
+  height: auto;
+  min-height: 260px;
+  resize: none;
 }
 
 /* 파일 선택 영역 정렬 */

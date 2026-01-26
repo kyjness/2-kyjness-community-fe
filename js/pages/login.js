@@ -5,20 +5,17 @@
 import { api } from '../api.js';
 import { setUser } from '../state.js';
 import { navigateTo } from '../router.js';
+import { renderHeader, initHeaderEvents } from '../components/header.js';
+import { showFieldError } from '../utils.js';
 
 /**
  * 로그인 페이지 렌더링
  */
 export function renderLogin() {
   const root = document.getElementById('app-root');
-  
+
   root.innerHTML = `
-    <header class="header">
-      <h1 class="header-title">
-        <span id="header-title-link">아무 말 대잔치</span>
-      </h1>
-      <div class="header-divider"></div>
-    </header>
+    ${renderHeader({ showProfile: false })}
     
     <main class="main">
       <div class="form-container">
@@ -59,8 +56,9 @@ export function renderLogin() {
       </div>
     </main>
   `;
-  
+
   // 이벤트 리스너 등록
+  initHeaderEvents();
   attachLoginEvents();
 }
 
@@ -73,7 +71,7 @@ function attachLoginEvents() {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const errorMessage = document.getElementById('error-message');
-  
+
   // 입력란 포커스 시 기본 helper text 숨기기
   if (emailInput) {
     emailInput.addEventListener('focus', () => {
@@ -87,7 +85,7 @@ function attachLoginEvents() {
       }
     });
   }
-  
+
   if (passwordInput) {
     passwordInput.addEventListener('focus', () => {
       if (errorMessage && errorMessage.textContent === '*helper text') {
@@ -100,22 +98,14 @@ function attachLoginEvents() {
       }
     });
   }
-  
+
   // 로그인 폼 제출
   form.addEventListener('submit', handleLogin);
-  
+
   // 회원가입 버튼 클릭
   signupBtn.addEventListener('click', () => {
     navigateTo('/signup');
   });
-  
-  // 헤더 제목 클릭 → 게시글 목록으로 이동
-  const headerTitle = document.getElementById('header-title-link');
-  if (headerTitle) {
-    headerTitle.addEventListener('click', () => {
-      navigateTo('/posts');
-    });
-  }
 }
 
 /**
@@ -123,40 +113,39 @@ function attachLoginEvents() {
  */
 async function handleLogin(e) {
   e.preventDefault();
-  
+
   const form = e.target;
   const formData = new FormData(form);
   const email = formData.get('email');
   const password = formData.get('password');
-  
+
   // 입력값 검증
   if (!email || !password) {
     showError('이메일과 비밀번호를 입력해주세요.');
     return;
   }
-  
+
   const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;
-  
+
   try {
     // 로딩 상태
     submitBtn.textContent = '로그인 중...';
     submitBtn.disabled = true;
-    
+
     // 로그인 API 호출
     const result = await api.post('/auth/login', {
       email,
-      password
+      password,
     });
-    
+
     // 사용자 정보 저장
     if (result.user) {
       setUser(result.user);
     }
-    
+
     // 게시글 목록으로 이동
     navigateTo('/posts');
-    
   } catch (error) {
     // 에러 표시
     const errorMessage = error.message || '로그인에 실패했습니다.';
@@ -172,9 +161,5 @@ async function handleLogin(e) {
  * 에러 메시지 표시
  */
 function showError(message) {
-  const errorElement = document.getElementById('error-message');
-  if (errorElement) {
-    errorElement.textContent = `* ${message}`;
-    errorElement.style.display = 'block';
-  }
+  showFieldError('error-message', message);
 }
