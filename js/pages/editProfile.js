@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
-import { renderHeader, initHeaderEvents } from '../components/header.js';
+import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
 import { fileToBase64 } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
 
@@ -184,7 +184,7 @@ function attachEditProfileEvents() {
     });
   }
 
-  // 프로필 사진 선택 시 미리보기
+  // 프로필 사진 선택 시 미리보기 (회원정보 수정 페이지 + 헤더 모두 업데이트)
   if (profileInput && avatarImg) {
     profileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -192,7 +192,14 @@ function attachEditProfileEvents() {
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        avatarImg.src = event.target.result;
+        const imageDataUrl = event.target.result;
+        // 회원정보 수정 페이지의 프로필 이미지 업데이트
+        avatarImg.src = imageDataUrl;
+        // 헤더의 프로필 이미지도 즉시 업데이트 (미리보기)
+        const headerProfileImg = document.querySelector('.profile-avatar-img');
+        if (headerProfileImg) {
+          headerProfileImg.src = imageDataUrl;
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -263,6 +270,8 @@ async function handleProfileUpdate(e) {
 
     if (updatedUser) {
       setUser(updatedUser); // 상태에 저장
+      // 헤더의 프로필 이미지도 즉시 업데이트
+      updateHeaderProfileImage();
     }
 
     alert('회원정보가 수정되었습니다.');

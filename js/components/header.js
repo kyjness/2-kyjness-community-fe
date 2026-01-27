@@ -97,6 +97,20 @@ export function initHeaderEvents(options = {}) {
 }
 
 /**
+ * 헤더의 프로필 이미지를 업데이트합니다
+ * 회원정보 수정 후 호출하여 헤더의 프로필 이미지를 즉시 반영합니다
+ */
+export function updateHeaderProfileImage() {
+  const profileImg = document.querySelector('.profile-avatar-img');
+  if (profileImg) {
+    const user = getUser();
+    const profileImage =
+      user?.profileImage || user?.profileImageUrl || DEFAULT_PROFILE_IMAGE;
+    profileImg.src = profileImage;
+  }
+}
+
+/**
  * 프로필 드롭다운 이벤트 초기화
  */
 function initProfileDropdown() {
