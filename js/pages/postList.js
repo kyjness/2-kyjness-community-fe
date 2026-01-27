@@ -8,6 +8,9 @@ import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { renderPostCard } from '../components/postCard.js';
 import { DEV_MODE } from '../constants.js';
 
+// 개발 모드: 목록 없음/API 실패 시 더미 게시글 표시 (postDetail과 동일하게)
+const DEV_MODE_DUMMY = DEV_MODE;
+
 // 페이지네이션 상태 관리
 let currentPage = 1;
 let isLoading = false;
@@ -31,7 +34,7 @@ export async function renderPostList() {
           아무 말 대잔치 <strong>게시판</strong> 입니다.
         </p>
 
-        <button class="btn btn-submit" id="btn-submit">
+        <button class="btn btn-submit" id="btn-submit" style="display: none;" aria-hidden="true">
           게시글 작성
         </button>
 
@@ -67,77 +70,84 @@ async function loadPostList() {
   if (!listContainer) return;
 
   isLoading = true;
-
-  // 첫 페이지가 아니면 로딩 인디케이터 표시
   if (currentPage > 1 && loadingIndicator) {
     loadingIndicator.style.display = 'block';
   }
 
+  let posts = [];
+  let fetchFailed = false;
   try {
-    // API 호출 (페이지네이션 파라미터 추가)
     const response = await api.get(`/posts?page=${currentPage}&size=${PAGE_SIZE}`);
-
-    // API 응답 구조: { code: "POSTS_RETRIEVED", data: [...] } 또는 배열
     const postsData = response.data || response;
-    const posts = Array.isArray(postsData) ? postsData : [];
+    posts = Array.isArray(postsData) ? postsData : [];
+  } catch (e) {
+    console.error('게시글 조회 실패:', e);
+    fetchFailed = true;
+  }
 
-    // 더 이상 불러올 게시글이 없으면
-    if (posts.length === 0) {
-      hasMore = false;
-      if (loadingIndicator) {
-        loadingIndicator.style.display = 'none';
-      }
-      // 첫 페이지에서 게시글이 없을 때만
-      if (currentPage === 1) {
-        // 개발 모드에서만: 게시물이 없으면 더미 데이터로 상세 페이지 테스트
-        if (DEV_MODE) {
-          const testPostId = 1;
-          console.log('게시물이 없어서 테스트 게시물 상세 페이지로 이동합니다...');
-          navigateTo(`/posts/${testPostId}`);
-          return;
-        }
-        listContainer.innerHTML = `
-          <p class="post-list-message">게시글이 없습니다.</p>`;
-      }
-      isLoading = false;
-      return;
+  isLoading = false;
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'none';
+  }
+
+  // 첫 페이지인데 목록 비었거나 API 실패 → postDetail처럼 한 군데에서만 처리
+  if (currentPage === 1 && (posts.length === 0 || fetchFailed)) {
+    hasMore = false;
+    const createBtn = document.getElementById('btn-submit');
+    if (createBtn) {
+      createBtn.style.display = '';
+      createBtn.removeAttribute('aria-hidden');
+      createBtn.classList.remove('right');
     }
-
-    // 게시글이 있으면 버튼 오른쪽으로 (첫 페이지일 때만)
-    if (currentPage === 1 && posts.length > 0) {
-      const createBtn = document.getElementById('btn-submit');
-      if (createBtn) {
-        createBtn.classList.add('right');
-      }
+    if (DEV_MODE_DUMMY) {
+      console.warn('개발 모드: 더미 게시글 목록을 표시합니다.');
+      const dummyPosts = [
+        {
+          postId: 1,
+          title: '첫 번째 예시 게시글',
+          likeCount: 3,
+          commentCount: 2,
+          hits: 15,
+          createdAt: new Date().toISOString(),
+          author: { nickname: '예시작성자1', profileImageUrl: null },
+        },
+        {
+          postId: 2,
+          title: '두 번째 예시 게시글',
+          likeCount: 0,
+          commentCount: 1,
+          hits: 5,
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          author: { nickname: '예시작성자2', profileImageUrl: null },
+        },
+      ];
+      listContainer.innerHTML = dummyPosts.map(post => renderPostCard(post)).join('');
+      if (createBtn) createBtn.classList.add('right');
+    } else {
+      listContainer.innerHTML =
+        fetchFailed
+          ? `<p class="post-list-message">게시글을 불러올 수 없습니다.</p>`
+          : `<p class="post-list-message">게시글이 없습니다.</p>`;
     }
+    return;
+  }
 
-    // postCard 컴포넌트 사용
+  if (posts.length > 0) {
     const postsHTML = posts.map(post => renderPostCard(post)).join('');
-
-    // 첫 페이지면 교체, 아니면 추가
     if (currentPage === 1) {
       listContainer.innerHTML = postsHTML;
+      const createBtn = document.getElementById('btn-submit');
+      if (createBtn) {
+        createBtn.style.display = '';
+        createBtn.removeAttribute('aria-hidden');
+        createBtn.classList.add('right');
+      }
     } else {
       listContainer.insertAdjacentHTML('beforeend', postsHTML);
     }
-
-    // 다음 페이지로
     currentPage++;
-
-    // 불러온 게시글이 페이지 크기보다 작으면 더 이상 없음
     if (posts.length < PAGE_SIZE) {
       hasMore = false;
-    }
-  } catch (e) {
-    console.error('게시글 조회 실패:', e);
-    if (currentPage === 1) {
-      listContainer.innerHTML = `
-        <p class="post-list-message">게시글을 불러올 수 없습니다.</p>`;
-    }
-  } finally {
-    isLoading = false;
-    if (loadingIndicator) {
-      loadingIndicator.style.display = 'none';
     }
   }
 }

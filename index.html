@@ -12,10 +12,17 @@
   <!-- Pretendard 폰트 -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
+  <!-- Lottie (img/anim1.json 등 스플래시용) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
   <!-- ES Module + defer: DOM 파싱 후 JS 실행 -->
   <script type="module" src="./js/main.js" defer></script>
 </head>
 <body>
+  <!-- 첫 진입: 로티(SPLASH_ITEMS) 순차 재생 후 앱 -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <div id="splash-stage"></div>
+  </div>
   <!-- SPA의 단일 렌더링 영역 -->
   <div id="app-root"></div>
 </body>

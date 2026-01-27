@@ -7,29 +7,65 @@ import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { DEFAULT_PROFILE_IMAGE, DEV_MODE } from '../constants.js';
 
-/** 해시(#/posts/123)에서 postId 추출 */
-function getPostIdFromHash() {
-  const hash = window.location.hash.slice(1) || '';
+const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
+
+/** 목록 페이지 예시 게시글과 동일한 ID일 때 사용할 상세 더미 (목록에서 클릭 시 상세 연결용) */
+const DUMMY_POST_DETAIL = {
+  '1': {
+    post: {
+      id: '1',
+      title: '첫 번째 예시 게시글',
+      content: '첫 번째 예시 게시글의 본문 내용입니다. 목록에서 이 카드를 눌렀을 때 보이는 상세 페이지입니다.',
+      author_nickname: '예시작성자1',
+      author_profile_image: null,
+      created_at: new Date().toLocaleString('ko-KR'),
+      image_url: null,
+      likes: 3,
+      views: 15,
+      isMine: true,
+    },
+    comments: [
+      { id: 101, author_nickname: '댓글작성자A', author_profile_image: null, created_at: new Date().toLocaleString('ko-KR'), content: '첫 번째 게시글에 대한 댓글입니다.', isMine: true },
+      { id: 102, author_nickname: '댓글작성자B', author_profile_image: null, created_at: new Date().toLocaleString('ko-KR'), content: '예시 댓글 하나 더 있어요.', isMine: true },
+    ],
+  },
+  '2': {
+    post: {
+      id: '2',
+      title: '두 번째 예시 게시글',
+      content: '두 번째 예시 게시글의 본문입니다. 이 역시 목록의 예시 카드를 눌렀을 때 보이는 상세입니다.',
+      author_nickname: '예시작성자2',
+      author_profile_image: null,
+      created_at: new Date(Date.now() - 86400000).toLocaleString('ko-KR'),
+      image_url: null,
+      likes: 0,
+      views: 5,
+      isMine: true,
+    },
+    comments: [
+      { id: 201, author_nickname: '댓글작성자C', author_profile_image: null, created_at: new Date(Date.now() - 3600000).toLocaleString('ko-KR'), content: '두 번째 게시글 댓글입니다.', isMine: true },
+    ],
+  },
+};
+
+/** 라우터 인자 또는 해시(#/posts/123)에서 postId 추출 */
+function resolvePostId(param) {
+  if (typeof param === 'string' || typeof param === 'number') return String(param);
+  if (param && typeof param === 'object') {
+    const id = param.id ?? param.postId ?? null;
+    return id ? String(id) : null;
+  }
+  const hash = (window.location.hash || '').slice(1);
   const parts = hash.split('/');
-  if (parts[1] === 'posts' && parts[2]) return parts[2];
-  return null;
+  return parts[1] === 'posts' && parts[2] ? parts[2] : null;
 }
 
 /**
  * 게시글 상세 페이지 렌더링
- * router에서 postId를 인자로 주든, hash에서 파싱하든 둘 다 커버
  */
 export async function renderPostDetail(param) {
   const root = document.getElementById('app-root');
-
-  let postId = null;
-  if (typeof param === 'string' || typeof param === 'number') {
-    postId = String(param);
-  } else if (param && typeof param === 'object') {
-    postId = param.id ?? param.postId ?? null;
-    if (postId) postId = String(postId);
-  }
-  if (!postId) postId = getPostIdFromHash();
+  const postId = resolvePostId(param);
 
   root.innerHTML = `
     ${renderHeader({ showBackButton: true })}
@@ -186,8 +222,6 @@ function closeModal(modal) {
    게시글 상세 데이터 로딩
    ========================= */
 
-// 개발 모드: API 실패 시 더미 데이터 표시 여부 (DEV_MODE와 연동)
-const DEV_MODE_DUMMY = DEV_MODE;
 
 async function loadPostDetail(postId) {
   const card = document.getElementById('post-detail-card');
@@ -198,8 +232,7 @@ async function loadPostDetail(postId) {
     return;
   }
 
-  card.innerHTML =
-    '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
+  card.innerHTML = LOADING_MSG;
 
   try {
     // 게시글 상세 조회 (백엔드에서 조회수 자동 증가)
@@ -248,53 +281,21 @@ async function loadPostDetail(postId) {
     renderPostDetailCard(normalizedPost, comments, postId);
   } catch (error) {
     console.error('게시글 상세 조회 실패:', error);
-
-    // 개발 모드에서는 더미 데이터 표시
-    if (DEV_MODE_DUMMY) {
-      console.warn('개발 모드: 더미 데이터를 표시합니다.');
-      const dummyPost = {
-        id: postId,
-        title: `게시글 제목 ${postId}`,
-        author_nickname: '작성자',
-        author_profile_image: null,
-        created_at: new Date().toLocaleString('ko-KR'),
-        image_url: null,
-        content:
-          '게시글 내용입니다. API 서버가 실행되지 않아 더미 데이터를 표시하고 있습니다. 이 내용은 실제 게시글 내용이 표시되어야 하는 부분입니다.',
-        likes: 0,
-        views: 1,
-        isMine: true,
-      };
-      const dummyComments = [
-        {
-          id: 1,
-          author_nickname: '댓글 작성자 1',
-          author_profile_image: null,
-          created_at: new Date().toLocaleString('ko-KR'),
-          content:
-            '첫 번째 댓글입니다. 댓글 기능이 잘 작동하는지 확인할 수 있습니다.',
-          isMine: true,
-        },
-        {
-          id: 2,
-          author_nickname: '댓글 작성자 2',
-          author_profile_image: null,
-          created_at: new Date().toLocaleString('ko-KR'),
-          content:
-            '두 번째 댓글입니다. 수정과 삭제 버튼이 보이는 댓글입니다.',
-          isMine: true,
-        },
-      ];
-      renderPostDetailCard(dummyPost, dummyComments, postId);
-    } else {
-      card.innerHTML = `
-        <div style="text-align:center;padding:40px;">
-          <p class="post-list-message">게시글을 불러올 수 없습니다.</p>
-          <p style="color:#777;font-size:12px;margin-top:8px;">${error.message || '서버 오류가 발생했습니다.'}</p>
-          <button onclick="window.location.hash='#/posts'" style="margin-top:16px;padding:8px 16px;background:#aca0eb;color:white;border:none;border-radius:6px;cursor:pointer;">목록으로 돌아가기</button>
-        </div>
-      `;
+    const id = String(postId);
+    if (DEV_MODE && DUMMY_POST_DETAIL[id]) {
+      const { post, comments } = DUMMY_POST_DETAIL[id];
+      renderPostDetailCard(post, comments, id);
+      return;
     }
+    card.innerHTML = `
+      <div style="text-align:center;padding:40px;">
+        <p class="post-list-message">게시글을 불러올 수 없습니다.</p>
+        <p style="color:#777;font-size:12px;margin-top:8px;">${error.message || '서버 오류가 발생했습니다.'}</p>
+        <button type="button" id="post-detail-back-to-list" style="margin-top:16px;padding:8px 16px;background:#aca0eb;color:white;border:none;border-radius:6px;cursor:pointer;">목록으로 돌아가기</button>
+      </div>
+    `;
+    const backBtn = document.getElementById('post-detail-back-to-list');
+    if (backBtn) backBtn.addEventListener('click', () => navigateTo('/posts'));
   }
 }
 
@@ -324,23 +325,19 @@ function renderPostDetailCard(post, comments, postId) {
           </div>
         </div>
 
-        <div class="post-detail-meta-actions">
+        <div class="detail-action-group">
           ${
             post.isMine
               ? `
-          <button type="button" class="post-detail-action-btn" id="post-edit-btn">
-            수정
-          </button>
-          <button type="button" class="post-detail-action-btn" id="post-delete-btn">
-            삭제
-          </button>
+          <button type="button" class="detail-action-btn" id="post-edit-btn">수정</button>
+          <button type="button" class="detail-action-btn" id="post-delete-btn">삭제</button>
           `
               : ''
           }
         </div>
       </div>
 
-      <div class="post-detail-divider"></div>
+      <div class="divider"></div>
 
       ${
         post.image_url
@@ -371,7 +368,7 @@ function renderPostDetailCard(post, comments, postId) {
         </div>
       </div>
 
-      <div class="comment-divider"></div>
+      <div class="divider"></div>
 
       <!-- 댓글 입력 -->
       <section class="comment-write-box">
@@ -382,9 +379,7 @@ function renderPostDetailCard(post, comments, postId) {
             placeholder="댓글을 남겨주세요!"
           ></textarea>
           <div class="comment-write-box-divider"></div>
-          <button type="submit" class="btn btn-submit">
-            댓글 등록
-          </button>
+          <button type="submit" class="btn btn-submit">댓글 등록</button>
         </form>
       </section>
 
@@ -406,13 +401,13 @@ function renderPostDetailCard(post, comments, postId) {
                 ${
                   c.isMine
                     ? `
-                <div class="comment-header-actions">
-                  <button type="button" class="comment-action-btn comment-edit-btn" data-comment-id="${c.id}">
+                <div class="detail-action-group">
+                  <button type="button" class="detail-action-btn comment-edit-btn" data-comment-id="${c.id}">
                     수정
                   </button>
                   <button
                     type="button"
-                    class="comment-action-btn comment-delete-btn"
+                    class="detail-action-btn comment-delete-btn"
                     data-comment-id="${c.id}"
                   >
                     삭제
@@ -422,19 +417,7 @@ function renderPostDetailCard(post, comments, postId) {
                     : ''
                 }
               </div>
-              ${
-                c.isEditing
-                  ? `
-              <form class="comment-edit-form" data-comment-id="${c.id}">
-                <textarea class="comment-edit-textarea" style="width:100%;min-height:60px;padding:8px;border:1px solid #e0e0e0;border-radius:4px;font-size:14px;resize:none;">${c.content}</textarea>
-                <div style="display:flex;gap:8px;margin-top:8px;">
-                  <button type="submit" class="comment-action-btn" style="border:1px solid var(--primary);">저장</button>
-                  <button type="button" class="comment-action-btn comment-edit-cancel-btn" data-comment-id="${c.id}" style="border:1px solid var(--primary);">취소</button>
-                </div>
-              </form>
-              `
-                  : `<p class="comment-content">${c.content}</p>`
-              }
+              <p class="comment-content">${c.content}</p>
             </div>
           </article>
         `,
@@ -553,17 +536,17 @@ function attachPostBodyEvents(postId) {
         editForm.className = 'comment-edit-form';
         editForm.dataset.commentId = commentId;
         editForm.innerHTML = `
-          <textarea class="comment-edit-textarea" style="width:100%;min-height:60px;padding:8px;border:1px solid #e0e0e0;border-radius:4px;font-size:14px;resize:none;">${content}</textarea>
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button type="submit" class="comment-action-btn" style="border:1px solid var(--primary);">저장</button>
-            <button type="button" class="comment-action-btn comment-edit-cancel-btn" data-comment-id="${commentId}" style="border:1px solid var(--primary);">취소</button>
+          <textarea class="comment-edit-textarea" aria-label="댓글 수정">${content}</textarea>
+          <div class="detail-action-group">
+            <button type="submit" class="detail-action-btn">저장</button>
+            <button type="button" class="detail-action-btn comment-edit-cancel-btn" data-comment-id="${commentId}">취소</button>
           </div>
         `;
         contentEl.parentNode.insertBefore(editForm, contentEl.nextSibling);
         editForm.addEventListener('submit', async (ev) => {
           ev.preventDefault();
           const textarea = editForm.querySelector('.comment-edit-textarea');
-          const newContent = textarea.value.trim();
+          const newContent = (textarea?.value ?? '').trim();
           if (!newContent) return;
           try {
             await api.put(`/comments/${commentId}`, { content: newContent });
@@ -572,12 +555,10 @@ function attachPostBodyEvents(postId) {
             alert(err.message || '댓글 수정에 실패했습니다.');
           }
         });
-        editForm
-          .querySelector('.comment-edit-cancel-btn')
-          .addEventListener('click', () => {
-            editForm.remove();
-            contentEl.style.display = 'block';
-          });
+        editForm.querySelector('.comment-edit-cancel-btn')?.addEventListener('click', () => {
+          editForm.remove();
+          contentEl.style.display = '';
+        });
         return;
       }
 
@@ -587,7 +568,7 @@ function attachPostBodyEvents(postId) {
         const commentItem = form?.closest('.comment-item');
         if (commentItem) {
           const contentEl = commentItem.querySelector('.comment-content');
-          if (contentEl) contentEl.style.display = 'block';
+          if (contentEl) contentEl.style.display = '';
           form?.remove();
         }
       }
