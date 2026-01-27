@@ -6,7 +6,7 @@ import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
-import { fileToBase64 } from '../utils.js';
+import { fileToBase64, escapeHtml } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
 
 /**
@@ -76,7 +76,7 @@ export function renderEditProfile() {
               id="nickname"
               name="nickname"
               class="form-input"
-              value="${user?.nickname || ''}"
+              value="${escapeHtml(String(user?.nickname || ''))}"
             />
             <!-- 항상 보이는 helper text (오타 없이) -->
             <span class="helper-text" id="nickname-error">*helper text</span>
@@ -265,8 +265,9 @@ async function handleProfileUpdate(e) {
       payload.profileImage = await fileToBase64(file);
     }
 
-    // 백엔드의 내 정보 수정 API
-    const updatedUser = await api.put('/users/me', payload);
+    // 백엔드의 내 정보 수정 API (응답이 { user } 형태이면 user 사용)
+    const res = await api.put('/users/me', payload);
+    const updatedUser = res?.user ?? res;
 
     if (updatedUser) {
       setUser(updatedUser); // 상태에 저장

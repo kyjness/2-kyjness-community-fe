@@ -180,17 +180,21 @@ function attachPostListEvents() {
   }
 }
 
+/** 무한 스크롤용 스크롤 리스너는 한 번만 등록 (목록 재진입 시 중복 방지) */
+let scrollListenerAttached = false;
+
 /**
  * 스크롤 이벤트 리스너 등록 (무한 스크롤)
  */
 function attachScrollListener() {
+  if (scrollListenerAttached) return;
+  scrollListenerAttached = true;
   window.addEventListener('scroll', () => {
-    // 스크롤이 페이지 하단 근처에 도달했는지 확인
+    const listContainer = document.getElementById('post-card-list');
+    if (!listContainer) return; // 목록 페이지가 아니면 무시
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
-
-    // 하단 200px 전에 도달하면 다음 페이지 로드
     if (scrollTop + windowHeight >= documentHeight - 200) {
       loadPostList();
     }

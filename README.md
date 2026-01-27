@@ -65,11 +65,14 @@ http-server . -p 8080
 2-kyjness-community-fe/
 │
 ├── index.html          # 메인 HTML 파일 (이것 하나만 사용)
-├── imt.png            # 기본 프로필 이미지
 │
 ├── css/               # 스타일 파일
 │   ├── base.css      # 기본 스타일 (리셋, 폰트, 색상 등)
 │   └── app.css       # 앱 전용 스타일
+│
+├── img/               # 이미지·로티 애니 리소스
+│   ├── anim1.json, anim2.json, anim3.json  # 스플래시 로티
+│   └── imt.png       # 기본 프로필 이미지
 │
 └── js/                # JavaScript 파일
     │
@@ -157,7 +160,7 @@ export const BASE_URL = 'http://localhost:8000'; // 여기를 변경
 export const DEV_MODE = true; // true: 인증 체크 안 함, false: 인증 체크 함
 ```
 
-**주의**: 배포할 때는 반드시 `DEV_MODE`를 `false`로 변경하세요!
+**주의**: 배포·제출할 때는 반드시 `DEV_MODE`를 `false`로 바꾸세요. 그렇지 않으면 인증이 생략되고, API 실패 시 더미 데이터가 노출됩니다.
 
 ---
 

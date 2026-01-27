@@ -59,6 +59,7 @@ export async function renderEditPost(param) {
                 maxlength="26"
                 required 
               />
+              <span class="helper-text" id="title-error">*helper text</span>
             </div>
             
             <!-- 내용 -->

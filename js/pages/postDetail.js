@@ -5,6 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
+import { escapeHtml } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE, DEV_MODE } from '../constants.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
@@ -308,7 +309,7 @@ function renderPostDetailCard(post, comments, postId) {
 
   card.innerHTML = `
     <section class="post-detail-card">
-      <h2 class="post-detail-title">${post.title}</h2>
+      <h2 class="post-detail-title">${escapeHtml(post.title || '')}</h2>
 
       <div class="post-detail-meta">
         <div class="post-detail-meta-left">
@@ -317,10 +318,10 @@ function renderPostDetailCard(post, comments, postId) {
           </div>
           <div class="post-detail-meta-text">
             <span class="post-detail-author-name">
-              ${post.author_nickname ?? '작성자'}
+              ${escapeHtml(post.author_nickname ?? '작성자')}
             </span>
             <span class="post-detail-date">
-              ${post.created_at ?? ''}
+              ${escapeHtml(String(post.created_at ?? ''))}
             </span>
           </div>
         </div>
@@ -350,7 +351,7 @@ function renderPostDetailCard(post, comments, postId) {
       }
 
       <p class="post-detail-content">
-        ${post.content || '내용이 없습니다.'}
+        ${escapeHtml(post.content || '내용이 없습니다.')}
       </p>
 
       <div class="post-detail-stats">
@@ -395,8 +396,8 @@ function renderPostDetailCard(post, comments, postId) {
             <div class="comment-body">
               <div class="comment-header">
                 <div class="comment-header-left">
-                  <span class="comment-author-name">${c.author_nickname}</span>
-                  <span class="comment-date">${c.created_at}</span>
+                  <span class="comment-author-name">${escapeHtml(c.author_nickname ?? '')}</span>
+                  <span class="comment-date">${escapeHtml(String(c.created_at ?? ''))}</span>
                 </div>
                 ${
                   c.isMine
@@ -417,7 +418,7 @@ function renderPostDetailCard(post, comments, postId) {
                     : ''
                 }
               </div>
-              <p class="comment-content">${c.content}</p>
+              <p class="comment-content">${escapeHtml(c.content ?? '')}</p>
             </div>
           </article>
         `,
@@ -536,7 +537,7 @@ function attachPostBodyEvents(postId) {
         editForm.className = 'comment-edit-form';
         editForm.dataset.commentId = commentId;
         editForm.innerHTML = `
-          <textarea class="comment-edit-textarea" aria-label="댓글 수정">${content}</textarea>
+          <textarea class="comment-edit-textarea" aria-label="댓글 수정">${escapeHtml(content)}</textarea>
           <div class="detail-action-group">
             <button type="submit" class="detail-action-btn">저장</button>
             <button type="button" class="detail-action-btn comment-edit-cancel-btn" data-comment-id="${commentId}">취소</button>

@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors } from '../utils.js';
+import { showFieldError, clearErrors, fileToBase64 } from '../utils.js';
 
 /**
  * 게시글 작성 페이지 렌더링
@@ -36,6 +36,7 @@ export function renderNewPost() {
                 maxlength="26"
                 required 
               />
+              <span class="helper-text" id="title-error">*helper text</span>
             </div>
             
             <!-- 내용 -->
@@ -145,23 +146,20 @@ async function handleNewPost(e) {
     submitBtn.textContent = '작성 중...';
     submitBtn.disabled = true;
 
-    // 기본 데이터
-    const postData = {
-      title,
-      content,
-    };
-
-    // (선택) 이미지가 필요하면 여기서 postData에 붙여서 백엔드와 맞추면 됨.
-    // 예: base64로 변환해서 postData.image = ...
+    const postData = { title, content };
+    if (imageFile) {
+      postData.image = await fileToBase64(imageFile);
+    }
 
     // 게시글 작성 API 호출
     const result = await api.post('/posts', postData);
 
     alert('게시글이 작성되었습니다!');
 
-    // 게시글 상세 페이지로 이동 (id가 있으면 상세, 없으면 목록으로)
-    if (result && result.id) {
-      navigateTo(`/posts/${result.id}`);
+    // 게시글 상세 페이지로 이동 (백엔드 응답 형식에 맞춰 id/postId 추출)
+    const postId = result?.data?.postId ?? result?.data?.id ?? result?.postId ?? result?.id;
+    if (postId) {
+      navigateTo(`/posts/${postId}`);
     } else {
       navigateTo('/posts');
     }
