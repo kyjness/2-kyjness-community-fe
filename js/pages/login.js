@@ -72,16 +72,16 @@ function attachLoginEvents() {
   const passwordInput = document.getElementById('password');
   const errorMessage = document.getElementById('error-message');
 
-  // 입력란 포커스 시 기본 helper text 숨기기
+  // 입력란 포커스 시 기본 helper text 숨기기 (공간은 유지)
   if (emailInput) {
     emailInput.addEventListener('focus', () => {
       if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.display = 'none';
+        errorMessage.style.visibility = 'hidden';
       }
     });
     emailInput.addEventListener('blur', () => {
       if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.display = 'block';
+        errorMessage.style.visibility = 'visible';
       }
     });
   }
@@ -89,12 +89,12 @@ function attachLoginEvents() {
   if (passwordInput) {
     passwordInput.addEventListener('focus', () => {
       if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.display = 'none';
+        errorMessage.style.visibility = 'hidden';
       }
     });
     passwordInput.addEventListener('blur', () => {
       if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.display = 'block';
+        errorMessage.style.visibility = 'visible';
       }
     });
   }

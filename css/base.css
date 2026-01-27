@@ -189,18 +189,20 @@ body {
   color: #FF0000;
   margin-top: 2px;
   display: block;
+  min-height: 14px; /* 고정 높이로 레이아웃 유지 */
   font-style: normal;
   font-weight: 400;
   font-family: 'Inter';
   line-height: 100%;
   letter-spacing: 0%;
+  visibility: visible; /* 기본적으로 보이도록 */
 }
 
-/* 입력란 포커스 시 기본 helper text 숨기기 */
+/* 입력란 포커스 시 기본 helper text 숨기기 (공간은 유지) */
 .form-input:focus ~ .helper-text:not(.has-error),
 .form-textarea:focus ~ .helper-text:not(.has-error),
 .comment-textarea:focus ~ .helper-text:not(.has-error) {
-  display: none;
+  visibility: hidden; /* display: none 대신 visibility 사용하여 공간 유지 */
 }
 
 /* ============================================

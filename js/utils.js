@@ -71,7 +71,7 @@ export function showFieldError(elementId, message) {
   const errorElement = document.getElementById(elementId);
   if (errorElement) {
     errorElement.textContent = `* ${message}`;
-    errorElement.style.display = 'block';
+    errorElement.style.visibility = 'visible';
   }
 }
 
@@ -82,6 +82,6 @@ export function clearErrors() {
   const errorElements = document.querySelectorAll('.helper-text');
   errorElements.forEach((el) => {
     el.textContent = '*helper text';
-    el.style.display = 'none';
+    el.style.visibility = 'hidden'; /* 공간은 유지하면서 숨김 */
   });
 }
