@@ -191,7 +191,7 @@ function attachModalEvents(postId) {
     if (!currentCommentIdForDelete) return;
 
     try {
-      await api.delete(`/comments/${currentCommentIdForDelete}`);
+      await api.delete(`/posts/${postId}/comments/${currentCommentIdForDelete}`);
       currentCommentIdForDelete = null;
       closeModal(commentDeleteModal);
       await loadPostDetail(postId); // 다시 로드
@@ -550,7 +550,7 @@ function attachPostBodyEvents(postId) {
           const newContent = (textarea?.value ?? '').trim();
           if (!newContent) return;
           try {
-            await api.put(`/comments/${commentId}`, { content: newContent });
+            await api.patch(`/posts/${postId}/comments/${commentId}`, { content: newContent });
             await loadPostDetail(postId);
           } catch (err) {
             alert(err.message || '댓글 수정에 실패했습니다.');

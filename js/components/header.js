@@ -5,6 +5,7 @@
 
 import { getUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
+import { api } from '../api.js';
 import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../constants.js';
 
 /**
@@ -142,13 +143,18 @@ function initProfileDropdown() {
     });
   }
 
-  // 로그아웃
+  // 로그아웃 (서버 세션 무효화 + 쿠키 삭제 후 클라이언트 상태 초기화)
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
+      dropdown.classList.remove('visible');
+      try {
+        await api.post('/auth/logout');
+      } catch (_) {
+        // 이미 만료되었거나 실패해도 클라이언트는 정리
+      }
       clearUser();
       navigateTo('/login');
-      dropdown.classList.remove('visible');
     });
   }
 

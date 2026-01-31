@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, fileToBase64 } from '../utils.js';
+import { showFieldError, clearErrors } from '../utils.js';
 import { DEV_MODE } from '../constants.js';
 
 /** 목록/상세 예시 게시글과 동일한 ID용 폼 기본값 (API 실패 시 수정 폼 채우기) */
@@ -229,19 +229,19 @@ async function handleEditPost(e, postId) {
     submitBtn.textContent = '수정 중...';
     submitBtn.disabled = true;
 
-    // 기본 데이터
-    const postData = {
-      title,
-      content,
-    };
-
-    // 이미지 변경이 있을 때만 추가 (백엔드 규칙에 맞춰서 수정 가능)
+    let fileUrl = null;
     if (imageFile) {
-      postData.image = await fileToBase64(imageFile);
+      const formData = new FormData();
+      formData.append('postFile', imageFile);
+      const uploadRes = await api.postFormData(`/posts/${postId}/image`, formData);
+      fileUrl = uploadRes?.data?.postFileUrl ?? uploadRes?.postFileUrl ?? '';
     }
 
-    // 게시글 수정 API 호출 (PUT 기준, 필요하면 PATCH로 변경)
-    await api.put(`/posts/${postId}`, postData);
+    await api.patch(`/posts/${postId}`, {
+      title,
+      content,
+      ...(fileUrl != null && { fileUrl }),
+    });
 
     alert('게시글이 수정되었습니다!');
 

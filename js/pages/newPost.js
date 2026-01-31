@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, fileToBase64 } from '../utils.js';
+import { showFieldError, clearErrors } from '../utils.js';
 
 /**
  * 게시글 작성 페이지 렌더링
@@ -146,18 +146,16 @@ async function handleNewPost(e) {
     submitBtn.textContent = '작성 중...';
     submitBtn.disabled = true;
 
-    const postData = { title, content };
-    if (imageFile) {
-      postData.image = await fileToBase64(imageFile);
+    const result = await api.post('/posts', { title, content, fileUrl: '' });
+    const postId = result?.data?.postId ?? result?.postId;
+
+    if (imageFile && postId) {
+      const formData = new FormData();
+      formData.append('postFile', imageFile);
+      await api.postFormData(`/posts/${postId}/image`, formData);
     }
 
-    // 게시글 작성 API 호출
-    const result = await api.post('/posts', postData);
-
     alert('게시글이 작성되었습니다!');
-
-    // 게시글 상세 페이지로 이동 (백엔드 응답 형식에 맞춰 id/postId 추출)
-    const postId = result?.data?.postId ?? result?.data?.id ?? result?.postId ?? result?.id;
     if (postId) {
       navigateTo(`/posts/${postId}`);
     } else {

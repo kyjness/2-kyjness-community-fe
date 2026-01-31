@@ -133,18 +133,20 @@ async function handleLogin(e) {
     submitBtn.textContent = '로그인 중...';
     submitBtn.disabled = true;
 
-    // 로그인 API 호출
-    const result = await api.post('/auth/login', {
-      email,
-      password,
-    });
+    // 로그인 API 호출 (백엔드: { code, data }. 세션은 Set-Cookie(session_id)로 설정됨)
+    const result = await api.post('/auth/login', { email, password });
 
-    // 사용자 정보 저장
-    if (result.user) {
-      setUser(result.user);
+    // 사용자 정보만 저장 (authToken은 사용하지 않음. 인증은 쿠키로만)
+    const data = result?.data;
+    if (data) {
+      setUser({
+        userId: data.userId,
+        email: data.email,
+        nickname: data.nickname,
+        profileImageUrl: data.profileImage ?? data.profileImageUrl,
+      });
     }
 
-    // 게시글 목록으로 이동
     navigateTo('/posts');
   } catch (error) {
     // 에러 표시

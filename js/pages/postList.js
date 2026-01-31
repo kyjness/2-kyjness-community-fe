@@ -121,7 +121,8 @@ async function loadPostList() {
           author: { nickname: '예시작성자2', profileImageUrl: null },
         },
       ];
-      listContainer.innerHTML = dummyPosts.map(post => renderPostCard(post)).join('');
+      const sortedDummy = [...dummyPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      listContainer.innerHTML = sortedDummy.map(post => renderPostCard(post)).join('');
       if (createBtn) createBtn.classList.add('right');
     } else {
       listContainer.innerHTML =
@@ -133,7 +134,8 @@ async function loadPostList() {
   }
 
   if (posts.length > 0) {
-    const postsHTML = posts.map(post => renderPostCard(post)).join('');
+    const sorted = [...posts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const postsHTML = sorted.map(post => renderPostCard(post)).join('');
     if (currentPage === 1) {
       listContainer.innerHTML = postsHTML;
       const createBtn = document.getElementById('btn-submit');

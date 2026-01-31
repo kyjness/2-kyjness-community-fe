@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, fileToBase64 } from '../utils.js';
+import { showFieldError, clearErrors } from '../utils.js';
 
 /**
  * 회원가입 페이지 렌더링
@@ -194,7 +194,6 @@ async function handleSignup(e) {
   const password = formData.get('password');
   const passwordConfirm = formData.get('password-confirm');
   const nickname = formData.get('nickname');
-  const profileImage = document.getElementById('profile-image').files[0];
 
   // 입력값 검증
   let hasError = false;
@@ -235,19 +234,14 @@ async function handleSignup(e) {
     submitBtn.textContent = '회원가입 중...';
     submitBtn.disabled = true;
 
-    // 회원가입 데이터 준비
+    // 회원가입 API (백엔드는 profileImageUrl만 허용. 프로필 이미지는 가입 후 회원정보수정에서 업로드)
     const signupData = {
       email,
       password,
+      passwordConfirm,
       nickname,
     };
 
-    // 프로필 이미지가 있으면 Base64로 변환
-    if (profileImage) {
-      signupData.profileImage = await fileToBase64(profileImage);
-    }
-
-    // 회원가입 API 호출
     await api.post('/auth/signup', signupData);
 
     // 성공 메시지 표시 후 로그인 페이지로 이동

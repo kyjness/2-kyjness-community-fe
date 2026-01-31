@@ -3,6 +3,7 @@
  */
 
 import { api } from '../api.js';
+import { getUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors } from '../utils.js';
@@ -21,15 +22,29 @@ export function renderChangePassword() {
         <h2 class="form-title">비밀번호 수정</h2>
         
         <form id="form" class="form">
+          <!-- 현재 비밀번호 -->
+          <div class="form-group">
+            <label for="current-password" class="form-label">현재 비밀번호</label>
+            <input 
+              type="password" 
+              id="current-password" 
+              name="current-password" 
+              class="form-input" 
+              placeholder="현재 비밀번호를 입력하세요"
+              required 
+            />
+            <span class="helper-text" id="current-password-error">*helper text</span>
+          </div>
+          
           <!-- 새 비밀번호 -->
           <div class="form-group">
-            <label for="new-password" class="form-label">비밀번호</label>
+            <label for="new-password" class="form-label">새 비밀번호</label>
             <input 
               type="password" 
               id="new-password" 
               name="new-password" 
               class="form-input" 
-              placeholder="비밀번호를 입력하세요"
+              placeholder="새 비밀번호를 입력하세요"
               required 
             />
             <span class="helper-text" id="new-password-error">*helper text</span>
@@ -37,13 +52,13 @@ export function renderChangePassword() {
           
           <!-- 새 비밀번호 확인 -->
           <div class="form-group">
-            <label for="new-password-confirm" class="form-label">비밀번호 확인</label>
+            <label for="new-password-confirm" class="form-label">새 비밀번호 확인</label>
             <input 
               type="password" 
               id="new-password-confirm" 
               name="new-password-confirm" 
               class="form-input" 
-              placeholder="비밀번호를 한번 더 입력하세요"
+              placeholder="새 비밀번호를 한번 더 입력하세요"
               required 
             />
             <span class="helper-text" id="new-password-confirm-error">*helper text</span>
@@ -79,14 +94,19 @@ async function handleChangePassword(e) {
   clearErrors();
 
   const form = e.target;
+  const currentPassword = document.getElementById('current-password').value;
   const newPassword = document.getElementById('new-password').value;
-  const newPasswordConfirm = document.getElementById('new-password-confirm')
-    .value;
+  const newPasswordConfirm = document.getElementById('new-password-confirm').value;
 
   let hasError = false;
 
+  if (!currentPassword) {
+    showFieldError('current-password-error', '현재 비밀번호를 입력해주세요.');
+    hasError = true;
+  }
+
   if (!newPassword) {
-    showFieldError('new-password-error', '비밀번호를 입력해주세요.');
+    showFieldError('new-password-error', '새 비밀번호를 입력해주세요.');
     hasError = true;
   } else if (newPassword.length < 8) {
     showFieldError('new-password-error', '비밀번호는 8자 이상이어야 합니다.');
@@ -96,12 +116,19 @@ async function handleChangePassword(e) {
   if (newPassword !== newPasswordConfirm) {
     showFieldError(
       'new-password-confirm-error',
-      '비밀번호가 일치하지 않습니다.',
+      '새 비밀번호가 일치하지 않습니다.',
     );
     hasError = true;
   }
 
   if (hasError) return;
+
+  const user = getUser();
+  const userId = user?.userId;
+  if (!userId) {
+    alert('로그인 정보가 없습니다.');
+    return;
+  }
 
   const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;
@@ -110,8 +137,8 @@ async function handleChangePassword(e) {
     submitBtn.textContent = '변경 중...';
     submitBtn.disabled = true;
 
-    // 비밀번호 변경 API 호출
-    await api.put('/auth/password', {
+    await api.patch(`/users/${userId}/password`, {
+      currentPassword,
       newPassword,
     });
 
