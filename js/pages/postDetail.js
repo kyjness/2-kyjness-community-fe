@@ -5,61 +5,11 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, resolvePostId } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE, DEV_MODE } from '../constants.js';
+import { DUMMY_POST_DETAIL } from '../dummyData.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
-
-/** 목록 페이지 예시 게시글과 동일한 ID일 때 사용할 상세 더미 (목록에서 클릭 시 상세 연결용) */
-const DUMMY_POST_DETAIL = {
-  '1': {
-    post: {
-      id: '1',
-      title: '첫 번째 예시 게시글',
-      content: '첫 번째 예시 게시글의 본문 내용입니다. 목록에서 이 카드를 눌렀을 때 보이는 상세 페이지입니다.',
-      author_nickname: '예시작성자1',
-      author_profile_image: null,
-      created_at: new Date().toLocaleString('ko-KR'),
-      image_url: null,
-      likes: 3,
-      views: 15,
-      isMine: true,
-    },
-    comments: [
-      { id: 101, author_nickname: '댓글작성자A', author_profile_image: null, created_at: new Date().toLocaleString('ko-KR'), content: '첫 번째 게시글에 대한 댓글입니다.', isMine: true },
-      { id: 102, author_nickname: '댓글작성자B', author_profile_image: null, created_at: new Date().toLocaleString('ko-KR'), content: '예시 댓글 하나 더 있어요.', isMine: true },
-    ],
-  },
-  '2': {
-    post: {
-      id: '2',
-      title: '두 번째 예시 게시글',
-      content: '두 번째 예시 게시글의 본문입니다. 이 역시 목록의 예시 카드를 눌렀을 때 보이는 상세입니다.',
-      author_nickname: '예시작성자2',
-      author_profile_image: null,
-      created_at: new Date(Date.now() - 86400000).toLocaleString('ko-KR'),
-      image_url: null,
-      likes: 0,
-      views: 5,
-      isMine: true,
-    },
-    comments: [
-      { id: 201, author_nickname: '댓글작성자C', author_profile_image: null, created_at: new Date(Date.now() - 3600000).toLocaleString('ko-KR'), content: '두 번째 게시글 댓글입니다.', isMine: true },
-    ],
-  },
-};
-
-/** 라우터 인자 또는 해시(#/posts/123)에서 postId 추출 */
-function resolvePostId(param) {
-  if (typeof param === 'string' || typeof param === 'number') return String(param);
-  if (param && typeof param === 'object') {
-    const id = param.id ?? param.postId ?? null;
-    return id ? String(id) : null;
-  }
-  const hash = (window.location.hash || '').slice(1);
-  const parts = hash.split('/');
-  return parts[1] === 'posts' && parts[2] ? parts[2] : null;
-}
 
 /**
  * 게시글 상세 페이지 렌더링
@@ -349,7 +299,7 @@ function renderPostDetailCard(post, comments, postId) {
       }
 
       <p class="post-detail-content">
-        ${escapeHtml(post.content || '내용이 없습니다.')}
+        ${escapeHtml(String(post.content || '내용이 없습니다.').trim())}
       </p>
 
       <div class="post-detail-stats">
@@ -480,6 +430,13 @@ function attachPostBodyEvents(postId) {
     });
   }
 
+  const commentTextarea = document.getElementById('comment-content');
+  if (commentTextarea) {
+    commentTextarea.addEventListener('focus', () => {
+      commentTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
   if (commentForm && postId) {
     commentForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -542,6 +499,7 @@ function attachPostBodyEvents(postId) {
           </div>
         `;
         contentEl.parentNode.insertBefore(editForm, contentEl.nextSibling);
+        editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
         editForm.addEventListener('submit', async (ev) => {
           ev.preventDefault();
           const textarea = editForm.querySelector('.comment-edit-textarea');

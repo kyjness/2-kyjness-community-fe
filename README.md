@@ -79,8 +79,8 @@ http-server . -p 8080
 ├── index.html              # 메인 HTML (SPA 기반, 이 파일 하나로 모든 화면 렌더)
 │
 ├── css/
-│   ├── base.css            # 기본 스타일 (리셋, 폰트, 색상)
-│   └── app.css             # 앱 전용 스타일
+│   ├── base.css            # 공통 스타일 (리셋, 폰트, 폼, 버튼, 헤더, 모달 등)
+│   └── app.css             # 페이지/컴포넌트 전용 (목록, 상세, 회원정보수정, 작성, 반응형)
 │
 ├── img/                    # 정적 이미지·애니메이션
 │   ├── anim1.json, anim2.json, anim3.json  # 스플래시 Lottie
@@ -107,7 +107,6 @@ http-server . -p 8080
     └── components/         # 재사용 UI 컴포넌트
         ├── header.js       # 상단 헤더 (프로필 메뉴)
         ├── postCard.js     # 게시글 카드
-        └── commentlist.js  # 댓글 목록
 ```
 
 **파일 역할**

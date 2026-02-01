@@ -5,34 +5,13 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors } from '../utils.js';
+import { showFieldError, clearErrors, autoResizeTextarea, initAutoResizeTextarea, resolvePostId } from '../utils.js';
 import { DEV_MODE } from '../constants.js';
-
-/** 목록/상세 예시 게시글과 동일한 ID용 폼 기본값 (API 실패 시 수정 폼 채우기) */
-const DUMMY_EDIT = {
-  '1': { title: '첫 번째 예시 게시글', content: '첫 번째 예시 게시글의 본문 내용입니다. 목록에서 이 카드를 눌렀을 때 보이는 상세 페이지입니다.', file: null },
-  '2': { title: '두 번째 예시 게시글', content: '두 번째 예시 게시글의 본문입니다. 이 역시 목록의 예시 카드를 눌렀을 때 보이는 상세입니다.', file: null },
-};
-
-/**
- * 게시글 수정 페이지 렌더링
- * router에서 postId를 인자로 넘겨준다고 가정 + 해시에서 파싱
- */
-function resolvePostId(param) {
-  if (typeof param === 'string' || typeof param === 'number') return String(param);
-  if (param && typeof param === 'object') {
-    const id = param.id ?? param.postId ?? null;
-    return id ? String(id) : null;
-  }
-  const hash = (window.location.hash || '').slice(1);
-  const parts = hash.split('/');
-  if (parts[1] === 'posts' && parts[2] && parts[3] === 'edit') return parts[2];
-  return null;
-}
+import { getDummyEdit } from '../dummyData.js';
 
 export async function renderEditPost(param) {
   const root = document.getElementById('app-root');
-  const postId = resolvePostId(param);
+  const postId = resolvePostId(param, { requireEdit: true });
 
   root.innerHTML = `
     ${renderHeader({
@@ -111,6 +90,7 @@ export async function renderEditPost(param) {
     backButtonHref: postId ? `/posts/${postId}` : '/posts',
   });
   attachEditPostEvents(postId);
+  initAutoResizeTextarea('content');
 
   // 기존 게시글 데이터 채우기
   if (postId) {
@@ -132,7 +112,10 @@ async function fillEditPostForm(postId) {
 
   function applyToForm(postData) {
     if (titleInput) titleInput.value = postData.title ?? '';
-    if (contentInput) contentInput.value = postData.content ?? '';
+    if (contentInput) {
+      contentInput.value = postData.content ?? '';
+      autoResizeTextarea(contentInput);
+    }
     if (fileText) {
       const fileName = postData.file?.fileName ?? postData.file?.name ?? postData.fileName ?? null;
       const fileUrl = postData.file?.fileUrl ?? postData.file?.url ?? postData.image_url ?? null;
@@ -154,8 +137,8 @@ async function fillEditPostForm(postId) {
     applyToForm(postData);
   } catch (error) {
     console.error('게시글 정보를 불러올 수 없습니다:', error);
-    if (DEV_MODE && DUMMY_EDIT[id]) {
-      applyToForm(DUMMY_EDIT[id]);
+    if (DEV_MODE && getDummyEdit(id)) {
+      applyToForm(getDummyEdit(id));
     } else {
       alert(error.message || '게시글 정보를 불러올 수 없습니다.');
     }

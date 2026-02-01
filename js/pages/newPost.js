@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors } from '../utils.js';
+import { showFieldError, clearErrors, initAutoResizeTextarea } from '../utils.js';
 
 /**
  * 게시글 작성 페이지 렌더링
@@ -85,9 +85,9 @@ export function renderNewPost() {
     </main>
   `;
 
-  // 이벤트 리스너 등록
   initHeaderEvents();
   attachNewPostEvents();
+  initAutoResizeTextarea('content');
 }
 
 /**

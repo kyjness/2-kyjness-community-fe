@@ -76,6 +76,64 @@ export function showFieldError(elementId, message) {
 }
 
 /**
+ * textarea auto-grow - 글 쓸수록 내용 칸이 아래로 계속 늘어남
+ * 커서가 화면 하단에서 ~100px 위쯤 되면 페이지 스크롤이 따라 내려감
+ */
+export function autoResizeTextarea(textarea, minHeight = 260) {
+  if (!textarea) return;
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+  const scrollTop = textarea.scrollTop;
+  textarea.style.setProperty('overflow', 'hidden');
+  textarea.style.setProperty('min-height', '0');
+  textarea.style.setProperty('height', '1px');
+  void textarea.offsetHeight; // reflow
+  const h = Math.max(minHeight, textarea.scrollHeight);
+  textarea.style.setProperty('min-height', minHeight + 'px');
+  textarea.style.setProperty('height', h + 'px', 'important');
+  textarea.style.removeProperty('overflow');
+  textarea.scrollTop = scrollTop;
+  const rect = textarea.getBoundingClientRect();
+  const margin = 100; // 화면 하단에서 이 정도 위면 스크롤 따라감
+  if (rect.bottom > window.innerHeight - margin) {
+    window.scrollTo(scrollX, scrollY + (rect.bottom - (window.innerHeight - margin)));
+  } else {
+    window.scrollTo(scrollX, scrollY);
+  }
+}
+
+/**
+ * 게시글 작성/수정 textarea에 auto-grow 적용
+ * @param {string} selector - textarea 선택자 (예: '#content')
+ */
+export function initAutoResizeTextarea(selector = '#content') {
+  const el = document.getElementById(String(selector).replace(/^#/, '')) ?? document.querySelector(selector);
+  if (!el) return;
+  const resize = () => autoResizeTextarea(el);
+  el.addEventListener('input', resize);
+  el.addEventListener('keyup', resize);
+}
+
+/**
+ * 해시 또는 라우터 인자에서 postId 추출
+ * @param {string|number|object} param - 라우터 params 또는 해시 파싱 대상
+ * @param {{ requireEdit?: boolean }} options - requireEdit: true면 #/posts/1/edit 형태에서만 추출
+ */
+export function resolvePostId(param, options = {}) {
+  if (typeof param === 'string' || typeof param === 'number') return String(param);
+  if (param && typeof param === 'object') {
+    const id = param.id ?? param.postId ?? null;
+    return id ? String(id) : null;
+  }
+  const hash = (window.location.hash || '').slice(1);
+  const parts = hash.split('/');
+  if (options.requireEdit) {
+    return parts[1] === 'posts' && parts[2] && parts[3] === 'edit' ? parts[2] : null;
+  }
+  return parts[1] === 'posts' && parts[2] ? parts[2] : null;
+}
+
+/**
  * 모든 에러 메시지 초기화
  */
 export function clearErrors() {

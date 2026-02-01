@@ -1,15 +1,16 @@
 /* ============================================
-   공통 스타일 (login.css와 signup.css에서 공유)
+   base.css - 공통 스타일 (모든 페이지에서 사용)
+   base.css = 공통 | app.css = 페이지 전용
    ============================================ */
 
-/* Reset - 모든 요소의 기본 마진/패딩 제거 */
+/* Reset - 모든 요소 마진/패딩 제거 */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* 나눔스퀘어라운드 폰트 로드 - 제목 '아무 말 대잔치'에 사용 */
+/* 폰트 - 제목용 (헤더 '아무 말 대잔치') */
 @font-face {
   font-family: 'NanumSquareRound';
   font-weight: 400;
@@ -17,12 +18,12 @@
   font-style: normal;
 }
 
-/* CSS 변수 정의 - 색상/스타일 일관성 유지 */
+/* CSS 변수 - 색상/테마 변경 시 여기만 수정 */
 :root {
-  --app-bg: #F4F5F7;
-  --divider: #000000;
-  --primary: #aca0eb;
-  --primary-hover: #9b8ee0;
+  --app-bg: #F4F5F7;      /* 배경색 */
+  --divider: #000000;     /* 구분선 색 */
+  --primary: #aca0eb;     /* 메인 버튼 색 (보라) */
+  --primary-hover: #9b8ee0; /* 버튼 호버 색 */
 }
 
 body {
@@ -35,7 +36,15 @@ body {
   flex-direction: column;
 }
 
-/* 첫 진입 스플래시: 로티(SPLASH_ITEMS) 순차 재생 후 제거 */
+/* 앱 루트 */
+#app-root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 스플래시 */
 .splash {
   position: fixed;
   inset: 0;
@@ -66,7 +75,6 @@ body {
   justify-content: center;
 }
 
-/* 로티가 들어가는 컨테이너: 뷰포트 비율에 맞게 꽉 채움 */
 .splash-frame .splash-content {
   width: 100%;
   height: 100%;
@@ -77,7 +85,6 @@ body {
   justify-content: center;
 }
 
-/* Lottie가 만드는 내부 래퍼도 뷰포트 안으로 제한 */
 .splash-frame .splash-content > * {
   max-width: 100%;
   max-height: 100%;
@@ -93,10 +100,7 @@ body {
   display: block;
 }
 
-/* ============================================
-   헤더 제목 (공통)
-   ============================================ */
-
+/* 헤더 - 모든 페이지 상단 (header.js) */
 .header {
   background-color: transparent;
   padding: 18px 0 0;
@@ -104,7 +108,6 @@ body {
   position: relative;
 }
 
-/* 페이지 제목 '아무 말 대잔치' - 모든 페이지 동일 */
 .header-title {
   text-align: center;
   font-family: 'NanumSquareRound';
@@ -116,17 +119,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin-bottom: 20px;
-  /* 기본 커서는 default */
   cursor: default;
 }
 
-/* 제목 링크에만 클릭 가능한 손 모양 */
 #header-title-link {
   cursor: pointer;
   display: inline-block;
 }
 
-/* 제목 아래 구분선 */
 .header-divider {
   height: 1px;
   background-color: var(--divider);
@@ -135,10 +135,7 @@ body {
   display: block;
 }
 
-/* ============================================
-   메인 콘텐츠 영역(공통)
-   ============================================ */
-
+/* 메인 영역 */
 .main {
   flex: 1;
   display: flex;
@@ -148,22 +145,17 @@ body {
   background-color: var(--app-bg);
 }
 
-/* ============================================
-   입력란 폼(공통)
-   ============================================ */
-
-/* 입력란 폼 컨테이너 */
+/* 폼 - 로그인/회원가입 등 */
 .form-container {
   background-color: transparent;
   padding: 0;
   border-radius: 0;
   width: 100%;
-  max-width: 355px;  /* 로그인 폼 최대 너비 */
+  max-width: 355px;  /* 폼 최대 너비 (변경 가능) */
   margin: 0;
   box-shadow: none;
 }
 
-/* 페이지 제목*/
 .form-title {
   text-align: center;
   font-family: 'Pretendard';
@@ -175,13 +167,11 @@ body {
   letter-spacing: 0%;
 }
 
-/* 입력란 폼*/
 .form {
   display: flex;
   flex-direction: column;
 }
 
-/* 입력 필드 그룹 (이메일, 비밀번호, 닉네임) */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -189,12 +179,10 @@ body {
   margin-bottom: 12px;
 }
 
-/* 마지막 입력 필드 그룹 (비밀번호) - 버튼과의 간격 조정 */
 .form-group:last-of-type {
   margin-bottom: 20px;
 }
 
-/* 입력 필드 라벨 (이메일, 비밀번호, 닉네임) */
 .form-label {
   font-family: 'Pretendard';
   font-size: 14px;
@@ -205,7 +193,6 @@ body {
   letter-spacing: 0%;
 }
 
-/* 입력 필드 스타일 */
 .form-input {
   padding: 12px 14px;
   border: 1px solid #000000;
@@ -230,7 +217,6 @@ body {
   opacity: 0;
 }
 
-/* 플레이스홀더 텍스트 스타일 */
 .form-input::placeholder {
   font-family: 'Pretendard', sans-serif;
   font-size: 14px;
@@ -242,33 +228,28 @@ body {
   transition: opacity 0.2s;
 }
 
-/* 에러 메시지 표시용 텍스트 */
+/* 에러 메시지 (form 하단 빨간 텍스트) */
 .helper-text {
   font-size: 12px;
   color: #FF0000;
   margin-top: 2px;
   display: block;
-  min-height: 14px; /* 고정 높이로 레이아웃 유지 */
+  min-height: 14px;
   font-style: normal;
   font-weight: 400;
   font-family: 'Inter';
   line-height: 100%;
   letter-spacing: 0%;
-  visibility: visible; /* 기본적으로 보이도록 */
+  visibility: visible;
 }
 
-/* 입력란 포커스 시 기본 helper text 숨기기 (공간은 유지) */
 .form-input:focus ~ .helper-text:not(.has-error),
 .form-textarea:focus ~ .helper-text:not(.has-error),
 .comment-textarea:focus ~ .helper-text:not(.has-error) {
-  visibility: hidden; /* display: none 대신 visibility 사용하여 공간 유지 */
+  visibility: hidden;
 }
 
-/* ============================================
-   버튼 스타일 (공통)
-   ============================================ */
-/*로그인, 회원가입, 완료, 수정하기 버튼 스타일*/
-/* 버튼 기본 스타일 */
+/* 버튼 - 로그인/회원가입/작성 등 */
 .btn {
   height: 33px;
   padding: 0 20px;
@@ -286,9 +267,9 @@ body {
   justify-content: center;
 }
 
-/* 로그인 버튼 (보라색) */
+/* 메인 버튼 (보라색) */
 .btn-primary {
-  width: 360px;
+  width: 360px;  /* 로그인 폼 너비에 맞춤 */
   background-color: var(--primary);
   color: #ffffff;
   margin-top: 0;
@@ -303,7 +284,6 @@ body {
   background-color: var(--primary-hover);
 }
 
-/* 회원가입 버튼 (텍스트 링크 스타일) */
 .btn-secondary {
   background-color: transparent;
   color: #000000;
@@ -318,21 +298,17 @@ body {
   align-self: center;
 }
 
-/* 회원가입 버튼 가져다두면 배경색 진해지는 효과 */
 .btn-secondary:hover {
   background-color: transparent;
-  color: #333333; 
+  color: #333333;
   text-decoration: none;
 }
 
-/* 회원가입 버튼 클릭시 배경색 진해지는 효과 */
 .btn-secondary:active {
   background-color: transparent;
   color: #111111;
 }
 
-/*게시글 작성, 댓글 등록 버튼 스타일*/
-/* 게시글 작성 버튼 */
 .btn-submit {
   background-color: var(--primary);
   color: #fff;
@@ -350,14 +326,11 @@ body {
   background-color: var(--primary-hover);
 }
 
-/* 게시글 목록의 '게시글 작성' 버튼 오른쪽 정렬 */
 .btn-submit.right {
   align-self: flex-end;
 }
 
-/* ============================================
-   상세 페이지 버튼 스타일
-   ============================================ */
+/* 상세 페이지 수정/삭제 버튼 그룹 */
 .detail-action-group {
   display: flex;
   gap: 8px;
@@ -367,18 +340,14 @@ body {
   min-width: 46px;
   height: 27px;
   border-radius: 6px;
-  border: 1px solid #000000;
+  border: 1px solid #aca0eb;
   background-color: #ffffff;
   font-size: 12px;
   font-family: 'Pretendard';
   cursor: pointer;
 }
 
-/* ============================================
-   뒤로가기 버튼 (공통)
-   ============================================ */
-
-/* 뒤로가기 버튼 - 제목 왼쪽 배치 */
+/* 뒤로가기 */
 .btn-back {
   position: absolute;
   left: 25%;
@@ -395,7 +364,6 @@ body {
   z-index: 10;
 }
 
-/* 뒤로가기 화살표 아이콘 */
 .btn-back svg {
   width: 22px;
   height: 22px;
@@ -406,16 +374,12 @@ body {
   stroke-width: 2.5;
 }
 
-/* 키보드 포커스 시 접근성 개선 */
 .btn-back:focus-visible {
   outline: 2px solid #000000;
   outline-offset: 2px;
 }
 
-/*============================================
-   작은 프로필 아이콘 (공통)
-   ============================================ */
-/* 헤더 작은 프로필 */
+/* 헤더 프로필 아이콘 + 드롭다운 메뉴 */
 .header-profile-wrapper {
   position: absolute;
   right: 25%;
@@ -439,7 +403,7 @@ body {
   object-fit: cover;
 }
 
-/* 드롭다운 */
+/* 드롭다운 (JS에서 .visible 토글) */
 .profile-dropdown {
   position: absolute;
   right: 25%;
@@ -460,7 +424,7 @@ body {
   padding: 6px 10px;
   border: none;
   background: #D9D9D9;
-  text-align: center; 
+  text-align: center;
   font-family: 'Pretendard';
   font-size: 13px;
   cursor: pointer;
@@ -471,10 +435,7 @@ body {
   background: #BDBDBD;
 }
 
-/* ============================================
-   프로필 사진 업로드 섹션 (공통)
-   ============================================ */
-
+/* 프로필 사진 (회원가입 등) */
 .profile-group {
   display: flex;
   flex-direction: column;
@@ -491,7 +452,7 @@ body {
   color: #000000;
 }
 
-/* 프로필 사진 래퍼 - 중앙 정렬 */
+/* 회원가입 프로필 사진 원형 (크기 변경 가능) */
 .avatar-wrapper {
   width: 130px;
   height: 130px;
@@ -501,10 +462,9 @@ body {
   justify-content: center;
   align-items: center;
   margin: 0px auto 0;
-  flex-shrink: 0; /* 크기 고정 */
+  flex-shrink: 0;
 }
 
-/* 프로필 사진 원형 컨테이너 */
 .avatar {
   width: 130px !important;
   height: 130px !important;
@@ -512,39 +472,33 @@ body {
   min-height: 130px !important;
   max-width: 130px !important;
   max-height: 130px !important;
-  aspect-ratio: 1 / 1 !important; /* 정사각형 보장 */
+  aspect-ratio: 1 / 1 !important;
   border-radius: 50%;
   background-color: #C4C4C4;
   position: relative;
-  overflow: hidden; /* 이미지가 원형 밖으로 나가지 않도록 */
-  flex-shrink: 0; /* 크기 고정 */
-  /* 원의 다른 영역에서는 커서가 손가락이 안 보이게 */
+  overflow: hidden;
+  flex-shrink: 0;
   cursor: default;
-  /* 버튼 스타일 오버라이드 */
   padding: 0 !important;
   border: none !important;
 }
 
-/* 회원가입 페이지의 프로필 이미지 스타일 */
 .avatar img {
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
   object-fit: cover;
-  object-position: center; /* 이미지 중앙 정렬 */
+  object-position: center;
   border-radius: 50%;
   display: block;
-  /* 타원형 방지: 정사각형 강제 */
   aspect-ratio: 1 / 1;
 }
 
-/* 회원가입 페이지(.avatar만 있고 .profile-edit-avatar는 없는 경우)에서만 '변경' 버튼 숨기기 */
 .avatar:not(.profile-edit-avatar) .profile-edit-avatar-change {
   display: none !important;
 }
 
-/* 프로필 사진 추가 아이콘 (+) */
 .plus {
   position: absolute;
   left: 50%;
@@ -553,12 +507,10 @@ body {
   height: 16px;
   box-sizing: border-box;
   transform: translate(-50%, -50%);
-  /* + 아이콘 부근에서만 손가락 커서 표시 */
   cursor: pointer;
-  z-index: 20; /* 이미지와 어두운 레이어 위에 표시 */
+  z-index: 20;
 }
 
-/* + 아이콘 가로선 */
 .plus::before {
   content: '';
   position: absolute;
@@ -570,7 +522,6 @@ body {
   transform: translateY(-50%);
 }
 
-/* + 아이콘 세로선 */
 .plus::after {
   content: '';
   position: absolute;
@@ -581,14 +532,12 @@ body {
   background: #000000;
   transform: translateX(-50%);
 }
-/*============================================
-   모달 스타일 (공통) - 수정/삭제 확인 페이지
-   ============================================ */
 
+/* 모달 - 삭제 확인 등 (JS에서 .visible 토글) */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25); /* 바깥 회색 반투명 */
+  background: rgba(0, 0, 0, 0.25);
   display: none;
   align-items: center;
   justify-content: center;
@@ -600,7 +549,7 @@ body {
 }
 
 .modal {
-  width: 332px;
+  width: 332px;  /* 모달 크기 (변경 가능) */
   padding: 38px 24px 34px;
   border-radius: 12px;
   background: #FFFFFF;
@@ -635,563 +584,21 @@ body {
   cursor: pointer;
 }
 
-/* 취소(검은색) */
 .modal-btn-cancel {
   background: #000000;
   color: #FFFFFF;
 }
 
-/* 확인(보라색) */
 .modal-btn-confirm {
-  background: #C9A7FF; /* 기존 보라 계열과 비슷하게 */
+  background: #C9A7FF;
   color: #000000;
 }
 
-/* ============================================
-   구분선 스타일
-   ============================================ */
+/* 구분선 (게시글/댓글 사이 등) */
 .divider {
   height: 1px;
   background-color: #D9D9D9;
   width: 100%;
   margin: 16px 0;
   display: block;
-}
-
-/* ============================================
-   게시글 목록 조회 전용
-   ============================================ */
-
-/* 게시판 전체 컨테이너 */
-.post-list-container {
-  width: 100%;
-  max-width: 590px;
-  margin: 0 auto;
-  padding-top: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* 인사말 텍스트 */
-.post-list-greeting {
-  font-size: 18px;
-  line-height: 140%;
-  color: #000;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.post-list-greeting strong {
-  font-weight: 700;
-}
-
-/* 게시글이 없거나 에러일 때 표시하는 문구 */
-.post-list-message {
-  margin-top: 24px;     /* 버튼 밑에 약간 띄우기 */
-  font-size: 16px;
-  color: #000;
-  text-align: center;   /* 글자 가운데 */
-  align-self: center;   /* 컨테이너 안에서 가운데 */
-}
-
-/* 게시글 카드 리스트 */
-.post-card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
-  padding-bottom: 40px;
-}
-
-/* 게시글 카드 */
-.post-card {
-  width: 100%;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: transform 0.1s ease;
-}
-
-.post-card:hover {
-  transform: translateY(-3px);
-}
-
-/* 게시글 상단 정보 */
-.post-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.post-card-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #000;
-}
-
-.post-card-date {
-  font-size: 13px;
-  color: #777;
-}
-
-/* 좋아요 · 댓글 · 조회수 */
-.post-card-stats {
-  font-size: 13px;
-  color: #555;
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.post-card-divider {
-  width: 100%;
-  height: 1px;
-  background: #e5e5e5;
-  margin-bottom: 12px;
-}
-
-/* 작성자 정보 */
-.post-card-author {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.post-card-author-img {
-  width: 32px;
-  height: 32px;
-  background: #ddd;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.post-card-author-name {
-  font-size: 14px;
-  color: #000000;
-}
-
-/* ============================================
-   회원정보 수정 전용
-   ============================================ */
-
-/* 프로필 사진 그룹 간격 */
-.profile-edit .signup-profile-group {
-  margin-bottom: 24px;
-}
-
-/* 프로필 사진이 들어가는 원형 영역 */
-.profile-edit-avatar {
-  width: 149px;
-  aspect-ratio: 1 / 1;             /* 강제로 정사각형 → 타원 방지 */
-  border-radius: 50%;
-  background: #4646468C;           /* Figma 스펙 그대로 */
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  /* 진짜 그림자 효과 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-  /* 원의 다른 영역에서는 커서가 손가락이 안 보이게 */
-  cursor: default;
-}
-
-/* 이미지 래퍼 - 전체 크기 */
-.profile-edit-avatar .avatar-img-wrapper {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  inset: 0;
-}
-
-/* 동그라미 안의 실제 이미지 – 전체 크기 */
-.profile-edit-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-/* 프로필 사진 위에 어둡게 덮는 레이어 */
-.profile-edit-avatar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);  /* 0.28~0.4 사이로 조절 가능 */
-  pointer-events: none;            /* 클릭 막지 않기 */
-  border-radius: 50%;
-}
-
-/* "변경" 버튼 */
-.profile-edit-avatar-change {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 52px;
-  height: 27px;
-  border-radius: 25px;
-  border: 1px solid #FFFFFF;
-  background-color: rgba(0, 0, 0, 0.35);
-  color: #FFFFFF;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'Pretendard';
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10; /* 다른 요소 위에 표시 */
-  /* 변경 버튼은 그림자 없음 */
-  box-shadow: none;
-}
-
-/* 이메일 텍스트 */
-.profile-edit-email {
-  font-size: 14px;
-  font-family: 'Pretendard', sans-serif;
-  color: #000000;
-  padding: 8px 0;
-}
-
-/* 회원정보 수정 하단의 보라색 "수정완료" 버튼 위치 조정 */
-.profile-edit .btn-submit {
-  display: block;
-  margin: 40px auto 0;   /* 위로 여유 있게 띄우고 가운데 정렬 */
-}
-
-/* 회원 탈퇴 버튼과 위 submit 버튼 간격 조금만 */
-.profile-edit .profile-delete-btn {
-  margin-top: 8px;
-}
-
-/* ============================================
-   게시글 상세 조회 전용
-   ============================================ */
-
-   .post-detail-main {
-    align-items: flex-start;
-  }
-  
-  /* 전체 래퍼 */
-  .post-detail-container {
-    width: 100%;
-    max-width: 590px;
-    margin: 0 auto;
-    padding-top: 32px;
-  }
-  
-  /* 카드 전체 */
-  .post-detail-card {
-    width: 100%;
-  }
-  
-  /* 제목 */
-  .post-detail-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 16px;
-  }
-  
-  /* 상단 작성자/날짜/버튼 */
-  .post-detail-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  
-  .post-detail-meta-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .post-detail-author-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #D9D9D9;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  
-  .post-detail-meta-text {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .post-detail-author-name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-  
-  .post-detail-date {
-    font-size: 12px;
-    color: #777777;
-  }
-  
-  /* 이미지 영역 */
-  .post-detail-image-wrapper {
-    width: 100%;
-    height: 260px;
-    border-radius: 12px;
-    background: #D9D9D9;
-    overflow: hidden;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .post-detail-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  /* 본문 내용 */
-  .post-detail-content {
-    font-size: 14px;
-    line-height: 1.6;
-    white-space: pre-line;
-    margin-bottom: 24px;
-  }
-  
-  /* 좋아요/조회수/댓글 요약 */
-  .post-detail-stats {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  
-  .post-detail-stat-box {
-    width: 96px;
-    height: 64px;
-    border-radius: 12px;
-    background: #D9D9D9;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .post-detail-stat-count {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    color: #000000;
-  }
-  
-  .post-detail-stat-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #000000;
-  }
-  
-  /* 댓글 입력칸과 버튼 사이 구분선 - 양옆 끝까지 */
-  .comment-write-box-divider {
-    height: 1px;
-    background-color: #D9D9D9;
-    width: calc(100% + 40px); /* 양옆 padding 20px씩 상쇄 */
-    margin: -8px -20px;
-    display: block;
-  }
-  
-  /* 댓글 작성 영역 카드 */
-  .comment-write-box {
-    margin: 15px 18px -10px;
-    padding: 0px 18px 0px;
-    border-radius: 12px;
-    background: #ffffff;
-  }
-  
-  /* form 레이아웃 */
-  .comment-form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  /* textarea 스타일 */
-  .comment-write-box .comment-textarea,
-  .comment-write-box .form-input.comment-textarea {
-    min-height: 110px;
-    padding: 25px 0px 25px 10px; /*위 오른쪽 아래 왼쪽*/
-    resize: none;
-    border: none;
-    outline: none;
-    box-shadow: none;
-    background: transparent;
-  }
-  
-  .comment-write-box .comment-textarea:focus,
-  .comment-write-box .form-input.comment-textarea:focus {
-    border: none;
-    outline: none;
-  }
-  
-  .comment-write-box .comment-textarea::placeholder,
-  .comment-write-box .form-input.comment-textarea::placeholder {
-    transition: opacity 0.2s;
-  }
-  
-  .comment-write-box .comment-textarea:focus::placeholder,
-  .comment-write-box .form-input.comment-textarea:focus::placeholder {
-    opacity: 0;
-  }
-  
-  /* 댓글 등록 버튼: 오른쪽 정렬 */
-  .comment-form .btn-submit {
-    align-self: flex-end;
-    margin-bottom: 8px;
-  }
-  
-  /* 댓글 리스트 */
-  .comment-list {
-    margin-top: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  /* 댓글 하나 */
-  .comment-item {
-    display: flex;
-    gap: 10px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: transparent !important;
-  }
-  
-  .comment-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #D9D9D9;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  
-  .comment-body {
-    flex: 1;
-  }
-  
-  /* 댓글 상단 (닉네임/날짜/버튼) */
-  .comment-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  
-  .comment-header-left {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .comment-author-name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-  
-  .comment-date {
-    font-size: 12px;
-    color: #777777;
-  }
-  
-  /* 댓글 내용 */
-  .comment-content {
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  /* 댓글 수정 인라인 입력창 */
-  .comment-edit-textarea {
-    width: 100%;
-    min-height: 60px;
-    padding: 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    font-size: 13px;
-    font-family: 'Pretendard', sans-serif;
-    resize: none;
-  }
-
-/* ============================================
-   게시글 작성 전용
-   ============================================ */
-
-/* 게시글 작성 폼 컨테이너는 폭을 더 넓게 (목록과 같은 590px) */
-.post-new-container .form-container {
-  max-width: 590px;
-}
-
-/* 게시글 작성/수정 페이지 — 입력창 '선' 스타일 */
-.new-post-form .form-input {
-  border: none;
-  border-top: 1px solid #D9D9D9;
-  border-bottom: 1px solid #D9D9D9;
-  border-radius: 0;
-  background-color: #F4F5F7;
-  padding: 10px 0;
-  height: auto;
-}
-
-.new-post-form .form-input::placeholder {
-  color: #838486;
-}
-
-.new-post-form .form-textarea {
-  border: none;
-  border-bottom: 1px solid #D9D9D9;
-  border-radius: 0;
-  background-color: #F4F5F7;
-  padding: 10px 0;
-  height: auto;
-  min-height: 260px;
-  resize: none;
-}
-
-/* 파일 선택 영역 정렬 */
-.file-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 실제 input은 숨김 */
-.file-input-hidden {
-  display: none;
-}
-
-/* Figma 스펙: 68x29, radius 4, border 1, 배경 #D9D9D9 */
-.file-input-button {
-  width: 68px;
-  height: 29px;
-  border-radius: 4px;
-  border: 1px solid #000000;
-  background-color: #D9D9D9;
-  font-size: 12px;
-  font-family: 'Pretendard';
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-/* 파일 안내 문구 */
-.file-input-text {
-  font-size: 12px;
-  font-family: 'Pretendard';
-  color: #000000;
 }

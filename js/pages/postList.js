@@ -7,6 +7,7 @@ import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { renderPostCard } from '../components/postCard.js';
 import { DEV_MODE } from '../constants.js';
+import { getDummyPostList } from '../dummyData.js';
 
 // 개발 모드: 목록 없음/API 실패 시 더미 게시글 표시 (postDetail과 동일하게)
 const DEV_MODE_DUMMY = DEV_MODE;
@@ -101,26 +102,7 @@ async function loadPostList() {
     }
     if (DEV_MODE_DUMMY) {
       console.warn('개발 모드: 더미 게시글 목록을 표시합니다.');
-      const dummyPosts = [
-        {
-          postId: 1,
-          title: '첫 번째 예시 게시글',
-          likeCount: 3,
-          commentCount: 2,
-          hits: 15,
-          createdAt: new Date().toISOString(),
-          author: { nickname: '예시작성자1', profileImageUrl: null },
-        },
-        {
-          postId: 2,
-          title: '두 번째 예시 게시글',
-          likeCount: 0,
-          commentCount: 1,
-          hits: 5,
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          author: { nickname: '예시작성자2', profileImageUrl: null },
-        },
-      ];
+      const dummyPosts = getDummyPostList();
       const sortedDummy = [...dummyPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       listContainer.innerHTML = sortedDummy.map(post => renderPostCard(post)).join('');
       if (createBtn) createBtn.classList.add('right');
