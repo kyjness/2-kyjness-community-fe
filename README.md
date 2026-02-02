@@ -114,56 +114,41 @@ http-server . -p 8080
 [화면 갱신]  사용자가 결과 확인
 ```
 
-### 2. 계층별 역할과 적용 개념
+### 2. 계층별 역할
 
-| 계층         | 역할                      |
-| ---------- | ----------------------- |
-| SPA        | 단일 HTML에서 JS로 화면 전환 처리  |
-| Router     | 해시 기반 라우팅 및 인증 필요 여부 판단 |
-| Pages      | 화면 렌더링 및 이벤트 바인딩        |
-| API Client | `fetch` 래퍼, 쿠키 포함 요청 처리 |
-| State      | 로그인 상태 관리(표시용)          |
-| Components | 재사용 가능한 UI 조각           |
+| 계층 | 역할 |
+|------|------|
+| SPA | 단일 HTML에서 JS로 화면 전환 |
+| Router | 해시 라우팅, 인증 필요 여부 판단 |
+| Pages | 화면 렌더링 및 이벤트 바인딩 |
+| API Client | `fetch` 래퍼, 쿠키 포함 요청 |
+| State | 로그인 상태 관리(표시용) |
+| Components | 재사용 UI 조각 |
 
 ### 3. 요청·화면 처리 예시 (게시글 목록)
 
-- 라우팅: `#/posts` 접근 시 게시글 목록 페이지로 전환
+- 라우팅: `#/posts` 접근 시 목록 페이지로 전환
 - 렌더링: 목록 화면 구성 및 이벤트 바인딩
-- 처리: `/posts` API 호출 후 응답 데이터로 화면 갱신
+- 처리: `GET /posts` 호출 후 응답으로 화면 갱신
 - 이동: 게시글 클릭 시 상세 페이지로 이동
 
-### 4. 예시: 로그인 후 게시글 작성
+### 4. 요청·화면 처리 예시 (로그인 후 게시글 작성)
 
-```
-사용자: 로그인 폼 제출
-    │
-    ├─ login.js: form submit 이벤트
-    ├─ api.post('/auth/login', { email, password })  ← credentials: 'include'
-    ├─ 백엔드: 세션 생성 → Set-Cookie: session_id=xxx
-    ├─ 응답 { code: 'LOGIN_SUCCESS', data: { userId, nickname, ... } }
-    ├─ setUser(data) → state 업데이트 + localStorage 저장
-    ├─ navigateTo('/posts')  → hash 변경 → postList 렌더
-    │
-사용자: "게시글 작성" 버튼 클릭
-    │
-    ├─ navigateTo('/posts/new')
-    ├─ authRequiredRoutes 포함 → isLoggedIn() true → 통과
-    ├─ renderNewPost() → 폼 렌더
-    │
-사용자: 폼 제출
-    │
-    ├─ api.post('/posts', { title, content })  ← 쿠키 자동 포함 (session_id)
-    ├─ 백엔드: get_current_user → session_id로 user_id 확인 → create_post
-    └─ 성공 시 navigateTo('/posts') 또는 상세 페이지로 이동
-```
+- 로그인: 폼 제출 → `POST /auth/login` 호출
+- 인증: 서버 세션 생성 후 `session_id` 쿠키 설정
+- 상태: 로그인 응답으로 프론트 상태(표시용) 업데이트
+- 이동: 게시글 목록 페이지로 이동
+- 작성: 작성 페이지 진입 후 폼 제출
+- 처리: `POST /posts` 호출 → 서버 인증 후 게시글 생성
+- 응답: 성공 시 목록 또는 상세로 이동
 
 ### 5. 프론트·백엔드 연결 요약
 
 | 개념 | 프론트엔드 | 백엔드 |
-|------|-----------|--------|
-| **인증** | localStorage는 표시용. 실제 인증은 쿠키(session_id) | Cookie의 session_id → sessions 테이블 조회 |
-| **API 호출** | `api.get/post(...)` 모든 요청에 `credentials: 'include'` | CORS `allow_credentials=True`, `allow_origins`에 프론트 URL 포함 |
-| **응답 형식** | `{ code, data }` 파싱 후 code별 분기 | 모든 응답을 `{ code, data }`로 통일 |
+|------|------------|--------|
+| 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id`로 사용자 식별 |
+| API 호출 | 모든 요청에 `credentials: 'include'` 포함 | CORS에서 credentials 허용 |
+| 응답 형식 | `{ code, data }` 기준 분기 처리 | `{ code, data }` 형식 통일 |
 
 ---
 
