@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors } from '../utils.js';
+import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail } from '../utils.js';
 
 /**
  * 회원가입 페이지 렌더링
@@ -24,7 +24,7 @@ export function renderSignup() {
           <!-- 프로필 사진 업로드 -->
           <div class="profile-group form-group">
            <label class="form-label">프로필 사진</label>
-           <span class="helper-text" id="profile-error">*helper text</span>
+           <span class="helper-text" id="profile-error"></span>
 
            <div class="avatar-wrapper">
             <div class="btn avatar" id="signup-avatar-preview">
@@ -56,7 +56,7 @@ export function renderSignup() {
               placeholder="이메일을 입력하세요"
               required 
             />
-            <span class="helper-text" id="email-error">*helper text</span>
+            <span class="helper-text" id="email-error"></span>
           </div>
           
           <!-- 비밀번호 -->
@@ -70,7 +70,7 @@ export function renderSignup() {
               placeholder="비밀번호를 입력하세요"
               required 
             />
-            <span class="helper-text" id="password-error">*helper text</span>
+            <span class="helper-text" id="password-error"></span>
           </div>
           
           <!-- 비밀번호 확인 -->
@@ -84,7 +84,7 @@ export function renderSignup() {
               placeholder="비밀번호를 다시 입력하세요"
               required 
             />
-            <span class="helper-text" id="password-confirm-error">*helper text</span>
+            <span class="helper-text" id="password-confirm-error"></span>
           </div>
           
           <!-- 닉네임 -->
@@ -98,7 +98,7 @@ export function renderSignup() {
               placeholder="닉네임을 입력하세요"
               required 
             />
-            <span class="helper-text" id="nickname-error">*helper text</span>
+            <span class="helper-text" id="nickname-error"></span>
           </div>
           
           <button type="submit" class="btn btn-primary">회원가입</button>
@@ -201,13 +201,19 @@ async function handleSignup(e) {
   if (!email) {
     showFieldError('email-error', '이메일을 입력해주세요.');
     hasError = true;
+  } else if (!isValidEmail(email)) {
+    showFieldError('email-error', getApiErrorMessage('INVALID_EMAIL_FORMAT'));
+    hasError = true;
   }
 
   if (!password) {
     showFieldError('password-error', '비밀번호를 입력해주세요.');
     hasError = true;
-  } else if (password.length < 8) {
-    showFieldError('password-error', '비밀번호는 8자 이상이어야 합니다.');
+  } else if (password.length < 8 || password.length > 20) {
+    showFieldError('password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
+    hasError = true;
+  } else if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(password)) {
+    showFieldError('password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
     hasError = true;
   }
 
@@ -221,6 +227,9 @@ async function handleSignup(e) {
 
   if (!nickname) {
     showFieldError('nickname-error', '닉네임을 입력해주세요.');
+    hasError = true;
+  } else if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(nickname.trim())) {
+    showFieldError('nickname-error', getApiErrorMessage('INVALID_NICKNAME_FORMAT'));
     hasError = true;
   }
 
@@ -248,9 +257,8 @@ async function handleSignup(e) {
     alert('회원가입이 완료되었습니다! 로그인해주세요.');
     navigateTo('/login');
   } catch (error) {
-    // 에러 표시
-    const errorMessage = error.message || '회원가입에 실패했습니다.';
-    alert(errorMessage);
+    const msg = getApiErrorMessage(error?.code || error?.message, '회원가입에 실패했습니다.');
+    alert(msg);
   } finally {
     // 버튼 상태 복원
     submitBtn.textContent = originalText;

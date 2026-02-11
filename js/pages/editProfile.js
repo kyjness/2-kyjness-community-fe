@@ -6,7 +6,7 @@ import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, getApiErrorMessage } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
 
 /**
@@ -78,8 +78,7 @@ export function renderEditProfile() {
               class="form-input"
               value="${escapeHtml(String(user?.nickname || ''))}"
             />
-            <!-- 항상 보이는 helper text (오타 없이) -->
-            <span class="helper-text" id="nickname-error">*helper text</span>
+            <span class="helper-text" id="nickname-error"></span>
           </div>
 
           <!-- 4) 수정하기 버튼 (폼 submit) -->
@@ -253,6 +252,12 @@ async function handleProfileUpdate(e) {
     return;
   }
 
+  // 닉네임 형식 검증 (한글, 영문, 숫자 1~10자)
+  if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(nickname)) {
+    showNicknameError(getApiErrorMessage('INVALID_NICKNAME_FORMAT'));
+    return;
+  }
+
   const user = getUser();
 
   try {
@@ -281,7 +286,7 @@ async function handleProfileUpdate(e) {
     alert('회원정보가 수정되었습니다.');
     navigateTo('/posts');
   } catch (error) {
-    alert(error.message || '회원정보 수정에 실패했습니다.');
+    alert(getApiErrorMessage(error?.code || error?.message, '회원정보 수정에 실패했습니다.'));
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;
@@ -301,7 +306,7 @@ async function handleDeleteAccount() {
     alert('회원 탈퇴가 완료되었습니다.');
     navigateTo('/signup');
   } catch (error) {
-    alert(error.message || '회원 탈퇴에 실패했습니다.');
+    alert(getApiErrorMessage(error?.code || error?.message, '회원 탈퇴에 실패했습니다.'));
   }
 }
 
@@ -317,11 +322,15 @@ function closeDeleteModal(modal) {
 function showNicknameError(message) {
   const el = document.getElementById('nickname-error');
   if (!el) return;
-  el.textContent = `* ${message}`;
+  el.textContent = message ? `* ${message}` : '';
+  el.classList.add('has-error');
+  el.style.visibility = 'visible';
 }
 
 function clearNicknameError() {
   const el = document.getElementById('nickname-error');
   if (!el) return;
-  el.textContent = '*helper text'; // 기본 helper text로 되돌리기
+  el.textContent = '';
+  el.classList.remove('has-error');
+  el.style.visibility = 'hidden';
 }

@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, autoResizeTextarea, initAutoResizeTextarea, resolvePostId } from '../utils.js';
+import { showFieldError, clearErrors, autoResizeTextarea, initAutoResizeTextarea, resolvePostId, getApiErrorMessage } from '../utils.js';
 import { DEV_MODE } from '../constants.js';
 import { getDummyEdit } from '../dummyData.js';
 
@@ -38,7 +38,7 @@ export async function renderEditPost(param) {
                 maxlength="26"
                 required 
               />
-              <span class="helper-text" id="title-error">*helper text</span>
+              <span class="helper-text" id="title-error"></span>
             </div>
             
             <!-- 내용 -->
@@ -51,7 +51,7 @@ export async function renderEditPost(param) {
                 placeholder="내용을 입력해주세요."
                 required
               ></textarea>
-              <span class="helper-text" id="content-error">*helper text</span>
+              <span class="helper-text" id="content-error"></span>
             </div>
 
             <!-- 이미지 -->
@@ -140,7 +140,7 @@ async function fillEditPostForm(postId) {
     if (DEV_MODE && getDummyEdit(id)) {
       applyToForm(getDummyEdit(id));
     } else {
-      alert(error.message || '게시글 정보를 불러올 수 없습니다.');
+      alert(getApiErrorMessage(error?.code || error?.message, '게시글 정보를 불러올 수 없습니다.'));
     }
   }
 }
@@ -230,8 +230,8 @@ async function handleEditPost(e, postId) {
 
     navigateTo(`/posts/${postId}`);
   } catch (error) {
-    const errorMessage = error.message || '게시글 수정에 실패했습니다.';
-    alert(errorMessage);
+    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 수정에 실패했습니다.');
+    alert(msg);
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;

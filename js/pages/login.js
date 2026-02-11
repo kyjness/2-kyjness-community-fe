@@ -6,7 +6,7 @@ import { api } from '../api.js';
 import { setUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError } from '../utils.js';
+import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail } from '../utils.js';
 
 /**
  * 로그인 페이지 렌더링
@@ -44,7 +44,7 @@ export function renderLogin() {
               placeholder="비밀번호를 입력하세요"
               required 
             />
-            <span class="helper-text" id="error-message">*helper text</span>
+            <span class="helper-text" id="error-message"></span>
           </div>
           
           <button type="submit" class="btn btn-primary">로그인</button>
@@ -68,36 +68,6 @@ export function renderLogin() {
 function attachLoginEvents() {
   const form = document.getElementById('form');
   const signupBtn = document.getElementById('signup-btn');
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-  const errorMessage = document.getElementById('error-message');
-
-  // 입력란 포커스 시 기본 helper text 숨기기 (공간은 유지)
-  if (emailInput) {
-    emailInput.addEventListener('focus', () => {
-      if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.visibility = 'hidden';
-      }
-    });
-    emailInput.addEventListener('blur', () => {
-      if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.visibility = 'visible';
-      }
-    });
-  }
-
-  if (passwordInput) {
-    passwordInput.addEventListener('focus', () => {
-      if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.visibility = 'hidden';
-      }
-    });
-    passwordInput.addEventListener('blur', () => {
-      if (errorMessage && errorMessage.textContent === '*helper text') {
-        errorMessage.style.visibility = 'visible';
-      }
-    });
-  }
 
   // 로그인 폼 제출
   form.addEventListener('submit', handleLogin);
@@ -119,9 +89,26 @@ async function handleLogin(e) {
   const email = formData.get('email');
   const password = formData.get('password');
 
+  // 기존 에러 메시지 초기화
+  clearErrors();
+
   // 입력값 검증
-  if (!email || !password) {
-    showError('이메일과 비밀번호를 입력해주세요.');
+  let hasError = false;
+  let errorMessage = '';
+
+  if (!email) {
+    errorMessage = '이메일을 입력해주세요.';
+    hasError = true;
+  } else if (!isValidEmail(email)) {
+    errorMessage = getApiErrorMessage('INVALID_EMAIL_FORMAT');
+    hasError = true;
+  } else if (!password) {
+    errorMessage = '비밀번호를 입력해주세요.';
+    hasError = true;
+  }
+
+  if (hasError) {
+    showFieldError('error-message', errorMessage);
     return;
   }
 
@@ -149,19 +136,11 @@ async function handleLogin(e) {
 
     navigateTo('/posts');
   } catch (error) {
-    // 에러 표시
-    const errorMessage = error.message || '로그인에 실패했습니다.';
-    showError(errorMessage);
+    const msg = getApiErrorMessage(error?.code || error?.message, '로그인에 실패했습니다.');
+    showFieldError('error-message', msg);
   } finally {
     // 버튼 상태 복원
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
   }
-}
-
-/**
- * 에러 메시지 표시
- */
-function showError(message) {
-  showFieldError('error-message', message);
 }

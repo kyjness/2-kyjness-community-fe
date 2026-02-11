@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors } from '../utils.js';
+import { showFieldError, clearErrors, getApiErrorMessage } from '../utils.js';
 
 /**
  * 비밀번호 변경 페이지 렌더링
@@ -32,7 +32,7 @@ export function renderChangePassword() {
               placeholder="현재 비밀번호를 입력하세요"
               required 
             />
-            <span class="helper-text" id="current-password-error">*helper text</span>
+            <span class="helper-text" id="current-password-error"></span>
           </div>
           
           <!-- 새 비밀번호 -->
@@ -46,7 +46,7 @@ export function renderChangePassword() {
               placeholder="새 비밀번호를 입력하세요"
               required 
             />
-            <span class="helper-text" id="new-password-error">*helper text</span>
+            <span class="helper-text" id="new-password-error"></span>
           </div>
           
           <!-- 새 비밀번호 확인 -->
@@ -60,7 +60,7 @@ export function renderChangePassword() {
               placeholder="새 비밀번호를 한번 더 입력하세요"
               required 
             />
-            <span class="helper-text" id="new-password-confirm-error">*helper text</span>
+            <span class="helper-text" id="new-password-confirm-error"></span>
           </div>
           
           <button type="submit" class="btn btn-primary">수정하기</button>
@@ -107,8 +107,11 @@ async function handleChangePassword(e) {
   if (!newPassword) {
     showFieldError('new-password-error', '새 비밀번호를 입력해주세요.');
     hasError = true;
-  } else if (newPassword.length < 8) {
-    showFieldError('new-password-error', '비밀번호는 8자 이상이어야 합니다.');
+  } else if (newPassword.length < 8 || newPassword.length > 20) {
+    showFieldError('new-password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
+    hasError = true;
+  } else if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(newPassword)) {
+    showFieldError('new-password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
     hasError = true;
   }
 
@@ -137,8 +140,8 @@ async function handleChangePassword(e) {
     alert('비밀번호가 변경되었습니다!');
     navigateTo('/posts');
   } catch (error) {
-    const errorMessage = error.message || '비밀번호 변경에 실패했습니다.';
-    alert(errorMessage);
+    const msg = getApiErrorMessage(error?.code || error?.message, '비밀번호 변경에 실패했습니다.');
+    alert(msg);
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;

@@ -5,7 +5,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, resolvePostId } from '../utils.js';
+import { escapeHtml, resolvePostId, getApiErrorMessage, showFieldError, clearErrors } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE, DEV_MODE } from '../constants.js';
 import { DUMMY_POST_DETAIL } from '../dummyData.js';
 
@@ -121,7 +121,7 @@ function attachModalEvents(postId) {
       alert('게시글이 삭제되었습니다.');
       navigateTo('/posts');
     } catch (error) {
-      alert(error.message || '게시글 삭제에 실패했습니다.');
+      alert(getApiErrorMessage(error?.code || error?.message, '게시글 삭제에 실패했습니다.'));
     }
   });
 
@@ -146,7 +146,7 @@ function attachModalEvents(postId) {
       closeModal(commentDeleteModal);
       await loadPostDetail(postId); // 다시 로드
     } catch (error) {
-      alert(error.message || '댓글 삭제에 실패했습니다.');
+      alert(getApiErrorMessage(error?.code || error?.message, '댓글 삭제에 실패했습니다.'));
     }
   });
 
@@ -239,7 +239,7 @@ async function loadPostDetail(postId) {
     card.innerHTML = `
       <div style="text-align:center;padding:40px;">
         <p class="post-list-message">게시글을 불러올 수 없습니다.</p>
-        <p style="color:#777;font-size:12px;margin-top:8px;">${error.message || '서버 오류가 발생했습니다.'}</p>
+        <p style="color:#777;font-size:12px;margin-top:8px;">${getApiErrorMessage(error?.code || error?.message, '서버 오류가 발생했습니다.')}</p>
         <button type="button" id="post-detail-back-to-list" style="margin-top:16px;padding:8px 16px;background:#aca0eb;color:white;border:none;border-radius:6px;cursor:pointer;">목록으로 돌아가기</button>
       </div>
     `;
@@ -327,6 +327,7 @@ function renderPostDetailCard(post, comments, postId) {
             class="form-input comment-textarea"
             placeholder="댓글을 남겨주세요!"
           ></textarea>
+          <span class="helper-text" id="comment-content-error"></span>
           <div class="comment-write-box-divider"></div>
           <button type="submit" class="btn btn-submit">댓글 등록</button>
         </form>
@@ -424,7 +425,7 @@ function attachPostBodyEvents(postId) {
           await loadPostDetail(postId);
         } catch (deleteErr) {
           console.error('좋아요 취소 실패:', deleteErr);
-          alert(err.message || '좋아요 처리에 실패했습니다.');
+          alert(getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다.'));
         }
       }
     });
@@ -442,11 +443,17 @@ function attachPostBodyEvents(postId) {
       e.preventDefault();
       const textarea = document.getElementById('comment-content');
       const content = textarea.value.trim();
-      if (!content) return;
+      
+      // 빈 값 검증
+      if (!content) {
+        showFieldError('comment-content-error', '댓글 내용을 입력해주세요.');
+        return;
+      }
 
       const submitBtn = commentForm.querySelector('.btn-submit');
       const orig = submitBtn.textContent;
       try {
+        clearErrors();
         submitBtn.disabled = true;
         submitBtn.textContent = '등록 중...';
         await api.post(`/posts/${postId}/comments`, { content });
@@ -454,7 +461,7 @@ function attachPostBodyEvents(postId) {
         // 댓글 등록 후 전체 페이지 다시 로드
         await loadPostDetail(postId);
       } catch (err) {
-        alert(err.message || '댓글 등록에 실패했습니다.');
+        showFieldError('comment-content-error', getApiErrorMessage(err?.code || err?.message, '댓글 등록에 실패했습니다.'));
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = orig;
@@ -504,12 +511,18 @@ function attachPostBodyEvents(postId) {
           ev.preventDefault();
           const textarea = editForm.querySelector('.comment-edit-textarea');
           const newContent = (textarea?.value ?? '').trim();
-          if (!newContent) return;
+          
+          // 빈 값 검증
+          if (!newContent) {
+            alert('댓글 내용을 입력해주세요.');
+            return;
+          }
+          
           try {
             await api.patch(`/posts/${postId}/comments/${commentId}`, { content: newContent });
             await loadPostDetail(postId);
           } catch (err) {
-            alert(err.message || '댓글 수정에 실패했습니다.');
+            alert(getApiErrorMessage(err?.code || err?.message, '댓글 수정에 실패했습니다.'));
           }
         });
         editForm.querySelector('.comment-edit-cancel-btn')?.addEventListener('click', () => {

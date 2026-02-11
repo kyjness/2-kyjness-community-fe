@@ -70,9 +70,63 @@ export function fileToBase64(file) {
 export function showFieldError(elementId, message) {
   const errorElement = document.getElementById(elementId);
   if (errorElement) {
-    errorElement.textContent = `* ${message}`;
+    errorElement.textContent = message ? `* ${message}` : '';
+    errorElement.classList.add('has-error');
     errorElement.style.visibility = 'visible';
   }
+}
+
+/**
+ * 백엔드 API 에러 코드를 한글 메시지로 변환
+ * @param {string} code - API 응답의 code (예: INVALID_PASSWORD_FORMAT)
+ * @param {string} fallback - 매핑 없을 때 사용할 기본 메시지
+ * @returns {string}
+ */
+export function getApiErrorMessage(code, fallback = '처리에 실패했습니다.') {
+  const messages = {
+    // 입력 검증
+    INVALID_PASSWORD_FORMAT:
+      '비밀번호는 8~20자, 영문 대/소문자, 숫자, 특수문자를 각각 1자 이상 포함해야 합니다.',
+    INVALID_NICKNAME_FORMAT: '닉네임은 한글, 영문, 숫자 1~10자로 입력해주세요.',
+    INVALID_EMAIL_FORMAT: '이메일 형식이 올바르지 않습니다.',
+    INVALID_PROFILEIMAGEURL: '프로필 이미지 형식이 올바르지 않습니다.',
+    INVALID_FILE_URL: '파일 URL 형식이 올바르지 않습니다.',
+    INVALID_REQUEST: '입력값을 확인해주세요.',
+    INVALID_REQUEST_BODY: '입력값을 확인해주세요.',
+    INVALID_POSTID_FORMAT: '게시글 ID 형식이 올바르지 않습니다.',
+    MISSING_REQUIRED_FIELD: '필수 입력 항목을 입력해주세요.',
+    // 인증
+    UNAUTHORIZED: '로그인이 필요합니다.',
+    INVALID_CREDENTIALS: '이메일 또는 비밀번호가 일치하지 않습니다.',
+    FORBIDDEN: '권한이 없습니다.',
+    // 중복
+    EMAIL_ALREADY_EXISTS: '이미 사용 중인 이메일입니다.',
+    NICKNAME_ALREADY_EXISTS: '이미 사용 중인 닉네임입니다.',
+    CONFLICT: '이미 사용 중입니다.',
+    // 리소스 없음
+    NOT_FOUND: '찾을 수 없습니다.',
+    USER_NOT_FOUND: '사용자를 찾을 수 없습니다.',
+    POST_NOT_FOUND: '게시글을 찾을 수 없습니다.',
+    COMMENT_NOT_FOUND: '댓글을 찾을 수 없습니다.',
+    LIKE_NOT_FOUND: '좋아요를 찾을 수 없습니다.',
+    // 파일
+    INVALID_FILE_TYPE: '지원하지 않는 파일 형식입니다.',
+    INVALID_IMAGE_FILE: '유효하지 않은 이미지 파일입니다.',
+    FILE_SIZE_EXCEEDED: '파일 크기가 너무 큽니다.',
+    // 서버
+    CONSTRAINT_ERROR: '데이터 제약 조건을 위반했습니다.',
+    DB_ERROR: '데이터베이스 오류가 발생했습니다.',
+    INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다.',
+    METHOD_NOT_ALLOWED: '허용되지 않은 요청 방식입니다.',
+    UNPROCESSABLE_ENTITY: '요청을 처리할 수 없습니다.',
+  };
+  return messages[code] || fallback;
+}
+
+/** 이메일 형식 검증 (간단한 패턴: local@domain.tld) */
+export function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
 /**
@@ -139,7 +193,8 @@ export function resolvePostId(param, options = {}) {
 export function clearErrors() {
   const errorElements = document.querySelectorAll('.helper-text');
   errorElements.forEach((el) => {
-    el.textContent = '*helper text';
-    el.style.visibility = 'hidden'; /* 공간은 유지하면서 숨김 */
+    el.textContent = '';
+    el.classList.remove('has-error');
+    el.style.visibility = 'hidden';
   });
 }

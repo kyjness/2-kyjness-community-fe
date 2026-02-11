@@ -242,6 +242,9 @@ body {
   letter-spacing: 0%;
   visibility: visible;
 }
+.helper-text:empty {
+  visibility: hidden;
+}
 
 .form-input:focus ~ .helper-text:not(.has-error),
 .form-textarea:focus ~ .helper-text:not(.has-error),
