@@ -3,7 +3,6 @@
  */
 
 import { api } from '../api.js';
-import { getUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors } from '../utils.js';
@@ -122,12 +121,6 @@ async function handleChangePassword(e) {
   }
 
   if (hasError) return;
-
-  const user = getUser();
-  if (!user?.userId) {
-    alert('로그인 정보가 없습니다.');
-    return;
-  }
 
   const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;

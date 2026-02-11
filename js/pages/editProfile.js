@@ -254,11 +254,6 @@ async function handleProfileUpdate(e) {
   }
 
   const user = getUser();
-  const userId = user?.userId;
-  if (!userId) {
-    alert('로그인 정보가 없습니다.');
-    return;
-  }
 
   try {
     submitBtn.disabled = true;
@@ -298,12 +293,6 @@ async function handleProfileUpdate(e) {
  */
 async function handleDeleteAccount() {
   const deleteModal = document.getElementById('delete-modal');
-  const user = getUser();
-  const userId = user?.userId;
-  if (!userId) {
-    alert('로그인 정보가 없습니다.');
-    return;
-  }
 
   try {
     await api.delete('/users/me');
