@@ -185,9 +185,11 @@ export const BASE_URL = 'http://localhost:8000';
 
 ### 개발 모드 (DEV_MODE)
 
-`js/constants.js`에서 `DEV_MODE`가 `true`이면 API 실패 시 목록·상세·수정 페이지에서 예시(더미) 데이터를 보여줍니다.
+`js/constants.js`에서 `DEV_MODE`가 `true`이면:
+- API 실패 시 목록·상세·수정 페이지에서 예시(더미) 데이터를 보여줌
+- **라우터 인증 검사 생략** – 비로그인 상태에서도 프로필 수정, 게시글 작성/수정 등 인증 필요 페이지 접근 가능 (개발·테스트용)
 
-**인증 검사는 DEV_MODE와 무관하게 항상 라우터에서 수행됩니다.**
+배포 시 `false`로 설정하면 인증 검사와 더미 데이터가 활성화됩니다.
 
 ```javascript
 export const DEV_MODE = false;  // 배포 시 false

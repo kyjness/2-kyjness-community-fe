@@ -4,6 +4,7 @@
  */
 
 import { isLoggedIn } from './state.js';
+import { DEV_MODE } from './constants.js';
 
 // 라우트 정의: 경로 -> 로더 함수 (dynamic import로 Lazy Loading)
 const routeLoaders = {
@@ -74,16 +75,17 @@ export async function route() {
   const { path, params } = parseHash();
   const load = routeLoaders[path];
 
-  // 인증 필요한 경로: 비로그인 시 로그인 페이지로 리다이렉트
-  if (authRequiredRoutes.includes(path) && !isLoggedIn()) {
-    alert('로그인이 필요합니다.');
-    navigateTo('/login');
-    return;
-  }
-  // 로그인/회원가입 페이지: 이미 로그인 시 게시글 목록으로 리다이렉트
-  if ((path === '/login' || path === '/signup') && isLoggedIn()) {
-    navigateTo('/posts');
-    return;
+  // DEV_MODE가 false일 때만 인증 검사 (개발 모드에서는 비로그인도 모든 페이지 접근 가능)
+  if (!DEV_MODE) {
+    if (authRequiredRoutes.includes(path) && !isLoggedIn()) {
+      alert('로그인이 필요합니다.');
+      navigateTo('/login');
+      return;
+    }
+    if ((path === '/login' || path === '/signup') && isLoggedIn()) {
+      navigateTo('/posts');
+      return;
+    }
   }
 
   if (load) {
