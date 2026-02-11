@@ -30,4 +30,4 @@ export const SPLASH_ITEMS = [
  * 개발 모드: true면 목록/상세/수정에서 API 실패 시 예시(더미) 데이터를 보여줌.
  * 배포 시 false 로 변경하면 예시는 완전히 끄고, 모든 데이터는 API·백엔드만 사용함.
  */
-export const DEV_MODE = true;
+export const DEV_MODE = false;
