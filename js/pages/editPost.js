@@ -54,9 +54,9 @@ export async function renderEditPost(param) {
               <span class="helper-text" id="content-error"></span>
             </div>
 
-            <!-- 이미지 -->
+            <!-- 이미지 또는 비디오 -->
             <div class="form-group">
-              <label for="image" class="form-label">이미지</label>
+              <label for="image" class="form-label">이미지 또는 비디오</label>
 
               <div class="file-input-wrapper">
                 <!-- 실제 파일 input (숨김) -->
@@ -64,7 +64,7 @@ export async function renderEditPost(param) {
                   type="file" 
                   id="image" 
                   name="image"
-                  accept="image/*"
+                  accept="image/*,video/mp4,video/webm"
                   class="file-input-hidden"
                 />
 
@@ -216,7 +216,9 @@ async function handleEditPost(e, postId) {
     if (imageFile) {
       const formData = new FormData();
       formData.append('postFile', imageFile);
-      const uploadRes = await api.postFormData(`/posts/${postId}/image`, formData);
+      const isVideo = imageFile.type && imageFile.type.startsWith('video/');
+      const endpoint = isVideo ? 'video' : 'image';
+      const uploadRes = await api.postFormData(`/posts/${postId}/${endpoint}`, formData);
       fileUrl = uploadRes?.data?.postFileUrl ?? uploadRes?.postFileUrl ?? '';
     }
 

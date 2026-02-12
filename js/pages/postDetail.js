@@ -248,12 +248,35 @@ async function loadPostDetail(postId) {
   }
 }
 
+/** 파일 URL이 비디오인지 여부 (경로에 /video/ 포함 또는 확장자 .mp4, .webm) */
+function isVideoFileUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  return url.includes('/video/') || /\.(mp4|webm)(\?|$)/i.test(url);
+}
+
 /**
  * 실제 DOM 렌더링 (성공이든 더미든 공통). postId로 수정/댓글 등 동작.
  */
 function renderPostDetailCard(post, comments, postId) {
   const card = document.getElementById('post-detail-card');
   if (!card) return;
+
+  const fileUrl = post.image_url;
+  const isVideo = fileUrl && isVideoFileUrl(fileUrl);
+  const fileBlock =
+    fileUrl && isVideo
+      ? `
+      <div class="post-detail-image-wrapper">
+        <video src="${escapeHtml(fileUrl)}" controls class="post-detail-image" style="max-width:100%;">지원하지 않는 형식입니다.</video>
+      </div>
+      `
+      : fileUrl
+        ? `
+      <div class="post-detail-image-wrapper">
+        <img src="${escapeHtml(fileUrl)}" alt="게시글 이미지" class="post-detail-image" />
+      </div>
+      `
+        : '';
 
   card.innerHTML = `
     <section class="post-detail-card">
@@ -288,15 +311,7 @@ function renderPostDetailCard(post, comments, postId) {
 
       <div class="divider"></div>
 
-      ${
-        post.image_url
-          ? `
-      <div class="post-detail-image-wrapper">
-        <img src="${post.image_url}" alt="게시글 이미지" class="post-detail-image" />
-      </div>
-      `
-          : ''
-      }
+      ${fileBlock}
 
       <p class="post-detail-content">
         ${escapeHtml(String(post.content || '내용이 없습니다.').trim())}
