@@ -6,8 +6,6 @@ import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, autoResizeTextarea, initAutoResizeTextarea, resolvePostId, getApiErrorMessage } from '../utils.js';
-import { DEV_MODE } from '../constants.js';
-import { getDummyEdit } from '../dummyData.js';
 
 export async function renderEditPost(param) {
   const root = document.getElementById('app-root');
@@ -102,7 +100,7 @@ export async function renderEditPost(param) {
 }
 
 /**
- * 기존 게시글 데이터 불러와서 폼에 채우기 (API 실패 시 예시 id면 더미로 채움)
+ * 기존 게시글 데이터 API로 불러와서 폼에 채움. 실패 시 에러 메시지 표시.
  */
 async function fillEditPostForm(postId) {
   const id = String(postId);
@@ -137,11 +135,7 @@ async function fillEditPostForm(postId) {
     applyToForm(postData);
   } catch (error) {
     console.error('게시글 정보를 불러올 수 없습니다:', error);
-    if (DEV_MODE && getDummyEdit(id)) {
-      applyToForm(getDummyEdit(id));
-    } else {
-      alert(getApiErrorMessage(error?.code || error?.message, '게시글 정보를 불러올 수 없습니다.'));
-    }
+    alert(getApiErrorMessage(error?.code || error?.message, '게시글 정보를 불러올 수 없습니다.'));
   }
 }
 

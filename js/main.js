@@ -5,7 +5,7 @@
 
 import { restoreUser } from './state.js';
 import { initRouter } from './router.js';
-import { SPLASH_ITEMS } from './constants.js';
+import { SPLASH_ITEMS } from '../constants.js';
 
 /**
  * 앱 초기화

@@ -6,11 +6,6 @@ import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { renderPostCard } from '../components/postCard.js';
-import { DEV_MODE } from '../constants.js';
-import { getDummyPostList } from '../dummyData.js';
-
-// 개발 모드: 목록 없음/API 실패 시 더미 게시글 표시 (postDetail과 동일하게)
-const DEV_MODE_DUMMY = DEV_MODE;
 
 // 페이지네이션 상태 관리
 let currentPage = 1;
@@ -32,7 +27,7 @@ export async function renderPostList() {
         
         <p class="post-list-greeting">
           안녕하세요,<br />
-          아무 말 대잔치 <strong>게시판</strong> 입니다.
+          퍼피톡 <strong>게시판</strong> 입니다.
         </p>
 
         <button class="btn btn-submit" id="btn-submit" style="display: none;" aria-hidden="true">
@@ -100,18 +95,10 @@ async function loadPostList() {
       createBtn.removeAttribute('aria-hidden');
       createBtn.classList.remove('right');
     }
-    if (DEV_MODE_DUMMY) {
-      console.warn('개발 모드: 더미 게시글 목록을 표시합니다.');
-      const dummyPosts = getDummyPostList();
-      const sortedDummy = [...dummyPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      listContainer.innerHTML = sortedDummy.map(post => renderPostCard(post)).join('');
-      if (createBtn) createBtn.classList.add('right');
-    } else {
-      listContainer.innerHTML =
-        fetchFailed
-          ? `<p class="post-list-message">게시글을 불러올 수 없습니다.</p>`
-          : `<p class="post-list-message">게시글이 없습니다.</p>`;
-    }
+    listContainer.innerHTML =
+      fetchFailed
+        ? `<p class="post-list-message">게시글을 불러올 수 없습니다.</p>`
+        : `<p class="post-list-message">게시글이 없습니다.</p>`;
     return;
   }
 

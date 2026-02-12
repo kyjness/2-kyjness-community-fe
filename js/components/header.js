@@ -6,7 +6,8 @@
 import { getUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { api } from '../api.js';
-import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../constants.js';
+import { safeImageUrl } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../../constants.js';
 
 /**
  * 헤더 렌더링
@@ -23,7 +24,7 @@ export function renderHeader(options = {}) {
     showProfile = true,
   } = options;
   const user = getUser();
-  const profileImage = user?.profileImageUrl || DEFAULT_PROFILE_IMAGE;
+  const profileImage = safeImageUrl(user?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
 
   return `
     <header class="header">
@@ -104,7 +105,7 @@ export function updateHeaderProfileImage() {
   const profileImg = document.querySelector('.profile-avatar-img');
   if (profileImg) {
     const user = getUser();
-    const profileImage = user?.profileImageUrl || DEFAULT_PROFILE_IMAGE;
+    const profileImage = safeImageUrl(user?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
     profileImg.src = profileImage;
   }
 }
@@ -118,9 +119,20 @@ function initProfileDropdown() {
 
   if (!profileBtn || !dropdown) return;
 
-  // 프로필 버튼 클릭 → 드롭다운 토글
-  profileBtn.addEventListener('click', () => {
+  // 프로필 버튼 클릭 → 드롭다운 토글 (바깥 클릭 시 한 번만 리스너 등록 후 제거, 메모리 누수 방지)
+  profileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpening = !dropdown.classList.contains('visible');
     dropdown.classList.toggle('visible');
+    if (isOpening) {
+      const closeOnOutside = (ev) => {
+        if (!profileBtn.contains(ev.target) && !dropdown.contains(ev.target)) {
+          dropdown.classList.remove('visible');
+          document.removeEventListener('click', closeOnOutside);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeOnOutside), 0);
+    }
   });
 
   // 회원정보 수정
@@ -155,14 +167,4 @@ function initProfileDropdown() {
       navigateTo('/login');
     });
   }
-
-  // 바깥 클릭 시 드롭다운 닫기
-  document.addEventListener('click', (e) => {
-    if (
-      !profileBtn.contains(e.target) &&
-      !dropdown.contains(e.target)
-    ) {
-      dropdown.classList.remove('visible');
-    }
-  });
 }

@@ -7,7 +7,8 @@ import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
 import { escapeHtml, getApiErrorMessage } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
+import { safeImageUrl } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../../constants.js';
 
 /**
  * 회원정보 수정 페이지 렌더링
@@ -37,7 +38,7 @@ export function renderEditProfile() {
                 <div class="avatar-img-wrapper">
                   <img
                     id="avatar-img"
-                    src="${user?.profileImageUrl || DEFAULT_PROFILE_IMAGE}"
+                    src="${safeImageUrl(user?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE}"
                     alt="프로필 이미지"
                   />
                 </div>

@@ -239,17 +239,25 @@ async function handleSignup(e) {
   const originalText = submitBtn.textContent;
 
   try {
-    // 로딩 상태
     submitBtn.textContent = '회원가입 중...';
     submitBtn.disabled = true;
 
-    // 회원가입 API (백엔드는 profileImageUrl만 허용. 프로필 이미지는 가입 후 회원정보수정에서 업로드)
+    let profileImageUrl = null;
+    const profileInput = document.getElementById('profile-image');
+    if (profileInput?.files?.[0]) {
+      const formData = new FormData();
+      formData.append('profileImage', profileInput.files[0]);
+      const uploadRes = await api.postFormData('/auth/upload-signup-profile-image', formData);
+      profileImageUrl = uploadRes?.data?.profileImageUrl ?? uploadRes?.profileImageUrl ?? null;
+    }
+
     const signupData = {
       email,
       password,
       passwordConfirm,
       nickname,
     };
+    if (profileImageUrl) signupData.profileImageUrl = profileImageUrl;
 
     await api.post('/auth/signup', signupData);
 

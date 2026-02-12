@@ -5,7 +5,7 @@
  * - 401 시 clearUser() 후 로그인 페이지로 리다이렉트
  */
 
-import { BASE_URL } from './constants.js';
+import { BASE_URL } from '../constants.js';
 import { clearUser } from './state.js';
 import { navigateTo } from './router.js';
 

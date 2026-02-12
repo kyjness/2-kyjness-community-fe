@@ -119,8 +119,24 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
     INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다.',
     METHOD_NOT_ALLOWED: '허용되지 않은 요청 방식입니다.',
     UNPROCESSABLE_ENTITY: '요청을 처리할 수 없습니다.',
+    RATE_LIMIT_EXCEEDED: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
   };
   return messages[code] || fallback;
+}
+
+/**
+ * img src에 넣어도 안전한 URL만 허용 (XSS 방지: javascript:, data: 등 차단)
+ * @param {string} url - 검사할 URL
+ * @param {string} fallback - 허용되지 않을 때 반환할 값
+ * @returns {string}
+ */
+export function safeImageUrl(url, fallback = '') {
+  if (!url || typeof url !== 'string') return fallback;
+  const t = url.trim();
+  if (t.startsWith('https://') || t.startsWith('http://') || t.startsWith('./') || t.startsWith('/')) {
+    return t;
+  }
+  return fallback;
 }
 
 /** 이메일 형식 검증 (간단한 패턴: local@domain.tld) */

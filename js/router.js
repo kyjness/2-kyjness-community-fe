@@ -4,7 +4,6 @@
  */
 
 import { isLoggedIn } from './state.js';
-import { DEV_MODE } from './constants.js';
 
 // 라우트 정의: 경로 -> 로더 함수 (dynamic import로 Lazy Loading)
 const routeLoaders = {
@@ -75,25 +74,27 @@ export async function route() {
   const { path, params } = parseHash();
   const load = routeLoaders[path];
 
-  // DEV_MODE가 false일 때만 인증 검사 (개발 모드에서는 비로그인도 모든 페이지 접근 가능)
-  if (!DEV_MODE) {
-    if (authRequiredRoutes.includes(path) && !isLoggedIn()) {
-      alert('로그인이 필요합니다.');
-      navigateTo('/login');
-      return;
-    }
-    if ((path === '/login' || path === '/signup') && isLoggedIn()) {
-      navigateTo('/posts');
-      return;
-    }
+  if (authRequiredRoutes.includes(path) && !isLoggedIn()) {
+    alert('로그인이 필요합니다.');
+    navigateTo('/login');
+    return;
+  }
+  if ((path === '/login' || path === '/signup') && isLoggedIn()) {
+    navigateTo('/posts');
+    return;
   }
 
   if (load) {
-    const mod = await load();
-    const renderFn = mod[renderKeys[path]];
-    if (typeof renderFn === 'function') {
-      await renderFn(params);
-    } else {
+    try {
+      const mod = await load();
+      const renderFn = mod[renderKeys[path]];
+      if (typeof renderFn === 'function') {
+        await renderFn(params);
+      } else {
+        render404();
+      }
+    } catch (err) {
+      console.error('페이지 로드 실패:', err);
       render404();
     }
   } else {
@@ -110,6 +111,7 @@ export function navigateTo(path) {
 
 function render404() {
   const root = document.getElementById('app-root');
+  if (!root) return;
   root.innerHTML = `
     <div style="
       display: flex;
@@ -122,8 +124,9 @@ function render404() {
     ">
       <h1 style="font-size: 48px; margin: 0; color: #000;">404</h1>
       <p style="font-size: 16px; margin: 12px 0; color: #666;">페이지를 찾을 수 없습니다</p>
-      <button 
-        onclick="window.location.hash='/'" 
+      <button
+        type="button"
+        id="btn-404-home"
         style="
           margin-top: 20px;
           padding: 10px 20px;
@@ -139,6 +142,8 @@ function render404() {
       </button>
     </div>
   `;
+  const btn = document.getElementById('btn-404-home');
+  if (btn) btn.addEventListener('click', () => navigateTo('/'));
 }
 
 /**

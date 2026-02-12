@@ -2,8 +2,8 @@
  * 게시글 카드 컴포넌트
  */
 
-import { escapeHtml, formatDate } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE } from '../constants.js';
+import { escapeHtml, formatDate, safeImageUrl } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../../constants.js';
 
 /**
  * 게시글 카드 렌더링
@@ -20,7 +20,7 @@ export function renderPostCard(post) {
   const author = post.author || {};
 
   const authorName = author.nickname || '알 수 없음';
-  const authorAvatar = author.profileImageUrl || DEFAULT_PROFILE_IMAGE;
+  const authorAvatar = safeImageUrl(author.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
 
   return `
     <div class="post-card" data-id="${postId}">

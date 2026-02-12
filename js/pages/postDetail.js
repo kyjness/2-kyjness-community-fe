@@ -4,10 +4,10 @@
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
+import { getUser } from '../state.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, resolvePostId, getApiErrorMessage, showFieldError, clearErrors } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE, DEV_MODE } from '../constants.js';
-import { DUMMY_POST_DETAIL } from '../dummyData.js';
+import { escapeHtml, resolvePostId, getApiErrorMessage, showFieldError, clearErrors, safeImageUrl } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../../constants.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
 
@@ -192,19 +192,20 @@ async function loadPostDetail(postId) {
     // API 응답 구조: { code: "POST_RETRIEVED", data: {...} }
     const postData = response.data || response;
 
-    // 백엔드 필드명을 프론트엔드 필드명으로 변환
+    // 백엔드 필드명을 프론트엔드 필드명으로 변환. isMine은 백엔드에서 안 내려오므로 로그인 사용자와 작성자 비교
+    const currentUser = getUser();
     const normalizedPost = {
       id: postData.postId,
       title: postData.title || '',
       content: postData.content || '',
       author_nickname: postData.author?.nickname || '',
       author_profile_image:
-        postData.author?.profileImageUrl || DEFAULT_PROFILE_IMAGE,
+        safeImageUrl(postData.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE,
       created_at: postData.createdAt || '',
       image_url: postData.file?.fileUrl || postData.file?.url || null,
       likes: postData.likeCount || 0,
       views: postData.hits || 0,
-      isMine: postData.isMine || false,
+      isMine: !!(currentUser && postData.author?.userId === currentUser.userId),
     };
 
     // 댓글 목록 조회
@@ -217,10 +218,10 @@ async function loadPostDetail(postId) {
           id: c.commentId,
           author_nickname: c.author?.nickname || '',
           author_profile_image:
-            c.author?.profileImageUrl || DEFAULT_PROFILE_IMAGE,
+            safeImageUrl(c.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE,
           created_at: c.createdAt || '',
           content: c.content || '',
-          isMine: c.isMine || false,
+          isMine: !!(currentUser && c.author?.userId === currentUser.userId),
         }),
       );
     } catch (commentError) {
@@ -230,16 +231,10 @@ async function loadPostDetail(postId) {
     renderPostDetailCard(normalizedPost, comments, postId);
   } catch (error) {
     console.error('게시글 상세 조회 실패:', error);
-    const id = String(postId);
-    if (DEV_MODE && DUMMY_POST_DETAIL[id]) {
-      const { post, comments } = DUMMY_POST_DETAIL[id];
-      renderPostDetailCard(post, comments, id);
-      return;
-    }
     card.innerHTML = `
       <div style="text-align:center;padding:40px;">
         <p class="post-list-message">게시글을 불러올 수 없습니다.</p>
-        <p style="color:#777;font-size:12px;margin-top:8px;">${getApiErrorMessage(error?.code || error?.message, '서버 오류가 발생했습니다.')}</p>
+        <p style="color:#777;font-size:12px;margin-top:8px;">${escapeHtml(getApiErrorMessage(error?.code || error?.message, '서버 오류가 발생했습니다.'))}</p>
         <button type="button" id="post-detail-back-to-list" style="margin-top:16px;padding:8px 16px;background:#aca0eb;color:white;border:none;border-radius:6px;cursor:pointer;">목록으로 돌아가기</button>
       </div>
     `;
@@ -255,25 +250,26 @@ function isVideoFileUrl(url) {
 }
 
 /**
- * 실제 DOM 렌더링 (성공이든 더미든 공통). postId로 수정/댓글 등 동작.
+ * 게시글 상세/댓글 DOM 렌더링. postId로 수정·댓글·좋아요 등 동작.
  */
 function renderPostDetailCard(post, comments, postId) {
   const card = document.getElementById('post-detail-card');
   if (!card) return;
 
-  const fileUrl = post.image_url;
+  const rawFileUrl = post.image_url;
+  const fileUrl = safeImageUrl(rawFileUrl, '') || '';
   const isVideo = fileUrl && isVideoFileUrl(fileUrl);
   const fileBlock =
     fileUrl && isVideo
       ? `
       <div class="post-detail-image-wrapper">
-        <video src="${escapeHtml(fileUrl)}" controls class="post-detail-image" style="max-width:100%;">지원하지 않는 형식입니다.</video>
+        <video src="${fileUrl}" controls class="post-detail-image" style="max-width:100%;">지원하지 않는 형식입니다.</video>
       </div>
       `
       : fileUrl
         ? `
       <div class="post-detail-image-wrapper">
-        <img src="${escapeHtml(fileUrl)}" alt="게시글 이미지" class="post-detail-image" />
+        <img src="${fileUrl}" alt="게시글 이미지" class="post-detail-image" />
       </div>
       `
         : '';
