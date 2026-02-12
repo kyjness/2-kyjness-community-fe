@@ -1,6 +1,4 @@
-/**
- * 게시글 수정 페이지
- */
+// 게시글 수정 페이지
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
@@ -99,9 +97,7 @@ export async function renderEditPost(param) {
   }
 }
 
-/**
- * 기존 게시글 데이터 API로 불러와서 폼에 채움. 실패 시 에러 메시지 표시.
- */
+// 기존 게시글 데이터 API로 불러와서 폼에 채움
 async function fillEditPostForm(postId) {
   const id = String(postId);
   const titleInput = document.getElementById('title');
@@ -139,9 +135,7 @@ async function fillEditPostForm(postId) {
   }
 }
 
-/**
- * 게시글 수정 페이지 이벤트 리스너 등록
- */
+// 게시글 수정 페이지 이벤트 리스너
 function attachEditPostEvents(postId) {
   const form = document.getElementById('edit-post-form');
   if (form) {
@@ -164,9 +158,7 @@ function attachEditPostEvents(postId) {
   }
 }
 
-/**
- * 게시글 수정 처리
- */
+// 게시글 수정 처리
 async function handleEditPost(e, postId) {
   e.preventDefault();
   if (!postId) {

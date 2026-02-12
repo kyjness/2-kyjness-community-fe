@@ -1,7 +1,4 @@
-/**
- * 해시 기반 SPA 라우터 (Lazy Loading: 경로별 dynamic import)
- * URL 해시(#/login, #/posts 등)에 따라 적절한 페이지를 비동기 로드 후 렌더링합니다.
- */
+// 해시 기반 SPA 라우터 (Lazy Loading)
 
 import { isLoggedIn } from './state.js';
 
@@ -39,10 +36,7 @@ const authRequiredRoutes = [
   '/posts/new',
 ];
 
-/**
- * 현재 URL 해시를 파싱하여 경로와 파라미터를 반환합니다.
- * 예: #/posts/123 -> { path: '/posts/:id', params: { id: '123' } }
- */
+// URL 해시 파싱 (#/posts/123 -> path, params)
 function parseHash() {
   const hash = window.location.hash.slice(1) || '/';
 
@@ -67,9 +61,7 @@ function parseHash() {
   return { path: hash, params: {} };
 }
 
-/**
- * 라우팅 처리 - Lazy Loading으로 페이지 모듈 로드 후 렌더링합니다.
- */
+// 라우팅 처리 (Lazy Loading)
 export async function route() {
   const { path, params } = parseHash();
   const load = routeLoaders[path];
@@ -102,9 +94,7 @@ export async function route() {
   }
 }
 
-/**
- * 특정 경로로 이동합니다 (해시 변경)
- */
+// 특정 경로로 이동 (해시 변경)
 export function navigateTo(path) {
   window.location.hash = path;
 }
@@ -146,9 +136,7 @@ function render404() {
   if (btn) btn.addEventListener('click', () => navigateTo('/'));
 }
 
-/**
- * 라우터 초기화 - 해시 변경 이벤트 리스너 등록
- */
+// 라우터 초기화 (hashchange 리스너)
 export function initRouter() {
   window.addEventListener('hashchange', () => {
     route();

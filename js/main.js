@@ -1,15 +1,10 @@
-/**
- * 앱 진입점 (Entry Point)
- * 스플래시: constants.SPLASH_ITEMS 순차 재생(각 항목 duration ms) 후 앱 초기화
- */
+// 앱 진입점 (스플래시 후 앱 초기화)
 
 import { restoreUser } from './state.js';
 import { initRouter } from './router.js';
-import { SPLASH_ITEMS } from '../constants.js';
+import { SPLASH_ITEMS } from './config.js';
 
-/**
- * 앱 초기화
- */
+// 앱 초기화
 function initApp() {
   restoreUser();
   initRouter();
@@ -21,9 +16,7 @@ function initApp() {
   });
 }
 
-/**
- * 스플래시 제거 후 앱 시작
- */
+// 스플래시 제거 후 앱 시작
 function finishSplash() {
   const splash = document.getElementById('splash');
   if (splash) {
@@ -39,9 +32,7 @@ function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/**
- * 스플래시 한 프레임 표시 (로티만)
- */
+// 스플래시 한 프레임 표시 (로티만)
 function showSplashFrame(stage, item) {
   stage.innerHTML = '';
   if (typeof window.lottie === 'undefined') return;
@@ -66,10 +57,7 @@ function showSplashFrame(stage, item) {
   }
 }
 
-/**
- * SPLASH_ITEMS 순서대로 각 duration씩 보였다가 넘김. 겹치지 않음.
- * 다 보여준 뒤 앱으로 전환.
- */
+// SPLASH_ITEMS 순서대로 재생 후 앱 전환
 async function runSplashSequence() {
   const stage = document.getElementById('splash-stage');
   if (!stage || !SPLASH_ITEMS || SPLASH_ITEMS.length === 0) {

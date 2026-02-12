@@ -1,22 +1,12 @@
-/**
- * 헤더 컴포넌트
- * 모든 페이지에서 공통으로 사용하는 헤더
- */
+// 헤더 컴포넌트 (모든 페이지 공통)
 
 import { getUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { api } from '../api.js';
 import { safeImageUrl } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../../constants.js';
+import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../config.js';
 
-/**
- * 헤더 렌더링
- * @param {Object} options - 헤더 옵션
- * @param {boolean} options.showBackButton - 뒤로가기 버튼 표시 여부
- * @param {string} options.backButtonHref - 뒤로가기 버튼 클릭 시 이동할 경로 (기본: '/posts')
- * @param {boolean} options.showProfile - 프로필 드롭다운 표시 여부 (기본: true)
- * @returns {string} 헤더 HTML
- */
+// 헤더 렌더링 (options: showBackButton, backButtonHref, showProfile)
 export function renderHeader(options = {}) {
   const {
     showBackButton = false,
@@ -29,11 +19,11 @@ export function renderHeader(options = {}) {
   return `
     <header class="header">
       ${showBackButton ? `
-      <a href="javascript:void(0);" class="btn-back" id="header-back-btn">
+      <button type="button" class="btn-back" id="header-back-btn" aria-label="뒤로 가기">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-      </a>
+      </button>
       ` : ''}
       
       <h1 class="header-title">
@@ -64,12 +54,7 @@ export function renderHeader(options = {}) {
   `;
 }
 
-/**
- * 헤더 이벤트 리스너 초기화
- * 헤더를 렌더링한 후 반드시 호출해야 합니다
- * @param {Object} options - 이벤트 옵션
- * @param {string} options.backButtonHref - 뒤로가기 버튼 클릭 시 이동할 경로 (기본: '/posts')
- */
+// 헤더 이벤트 리스너 초기화 (렌더링 후 반드시 호출, options.backButtonHref)
 export function initHeaderEvents(options = {}) {
   const { backButtonHref = '/posts' } = options;
 
@@ -97,10 +82,7 @@ export function initHeaderEvents(options = {}) {
   }
 }
 
-/**
- * 헤더의 프로필 이미지를 업데이트합니다
- * 회원정보 수정 후 호출하여 헤더의 프로필 이미지를 즉시 반영합니다
- */
+// 헤더 프로필 이미지 업데이트 (회원정보 수정 후 반영)
 export function updateHeaderProfileImage() {
   const profileImg = document.querySelector('.profile-avatar-img');
   if (profileImg) {
@@ -110,9 +92,7 @@ export function updateHeaderProfileImage() {
   }
 }
 
-/**
- * 프로필 드롭다운 이벤트 초기화
- */
+// 프로필 드롭다운 이벤트 초기화
 function initProfileDropdown() {
   const profileBtn = document.getElementById('header-profile-btn');
   const dropdown = document.getElementById('profile-dropdown');

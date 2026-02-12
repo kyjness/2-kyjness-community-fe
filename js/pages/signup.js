@@ -1,15 +1,11 @@
-/**
- * 회원가입 페이지
- */
+// 회원가입 페이지
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail } from '../utils.js';
 
-/**
- * 회원가입 페이지 렌더링
- */
+// 회원가입 페이지 렌더링
 export function renderSignup() {
   const root = document.getElementById('app-root');
 
@@ -116,9 +112,7 @@ export function renderSignup() {
   attachSignupEvents();
 }
 
-/**
- * 회원가입 페이지 이벤트 리스너 등록
- */
+// 회원가입 페이지 이벤트 리스너
 function attachSignupEvents() {
   const form = document.getElementById('form');
   const loginLink = document.getElementById('login-link');
@@ -179,9 +173,7 @@ function attachSignupEvents() {
   }
 }
 
-/**
- * 회원가입 처리
- */
+// 회원가입 처리
 async function handleSignup(e) {
   e.preventDefault();
 

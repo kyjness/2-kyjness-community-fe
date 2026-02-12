@@ -1,12 +1,6 @@
-/**
- * 공통 유틸리티 함수
- */
+// 공통 유틸리티 함수
 
-/**
- * HTML 이스케이프 처리 (XSS 방지)
- * @param {string} text - 이스케이프할 텍스트
- * @returns {string} 이스케이프된 텍스트
- */
+// HTML 이스케이프 (XSS 방지)
 export function escapeHtml(text) {
   if (!text) return '';
 
@@ -15,11 +9,19 @@ export function escapeHtml(text) {
   return div.innerHTML;
 }
 
-/**
- * 날짜 포맷팅 (상대 시간 표시)
- * @param {string} dateString - ISO 날짜 문자열
- * @returns {string} 포맷된 날짜
- */
+// HTML 속성값 이스케이프 (XSS/속성 탈출 방지)
+export function escapeAttr(value) {
+  if (value == null) return '';
+  const s = String(value);
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// 날짜 포맷팅 (상대 시간)
 export function formatDate(dateString) {
   if (!dateString) return '';
 
@@ -48,11 +50,7 @@ export function formatDate(dateString) {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
 }
 
-/**
- * 파일을 Base64로 변환
- * @param {File} file - 변환할 파일
- * @returns {Promise<string>} Base64 문자열
- */
+// 파일을 Base64로 변환
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -62,11 +60,7 @@ export function fileToBase64(file) {
   });
 }
 
-/**
- * 필드별 에러 메시지 표시
- * @param {string} elementId - 에러 메시지를 표시할 요소 ID
- * @param {string} message - 에러 메시지
- */
+// 필드별 에러 메시지 표시 (elementId, message)
 export function showFieldError(elementId, message) {
   const errorElement = document.getElementById(elementId);
   if (errorElement) {
@@ -76,12 +70,7 @@ export function showFieldError(elementId, message) {
   }
 }
 
-/**
- * 백엔드 API 에러 코드를 한글 메시지로 변환
- * @param {string} code - API 응답의 code (예: INVALID_PASSWORD_FORMAT)
- * @param {string} fallback - 매핑 없을 때 사용할 기본 메시지
- * @returns {string}
- */
+// API 에러 코드 → 한글 메시지 (code, fallback)
 export function getApiErrorMessage(code, fallback = '처리에 실패했습니다.') {
   const messages = {
     // 입력 검증
@@ -124,12 +113,7 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
   return messages[code] || fallback;
 }
 
-/**
- * img src에 넣어도 안전한 URL만 허용 (XSS 방지: javascript:, data: 등 차단)
- * @param {string} url - 검사할 URL
- * @param {string} fallback - 허용되지 않을 때 반환할 값
- * @returns {string}
- */
+// 안전한 이미지 URL만 허용 (XSS 방지)
 export function safeImageUrl(url, fallback = '') {
   if (!url || typeof url !== 'string') return fallback;
   const t = url.trim();
@@ -139,16 +123,13 @@ export function safeImageUrl(url, fallback = '') {
   return fallback;
 }
 
-/** 이메일 형식 검증 (간단한 패턴: local@domain.tld) */
+// 이메일 형식 검증
 export function isValidEmail(email) {
   if (!email || typeof email !== 'string') return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-/**
- * textarea auto-grow - 글 쓸수록 내용 칸이 아래로 계속 늘어남
- * 커서가 화면 하단에서 ~100px 위쯤 되면 페이지 스크롤이 따라 내려감
- */
+// textarea auto-grow (글 쓸수록 늘어남, 스크롤 따라감)
 export function autoResizeTextarea(textarea, minHeight = 260) {
   if (!textarea) return;
   const scrollX = window.scrollX;
@@ -172,10 +153,7 @@ export function autoResizeTextarea(textarea, minHeight = 260) {
   }
 }
 
-/**
- * 게시글 작성/수정 textarea에 auto-grow 적용
- * @param {string} selector - textarea 선택자 (예: '#content')
- */
+// textarea auto-grow 적용 (selector 기본 '#content')
 export function initAutoResizeTextarea(selector = '#content') {
   const el = document.getElementById(String(selector).replace(/^#/, '')) ?? document.querySelector(selector);
   if (!el) return;
@@ -184,11 +162,7 @@ export function initAutoResizeTextarea(selector = '#content') {
   el.addEventListener('keyup', resize);
 }
 
-/**
- * 해시 또는 라우터 인자에서 postId 추출
- * @param {string|number|object} param - 라우터 params 또는 해시 파싱 대상
- * @param {{ requireEdit?: boolean }} options - requireEdit: true면 #/posts/1/edit 형태에서만 추출
- */
+// 해시/라우터 인자에서 postId 추출 (options.requireEdit)
 export function resolvePostId(param, options = {}) {
   if (typeof param === 'string' || typeof param === 'number') return String(param);
   if (param && typeof param === 'object') {
@@ -203,9 +177,7 @@ export function resolvePostId(param, options = {}) {
   return parts[1] === 'posts' && parts[2] ? parts[2] : null;
 }
 
-/**
- * 모든 에러 메시지 초기화
- */
+// 모든 에러 메시지 초기화
 export function clearErrors() {
   const errorElements = document.querySelectorAll('.helper-text');
   errorElements.forEach((el) => {
@@ -213,4 +185,16 @@ export function clearErrors() {
     el.classList.remove('has-error');
     el.style.visibility = 'hidden';
   });
+}
+
+// 모달 열기 (공통)
+export function openModal(modal) {
+  if (!modal) return;
+  modal.classList.add('visible');
+}
+
+// 모달 닫기 (공통)
+export function closeModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('visible');
 }

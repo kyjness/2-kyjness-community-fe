@@ -1,7 +1,4 @@
-/**
- * 전역 상태 관리
- * 로그인 유저 정보(표시용)만 관리. 인증은 쿠키/세션으로만 처리하며, 토큰 저장하지 않음.
- */
+// 전역 상태 관리 (로그인 유저 표시용, 인증은 쿠키/세션)
 
 // 전역 상태 객체
 const state = {
@@ -9,24 +6,17 @@ const state = {
   isLoggedIn: false, // 로그인 여부
 };
 
-/**
- * 현재 로그인 상태를 반환합니다
- */
+// 현재 로그인 여부
 export function isLoggedIn() {
   return state.isLoggedIn;
 }
 
-/**
- * 현재 로그인한 사용자 정보를 반환합니다
- */
+// 현재 로그인 사용자 정보
 export function getUser() {
   return state.user;
 }
 
-/**
- * 사용자 정보를 설정하고 로그인 상태로 변경합니다
- * @param {Object} userData - 사용자 정보
- */
+// 사용자 설정 및 로그인 상태로 변경
 export function setUser(userData) {
   state.user = userData;
   state.isLoggedIn = true;
@@ -37,9 +27,7 @@ export function setUser(userData) {
   }
 }
 
-/**
- * 로그아웃 처리 - 사용자 정보를 제거합니다
- */
+// 로그아웃 (사용자 정보 제거)
 export function clearUser() {
   state.user = null;
   state.isLoggedIn = false;
@@ -48,10 +36,7 @@ export function clearUser() {
   localStorage.removeItem('user');
 }
 
-/**
- * 표시용 사용자 정보만 로컬 스토리지에서 복원 (UI용).
- * 실제 인증 여부는 서버(쿠키 세션) 기준. localStorage는 인증 수단이 아님.
- */
+// 로컬 스토리지에서 사용자 정보 복원 (UI용, 인증은 서버 기준)
 export function restoreUser() {
   const userJson = localStorage.getItem('user');
   if (userJson) {
@@ -68,10 +53,7 @@ export function restoreUser() {
   return null;
 }
 
-/**
- * 사용자 정보를 업데이트합니다 (프로필 수정 시 사용)
- * @param {Object} updates - 업데이트할 필드들
- */
+// 사용자 정보 업데이트 (프로필 수정 시)
 export function updateUser(updates) {
   if (state.user) {
     state.user = { ...state.user, ...updates };

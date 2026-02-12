@@ -1,15 +1,11 @@
-/**
- * 비밀번호 변경 페이지
- */
+// 비밀번호 변경 페이지
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, getApiErrorMessage } from '../utils.js';
 
-/**
- * 비밀번호 변경 페이지 렌더링
- */
+// 비밀번호 변경 페이지 렌더링
 export function renderChangePassword() {
   const root = document.getElementById('app-root');
 
@@ -74,9 +70,7 @@ export function renderChangePassword() {
   attachChangePasswordEvents();
 }
 
-/**
- * 비밀번호 변경 페이지 이벤트 리스너 등록
- */
+// 비밀번호 변경 페이지 이벤트 리스너
 function attachChangePasswordEvents() {
   const form = document.getElementById('form');
   if (form) {
@@ -84,9 +78,7 @@ function attachChangePasswordEvents() {
   }
 }
 
-/**
- * 비밀번호 변경 처리
- */
+// 비밀번호 변경 처리
 async function handleChangePassword(e) {
   e.preventDefault();
 

@@ -1,6 +1,4 @@
-/**
- * 게시글 목록 조회 페이지
- */
+// 게시글 목록 조회 페이지
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
@@ -13,9 +11,7 @@ let isLoading = false;
 let hasMore = true;
 const PAGE_SIZE = 10; // 한 번에 불러올 게시글 수
 
-/**
- * 게시글 목록 렌더링
- */
+// 게시글 목록 렌더링
 export async function renderPostList() {
   const root = document.getElementById('app-root');
 
@@ -54,9 +50,7 @@ export async function renderPostList() {
   attachScrollListener();
 }
 
-/**
- * 게시글 목록 불러오기 (페이지네이션 지원)
- */
+// 게시글 목록 불러오기 (페이지네이션)
 async function loadPostList() {
   if (isLoading || !hasMore) return;
 
@@ -123,9 +117,7 @@ async function loadPostList() {
   }
 }
 
-/**
- * 게시글 목록 이벤트 등록
- */
+// 게시글 목록 이벤트 등록
 function attachPostListEvents() {
   const createBtn = document.getElementById('btn-submit');
   const listContainer = document.getElementById('post-card-list');
@@ -151,12 +143,10 @@ function attachPostListEvents() {
   }
 }
 
-/** 무한 스크롤용 스크롤 리스너는 한 번만 등록 (목록 재진입 시 중복 방지) */
+// 무한 스크롤 리스너는 한 번만 등록
 let scrollListenerAttached = false;
 
-/**
- * 스크롤 이벤트 리스너 등록 (무한 스크롤)
- */
+// 스크롤 이벤트 (무한 스크롤)
 function attachScrollListener() {
   if (scrollListenerAttached) return;
   scrollListenerAttached = true;

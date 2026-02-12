@@ -135,9 +135,9 @@ npx http-server . -p 8080
 │   ├── anim1.json, anim2.json, anim3.json   # 스플래시 Lottie
 │   └── imt.png             # 기본 프로필 이미지
 │
-├── constants.js            # 전역 상수 (배포 시 BASE_URL 수정)
 └── js/
     ├── main.js             # 앱 진입점, 스플래시(Lottie) → restoreUser, initRouter, 전역 에러 핸들러
+    ├── config.js           # 프로젝트 설정 (배포 시 BASE_URL 수정)
     ├── router.js           # 해시 라우팅, 인증 검사, Lazy Loading(dynamic import), 404
     ├── api.js              # fetch 래퍼, credentials 포함, 401 시 clearUser·로그인 페이지 이동
     ├── state.js            # 로그인 상태(표시용), localStorage 동기화
@@ -162,7 +162,7 @@ npx http-server . -p 8080
 
 ## 설정
 
-배포 시 **`constants.js`**에서 `BASE_URL`만 실제 API 서버 주소로 수정하면 됩니다. 설명은 constants.js 주석을 참고하면 됩니다.
+배포 시 **`js/config.js`**에서 `BASE_URL`만 실제 API 서버 주소로 수정하면 됩니다. 설명은 config.js 주석을 참고하면 됩니다.
 
 ---
 
@@ -171,11 +171,11 @@ npx http-server . -p 8080
 ### 로컬 실행 시
 
 - [ ] 백엔드(`2-kyjness-community-be`) 실행 (uvicorn 등)
-- [ ] `constants.js`에 `BASE_URL`이 백엔드 주소와 일치하는지 확인
+- [ ] `js/config.js`에 `BASE_URL`이 백엔드 주소와 일치하는지 확인
 - [ ] 웹 서버로 프론트 서빙 (Live Server, `python -m http.server`, `npx http-server` 등)
 - [ ] 브라우저에서 접속 (파일 직접 열기 `file://`은 CORS·모듈 이슈로 동작하지 않을 수 있음)
 
 ### 배포 전
 
-- [ ] `constants.js`의 `BASE_URL`을 실제 API 서버 URL로 변경
+- [ ] `js/config.js`의 `BASE_URL`을 실제 API 서버 URL로 변경
 - [ ] 백엔드 CORS에 배포된 프론트 URL 포함 여부 확인

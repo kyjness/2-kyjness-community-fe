@@ -348,7 +348,7 @@ body {
   cursor: pointer;
 }
 
-/* 뒤로가기 */
+/* 뒤로가기 (button 시맨틱 사용) */
 .btn-back {
   position: absolute;
   left: 25%;
@@ -360,8 +360,11 @@ body {
   align-items: center;
   justify-content: center;
   background-color: transparent;
+  border: none;
   border-radius: 8px;
+  padding: 0;
   text-decoration: none;
+  cursor: pointer;
   z-index: 10;
 }
 

@@ -1,19 +1,15 @@
-/**
- * 게시글 상세 조회 페이지
- */
+// 게시글 상세 조회 페이지
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { getUser } from '../state.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, resolvePostId, getApiErrorMessage, showFieldError, clearErrors, safeImageUrl } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE } from '../../constants.js';
+import { escapeHtml, resolvePostId, getApiErrorMessage, showFieldError, clearErrors, safeImageUrl, openModal, closeModal } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
 
-/**
- * 게시글 상세 페이지 렌더링
- */
+// 게시글 상세 페이지 렌더링
 export async function renderPostDetail(param) {
   const root = document.getElementById('app-root');
   const postId = resolvePostId(param);
@@ -158,17 +154,6 @@ function attachModalEvents(postId) {
   });
 }
 
-/* 모달 열기/닫기 – editProfile.js와 동일 패턴 */
-function openModal(modal) {
-  if (!modal) return;
-  modal.classList.add('visible');
-}
-
-function closeModal(modal) {
-  if (!modal) return;
-  modal.classList.remove('visible');
-}
-
 /* =========================
    게시글 상세 데이터 로딩
    ========================= */
@@ -243,15 +228,13 @@ async function loadPostDetail(postId) {
   }
 }
 
-/** 파일 URL이 비디오인지 여부 (경로에 /video/ 포함 또는 확장자 .mp4, .webm) */
+// 파일 URL이 비디오인지 (경로 /video/ 또는 .mp4, .webm)
 function isVideoFileUrl(url) {
   if (!url || typeof url !== 'string') return false;
   return url.includes('/video/') || /\.(mp4|webm)(\?|$)/i.test(url);
 }
 
-/**
- * 게시글 상세/댓글 DOM 렌더링. postId로 수정·댓글·좋아요 등 동작.
- */
+// 게시글 상세/댓글 DOM 렌더링 (수정·댓글·좋아요 이벤트)
 function renderPostDetailCard(post, comments, postId) {
   const card = document.getElementById('post-detail-card');
   if (!card) return;

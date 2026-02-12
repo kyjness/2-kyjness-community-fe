@@ -1,15 +1,11 @@
-/**
- * 게시글 작성 페이지
- */
+// 게시글 작성 페이지
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage } from '../utils.js';
 
-/**
- * 게시글 작성 페이지 렌더링
- */
+// 게시글 작성 페이지 렌더링
 export function renderNewPost() {
   const root = document.getElementById('app-root');
 
@@ -90,9 +86,7 @@ export function renderNewPost() {
   initAutoResizeTextarea('content');
 }
 
-/**
- * 게시글 작성 페이지 이벤트 리스너 등록
- */
+// 게시글 작성 페이지 이벤트 리스너
 function attachNewPostEvents() {
   const form = document.getElementById('form');
   form.addEventListener('submit', handleNewPost);
@@ -108,9 +102,7 @@ function attachNewPostEvents() {
   }
 }
 
-/**
- * 게시글 작성 처리
- */
+// 게시글 작성 처리
 async function handleNewPost(e) {
   e.preventDefault();
 

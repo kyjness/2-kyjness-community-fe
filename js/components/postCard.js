@@ -1,15 +1,9 @@
-/**
- * 게시글 카드 컴포넌트
- */
+// 게시글 카드 컴포넌트
 
-import { escapeHtml, formatDate, safeImageUrl } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE } from '../../constants.js';
+import { escapeHtml, escapeAttr, formatDate, safeImageUrl } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
-/**
- * 게시글 카드 렌더링
- * @param {Object} post - 게시글 데이터
- * @returns {string} 게시글 카드 HTML
- */
+// 게시글 카드 렌더링
 export function renderPostCard(post) {
   const postId = post.postId || post.id;
   const title = post.title || '제목 없음';
@@ -23,7 +17,7 @@ export function renderPostCard(post) {
   const authorAvatar = safeImageUrl(author.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
 
   return `
-    <div class="post-card" data-id="${postId}">
+    <div class="post-card" data-id="${escapeAttr(postId)}">
       <div class="post-card-header">
         <span class="post-card-title">${escapeHtml(title)}</span>
         <span class="post-card-date">${formatDate(createdAt)}</span>

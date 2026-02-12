@@ -1,18 +1,13 @@
-/**
- * 회원정보 수정 페이지
- */
+// 회원정보 수정 페이지
 
 import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
-import { escapeHtml, getApiErrorMessage } from '../utils.js';
-import { safeImageUrl } from '../utils.js';
-import { DEFAULT_PROFILE_IMAGE } from '../../constants.js';
+import { escapeHtml, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors } from '../utils.js';
+import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
-/**
- * 회원정보 수정 페이지 렌더링
- */
+// 회원정보 수정 페이지 렌더링
 export function renderEditProfile() {
   const root = document.getElementById('app-root');
   const user = getUser();
@@ -138,9 +133,7 @@ export function renderEditProfile() {
   attachEditProfileEvents();
 }
 
-/**
- * 이벤트 등록
- */
+// 이벤트 등록
 function attachEditProfileEvents() {
   const form = document.getElementById('form');
   const avatarArea = document.getElementById('avatar-area');
@@ -207,16 +200,12 @@ function attachEditProfileEvents() {
 
   // 회원 탈퇴 버튼 → 모달 열기
   if (deleteBtn && deleteModal) {
-    deleteBtn.addEventListener('click', () => {
-      openDeleteModal(deleteModal);
-    });
+    deleteBtn.addEventListener('click', () => openModal(deleteModal));
   }
 
   // 모달 취소/확인
   if (deleteModalCancel && deleteModal) {
-    deleteModalCancel.addEventListener('click', () => {
-      closeDeleteModal(deleteModal);
-    });
+    deleteModalCancel.addEventListener('click', () => closeModal(deleteModal));
   }
 
   if (deleteModalConfirm) {
@@ -228,34 +217,29 @@ function attachEditProfileEvents() {
   // 모달 바깥 클릭 시 닫기
   if (deleteModal) {
     deleteModal.addEventListener('click', (e) => {
-      if (e.target === deleteModal) {
-        closeDeleteModal(deleteModal);
-      }
+      if (e.target === deleteModal) closeModal(deleteModal);
     });
   }
 }
 
-/**
- * 회원정보 수정 처리
- */
+// 회원정보 수정 처리
 async function handleProfileUpdate(e) {
   e.preventDefault();
 
-  clearNicknameError();
+  clearErrors();
 
   const nicknameInput = document.getElementById('nickname');
   const nickname = nicknameInput.value.trim();
-  const submitBtn = e.target.querySelector('button[type="submit"]'); // btn-primary
+  const submitBtn = e.target.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
 
   if (!nickname) {
-    showNicknameError('닉네임을 입력해주세요.');
+    showFieldError('nickname-error', '닉네임을 입력해주세요.');
     return;
   }
 
-  // 닉네임 형식 검증 (한글, 영문, 숫자 1~10자)
   if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(nickname)) {
-    showNicknameError(getApiErrorMessage('INVALID_NICKNAME_FORMAT'));
+    showFieldError('nickname-error', getApiErrorMessage('INVALID_NICKNAME_FORMAT'));
     return;
   }
 
@@ -294,44 +278,17 @@ async function handleProfileUpdate(e) {
   }
 }
 
-/**
- * 회원 탈퇴 처리
- */
+// 회원 탈퇴 처리
 async function handleDeleteAccount() {
   const deleteModal = document.getElementById('delete-modal');
 
   try {
     await api.delete('/users/me');
     clearUser();
-    closeDeleteModal(deleteModal);
+    closeModal(deleteModal);
     alert('회원 탈퇴가 완료되었습니다.');
     navigateTo('/signup');
   } catch (error) {
     alert(getApiErrorMessage(error?.code || error?.message, '회원 탈퇴에 실패했습니다.'));
   }
-}
-
-/* 모달 열기/닫기 */
-function openDeleteModal(modal) {
-  modal.classList.add('visible');
-}
-function closeDeleteModal(modal) {
-  modal.classList.remove('visible');
-}
-
-/* 닉네임 에러 헬퍼 */
-function showNicknameError(message) {
-  const el = document.getElementById('nickname-error');
-  if (!el) return;
-  el.textContent = message ? `* ${message}` : '';
-  el.classList.add('has-error');
-  el.style.visibility = 'visible';
-}
-
-function clearNicknameError() {
-  const el = document.getElementById('nickname-error');
-  if (!el) return;
-  el.textContent = '';
-  el.classList.remove('has-error');
-  el.style.visibility = 'hidden';
 }

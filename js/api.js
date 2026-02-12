@@ -1,11 +1,6 @@
-/**
- * 공통 API 클라이언트 (fetch 기반, axios 미사용)
- * - 모든 요청에 credentials: 'include' 필수 (크로스 오리진 쿠키-세션 인증)
- * - 응답 포맷: 성공/실패 공통 { code, data } (실패 시 data === null)
- * - 401 시 clearUser() 후 로그인 페이지로 리다이렉트
- */
+// 공통 API 클라이언트 (fetch, credentials 포함, 401 시 로그인으로 리다이렉트)
 
-import { BASE_URL } from '../constants.js';
+import { BASE_URL } from './config.js';
 import { clearUser } from './state.js';
 import { navigateTo } from './router.js';
 

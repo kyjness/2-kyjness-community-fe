@@ -1,6 +1,4 @@
-/**
- * 로그인 페이지
- */
+// 로그인 페이지
 
 import { api } from '../api.js';
 import { setUser } from '../state.js';
@@ -8,9 +6,7 @@ import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail } from '../utils.js';
 
-/**
- * 로그인 페이지 렌더링
- */
+// 로그인 페이지 렌더링
 export function renderLogin() {
   const root = document.getElementById('app-root');
 
@@ -62,9 +58,7 @@ export function renderLogin() {
   attachLoginEvents();
 }
 
-/**
- * 로그인 페이지 이벤트 리스너 등록
- */
+// 로그인 페이지 이벤트 리스너
 function attachLoginEvents() {
   const form = document.getElementById('form');
   const signupBtn = document.getElementById('signup-btn');
@@ -78,9 +72,7 @@ function attachLoginEvents() {
   });
 }
 
-/**
- * 로그인 처리
- */
+// 로그인 처리
 async function handleLogin(e) {
   e.preventDefault();
 
