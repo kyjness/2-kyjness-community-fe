@@ -48,28 +48,26 @@ export function renderNewPost() {
               <span class="helper-text" id="content-error"></span>
             </div>
 
-            <!-- 이미지 또는 비디오 -->
+            <!-- 이미지 (최대 5장) -->
             <div class="form-group">
-              <label for="image" class="form-label">이미지 또는 비디오</label>
+              <label for="image" class="form-label">이미지 (최대 5장)</label>
 
               <div class="file-input-wrapper">
-                <!-- 실제 파일 input (숨김) -->
                 <input 
                   type="file" 
                   id="image" 
                   name="image"
-                  accept="image/*,video/mp4,video/webm"
+                  accept="image/jpeg,image/jpg,image/png"
+                  multiple
                   class="file-input-hidden"
                 />
 
-                <!-- 디자인된 버튼 -->
                 <label for="image" class="file-input-button">
                   파일 선택
                 </label>
 
-                <!-- 오른쪽 안내 문구 -->
                 <span class="file-input-text" id="file-input-text">
-                  파일을 선택해주세요.
+                  파일을 선택해주세요. (최대 5장)
                 </span>
               </div>
             </div>
@@ -91,13 +89,13 @@ function attachNewPostEvents() {
   const form = document.getElementById('form');
   form.addEventListener('submit', handleNewPost);
 
-  // 파일 선택 시 오른쪽 텍스트 변경
+  // 파일 선택 시 오른쪽 텍스트 변경 (최대 5장)
   const imageInput = document.getElementById('image');
   const fileText = document.getElementById('file-input-text');
   if (imageInput && fileText) {
     imageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      fileText.textContent = file ? file.name : '파일을 선택해주세요.';
+      const files = Array.from(e.target.files || []).slice(0, 5);
+      fileText.textContent = files.length > 0 ? `${files.length}개 파일 선택됨` : '파일을 선택해주세요. (최대 5장)';
     });
   }
 }
@@ -112,7 +110,7 @@ async function handleNewPost(e) {
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
   const imageInput = document.getElementById('image');
-  const imageFile = imageInput?.files?.[0];
+  const imageFiles = Array.from(imageInput?.files || []).slice(0, 5);
 
   let hasError = false;
 
@@ -141,12 +139,19 @@ async function handleNewPost(e) {
     const result = await api.post('/posts', { title, content, fileUrl: '' });
     const postId = result?.data?.postId ?? result?.postId;
 
-    if (imageFile && postId) {
+    for (const file of imageFiles) {
+      if (!postId) break;
       const formData = new FormData();
-      formData.append('postFile', imageFile);
-      const isVideo = imageFile.type && imageFile.type.startsWith('video/');
-      const endpoint = isVideo ? 'video' : 'image';
-      await api.postFormData(`/posts/${postId}/${endpoint}`, formData);
+      formData.append('postFile', file);
+      try {
+        await api.postFormData(`/posts/${postId}/image`, formData);
+      } catch (uploadErr) {
+        if (uploadErr?.code === 'POST_FILE_LIMIT_EXCEEDED') {
+          alert('이미지는 게시글당 최대 5장까지 첨부할 수 있습니다.');
+          break;
+        }
+        throw uploadErr;
+      }
     }
 
     alert('게시글이 작성되었습니다!');

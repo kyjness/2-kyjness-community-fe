@@ -4,10 +4,11 @@ import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { getUser } from '../state.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, resolvePostId, getApiErrorMessage, showFieldError, clearErrors, safeImageUrl, openModal, closeModal } from '../utils.js';
+import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, showFieldError, clearErrors, safeImageUrl, openModal, closeModal } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
+const COMMENT_PAGE_SIZE = 20;
 
 // 게시글 상세 페이지 렌더링
 export async function renderPostDetail(param) {
@@ -85,6 +86,68 @@ export async function renderPostDetail(param) {
     if (card)
       card.innerHTML =
         '<p class="post-list-message">유효하지 않은 게시글입니다.</p>';
+  }
+}
+
+/* =========================
+   댓글 페이지 전환
+   ========================= */
+
+async function loadCommentsPage(postId, page) {
+  const commentList = document.getElementById('comment-list');
+  const commentPagination = document.getElementById('comment-pagination');
+  if (!commentList || !postId) return;
+
+  try {
+    const response = await api.get(`/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}`);
+    const commentsData = response.data || response;
+    const comments = Array.isArray(commentsData) ? commentsData : [];
+    const currentUser = getUser();
+    const totalPages = response.totalPages ?? 1;
+
+    const commentsHTML = comments
+      .map(
+        (c) => `
+      <article class="comment-item" data-comment-id="${c.commentId}">
+        <div class="comment-avatar">
+          <img src="${safeImageUrl(c.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE}" alt="댓글 작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+        </div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <div class="comment-header-left">
+              <span class="comment-author-name">${escapeHtml(c.author?.nickname ?? '')}</span>
+              <span class="comment-date">${escapeHtml(String(c.createdAt ?? ''))}</span>
+            </div>
+            ${
+              currentUser && c.author?.userId === currentUser.userId
+                ? `
+            <div class="detail-action-group">
+              <button type="button" class="detail-action-btn comment-edit-btn" data-comment-id="${c.commentId}">수정</button>
+              <button type="button" class="detail-action-btn comment-delete-btn" data-comment-id="${c.commentId}">삭제</button>
+            </div>
+            `
+                : ''
+            }
+          </div>
+          <p class="comment-content">${escapeHtml(c.content ?? '')}</p>
+        </div>
+      </article>
+    `,
+      )
+      .join('');
+
+    commentList.innerHTML = commentsHTML;
+
+    // 페이지 버튼 active 갱신
+    if (commentPagination) {
+      const btns = commentPagination.querySelectorAll('.comment-page-btn');
+      btns.forEach((b) => {
+        b.classList.toggle('active', parseInt(b.dataset.page, 10) === page);
+      });
+    }
+  } catch (err) {
+    console.warn('댓글 페이지 로드 실패:', err);
+    alert(getApiErrorMessage(err?.code || err?.message, '댓글을 불러오지 못했습니다.'));
   }
 }
 
@@ -187,16 +250,19 @@ async function loadPostDetail(postId) {
       author_profile_image:
         safeImageUrl(postData.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE,
       created_at: postData.createdAt || '',
-      image_url: postData.file?.fileUrl || postData.file?.url || null,
+      files: postData.files || (postData.file ? [postData.file] : []),
       likes: postData.likeCount || 0,
       views: postData.hits || 0,
+      commentCount: postData.commentCount ?? 0,
       isMine: !!(currentUser && postData.author?.userId === currentUser.userId),
     };
 
-    // 댓글 목록 조회
+    // 댓글 목록 조회 (20개 단위 페이지네이션)
     let comments = [];
+    let commentTotalPages = 1;
+    let commentTotalCount = 0;
     try {
-      const commentsResponse = await api.get(`/posts/${postId}/comments`);
+      const commentsResponse = await api.get(`/posts/${postId}/comments?page=1&size=${COMMENT_PAGE_SIZE}`);
       const commentsData = commentsResponse.data || commentsResponse;
       comments = (Array.isArray(commentsData) ? commentsData : []).map(
         (c) => ({
@@ -209,11 +275,13 @@ async function loadPostDetail(postId) {
           isMine: !!(currentUser && c.author?.userId === currentUser.userId),
         }),
       );
+      commentTotalPages = commentsResponse.totalPages ?? 1;
+      commentTotalCount = commentsResponse.totalCount ?? comments.length;
     } catch (commentError) {
       console.warn('댓글 조회 실패:', commentError);
     }
 
-    renderPostDetailCard(normalizedPost, comments, postId);
+    renderPostDetailCard(normalizedPost, comments, postId, 1, commentTotalPages, commentTotalCount);
   } catch (error) {
     console.error('게시글 상세 조회 실패:', error);
     card.innerHTML = `
@@ -228,34 +296,22 @@ async function loadPostDetail(postId) {
   }
 }
 
-// 파일 URL이 비디오인지 (경로 /video/ 또는 .mp4, .webm)
-function isVideoFileUrl(url) {
-  if (!url || typeof url !== 'string') return false;
-  return url.includes('/video/') || /\.(mp4|webm)(\?|$)/i.test(url);
-}
-
 // 게시글 상세/댓글 DOM 렌더링 (수정·댓글·좋아요 이벤트)
-function renderPostDetailCard(post, comments, postId) {
+function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, commentTotalPages = 1, commentTotalCount = 0) {
   const card = document.getElementById('post-detail-card');
   if (!card) return;
 
-  const rawFileUrl = post.image_url;
-  const fileUrl = safeImageUrl(rawFileUrl, '') || '';
-  const isVideo = fileUrl && isVideoFileUrl(fileUrl);
-  const fileBlock =
-    fileUrl && isVideo
-      ? `
-      <div class="post-detail-image-wrapper">
-        <video src="${fileUrl}" controls class="post-detail-image" style="max-width:100%;">지원하지 않는 형식입니다.</video>
+  const files = post.files || [];
+  const fileBlock = files.length > 0
+    ? `
+      <div class="post-detail-images-wrapper">
+        ${files.map((f) => {
+          const url = safeImageUrl(f.fileUrl || f.url, '') || '';
+          return url ? `<div class="post-detail-image-wrapper"><img src="${escapeAttr(url)}" alt="게시글 이미지" class="post-detail-image" /></div>` : '';
+        }).filter(Boolean).join('')}
       </div>
       `
-      : fileUrl
-        ? `
-      <div class="post-detail-image-wrapper">
-        <img src="${fileUrl}" alt="게시글 이미지" class="post-detail-image" />
-      </div>
-      `
-        : '';
+    : '';
 
   card.innerHTML = `
     <section class="post-detail-card">
@@ -306,7 +362,7 @@ function renderPostDetailCard(post, comments, postId) {
           <span class="post-detail-stat-label">조회수</span>
         </div>
         <div class="post-detail-stat-box">
-          <span class="post-detail-stat-count">${comments.length}</span>
+          <span class="post-detail-stat-count">${post.commentCount ?? commentTotalCount}</span>
           <span class="post-detail-stat-label">댓글</span>
         </div>
       </div>
@@ -368,17 +424,36 @@ function renderPostDetailCard(post, comments, postId) {
           )
           .join('')}
       </section>
+      ${
+        commentTotalPages > 1
+          ? `
+      <nav class="comment-pagination" id="comment-pagination" aria-label="댓글 페이지">
+        <ul class="comment-pagination-list">
+          ${Array.from({ length: commentTotalPages }, (_, i) => i + 1)
+            .map(
+              (p) => `
+            <li>
+              <button type="button" class="comment-page-btn ${p === commentCurrentPage ? 'active' : ''}" data-page="${p}">${p}</button>
+            </li>
+          `,
+            )
+            .join('')}
+        </ul>
+      </nav>
+      `
+          : ''
+      }
     </section>
   `;
 
-  attachPostBodyEvents(postId);
+  attachPostBodyEvents(postId, commentTotalPages, commentTotalCount);
 }
 
 /* =========================
    상세 화면 내부 이벤트
    ========================= */
 
-function attachPostBodyEvents(postId) {
+function attachPostBodyEvents(postId, commentTotalPages = 1, commentTotalCount = 0) {
   const postEditBtn = document.getElementById('post-edit-btn');
   const postDeleteBtn = document.getElementById('post-delete-btn');
   const postDeleteModal = document.getElementById('post-delete-modal');
@@ -386,6 +461,18 @@ function attachPostBodyEvents(postId) {
   const commentList = document.getElementById('comment-list');
   const commentDeleteModal = document.getElementById('comment-delete-modal');
   const likeStatBox = document.getElementById('like-stat-box');
+  const commentPagination = document.getElementById('comment-pagination');
+
+  // 댓글 페이지 번호 클릭
+  if (commentPagination && postId && commentTotalPages > 1) {
+    commentPagination.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.comment-page-btn');
+      if (!btn || btn.classList.contains('active')) return;
+      const page = parseInt(btn.dataset.page, 10);
+      if (!page) return;
+      await loadCommentsPage(postId, page);
+    });
+  }
 
   if (postEditBtn && postId) {
     postEditBtn.addEventListener('click', () =>
@@ -414,9 +501,10 @@ function attachPostBodyEvents(postId) {
         console.error('좋아요 실패:', err);
         // 이미 좋아요를 눌렀다면 취소 시도
         try {
-          await api.delete(`/posts/${postId}/likes`);
-          // 좋아요 취소 후 게시글 다시 로드하여 정확한 수치 반영
-          await loadPostDetail(postId);
+          const response = await api.delete(`/posts/${postId}/likes`);
+          if (response.data && response.data.likeCount !== undefined) {
+            likeCountEl.textContent = response.data.likeCount;
+          }
         } catch (deleteErr) {
           console.error('좋아요 취소 실패:', deleteErr);
           alert(getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다.'));

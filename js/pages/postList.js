@@ -66,10 +66,12 @@ async function loadPostList() {
 
   let posts = [];
   let fetchFailed = false;
+  let hasMoreFromApi = false;
   try {
     const response = await api.get(`/posts?page=${currentPage}&size=${PAGE_SIZE}`);
     const postsData = response.data || response;
     posts = Array.isArray(postsData) ? postsData : [];
+    hasMoreFromApi = typeof response.hasMore === 'boolean' ? response.hasMore : posts.length === PAGE_SIZE;
   } catch (e) {
     console.error('게시글 조회 실패:', e);
     fetchFailed = true;
@@ -111,9 +113,7 @@ async function loadPostList() {
       listContainer.insertAdjacentHTML('beforeend', postsHTML);
     }
     currentPage++;
-    if (posts.length < PAGE_SIZE) {
-      hasMore = false;
-    }
+    hasMore = hasMoreFromApi;
   }
 }
 

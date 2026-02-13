@@ -109,6 +109,8 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
     METHOD_NOT_ALLOWED: '허용되지 않은 요청 방식입니다.',
     UNPROCESSABLE_ENTITY: '요청을 처리할 수 없습니다.',
     RATE_LIMIT_EXCEEDED: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    LOGIN_RATE_LIMIT_EXCEEDED: '로그인 시도 횟수가 제한되었습니다. 1분 후 다시 시도해주세요.',
+    POST_FILE_LIMIT_EXCEEDED: '이미지는 게시글당 최대 5장까지 첨부할 수 있습니다.',
   };
   return messages[code] || fallback;
 }

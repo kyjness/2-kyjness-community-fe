@@ -50,26 +50,24 @@ export async function renderEditPost(param) {
               <span class="helper-text" id="content-error"></span>
             </div>
 
-            <!-- 이미지 또는 비디오 -->
+            <!-- 이미지 (최대 5장) -->
             <div class="form-group">
-              <label for="image" class="form-label">이미지 또는 비디오</label>
+              <label for="image" class="form-label">이미지 추가 (최대 5장)</label>
 
               <div class="file-input-wrapper">
-                <!-- 실제 파일 input (숨김) -->
                 <input 
                   type="file" 
                   id="image" 
                   name="image"
-                  accept="image/*,video/mp4,video/webm"
+                  accept="image/jpeg,image/jpg,image/png"
+                  multiple
                   class="file-input-hidden"
                 />
 
-                <!-- 디자인된 버튼 -->
                 <label for="image" class="file-input-button">
                   파일 선택
                 </label>
 
-                <!-- 오른쪽 안내 문구 -->
                 <span class="file-input-text" id="file-input-text"></span>
               </div>
             </div>
@@ -111,17 +109,8 @@ async function fillEditPostForm(postId) {
       autoResizeTextarea(contentInput);
     }
     if (fileText) {
-      const fileName = postData.file?.fileName ?? postData.file?.name ?? postData.fileName ?? null;
-      const fileUrl = postData.file?.fileUrl ?? postData.file?.url ?? postData.image_url ?? null;
-      if (fileName) {
-        fileText.textContent = fileName;
-      } else if (fileUrl) {
-        const urlParts = String(fileUrl).split('/');
-        const extractedName = urlParts[urlParts.length - 1];
-        fileText.textContent = extractedName && extractedName !== 'null' && extractedName !== 'undefined' ? extractedName : '';
-      } else {
-        fileText.textContent = '';
-      }
+      const files = postData.files || (postData.file ? [postData.file] : []);
+      fileText.textContent = files.length > 0 ? `기존 ${files.length}장` : '';
     }
   }
 
@@ -147,13 +136,8 @@ function attachEditPostEvents(postId) {
   const fileText = document.getElementById('file-input-text');
   if (imageInput && fileText) {
     imageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        fileText.textContent = file.name;
-      } else {
-        // 파일 선택 취소 시 기존 파일명이 있으면 유지, 없으면 빈 문자열
-        fileText.textContent = '';
-      }
+      const files = Array.from(e.target.files || []).slice(0, 5);
+      fileText.textContent = files.length > 0 ? `${files.length}개 추가` : '';
     });
   }
 }
@@ -172,7 +156,7 @@ async function handleEditPost(e, postId) {
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
   const imageInput = document.getElementById('image');
-  const imageFile = imageInput?.files?.[0];
+  const imageFiles = Array.from(imageInput?.files || []).slice(0, 5);
 
   let hasError = false;
 
@@ -198,21 +182,21 @@ async function handleEditPost(e, postId) {
     submitBtn.textContent = '수정 중...';
     submitBtn.disabled = true;
 
-    let fileUrl = null;
-    if (imageFile) {
-      const formData = new FormData();
-      formData.append('postFile', imageFile);
-      const isVideo = imageFile.type && imageFile.type.startsWith('video/');
-      const endpoint = isVideo ? 'video' : 'image';
-      const uploadRes = await api.postFormData(`/posts/${postId}/${endpoint}`, formData);
-      fileUrl = uploadRes?.data?.postFileUrl ?? uploadRes?.postFileUrl ?? '';
-    }
+    await api.patch(`/posts/${postId}`, { title, content });
 
-    await api.patch(`/posts/${postId}`, {
-      title,
-      content,
-      ...(fileUrl != null && { fileUrl }),
-    });
+    for (const file of imageFiles) {
+      const formData = new FormData();
+      formData.append('postFile', file);
+      try {
+        await api.postFormData(`/posts/${postId}/image`, formData);
+      } catch (uploadErr) {
+        if (uploadErr?.code === 'POST_FILE_LIMIT_EXCEEDED') {
+          alert('이미지는 게시글당 최대 5장까지 첨부할 수 있습니다.');
+          break;
+        }
+        throw uploadErr;
+      }
+    }
 
     alert('게시글이 수정되었습니다!');
 

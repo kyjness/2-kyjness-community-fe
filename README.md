@@ -10,9 +10,8 @@
 | 기능 | 설명 |
 |------|------|
 | **인증** | 회원가입(프로필 사진 선택 가능), 로그인, 로그아웃. 로그인 상태는 `localStorage`(표시용)와 쿠키(실제 인증)로 유지 |
-| **게시글** | 목록, 상세, 작성, 수정, 삭제 |
-| **댓글** | 보기, 작성, 수정, 삭제 |
-| **좋아요** | 게시글 좋아요 추가/취소 |
+| **게시글** | 목록(무한 스크롤), 상세, 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
+| **댓글** | 보기(20개 단위 페이지 번호), 작성, 수정, 삭제 |
 | **프로필** | 회원가입 시 또는 회원정보수정에서 닉네임·프로필 이미지 설정, 비밀번호 변경 |
 
 ---
@@ -26,6 +25,46 @@
 | **프론트** | HTML5, CSS3, JavaScript (ES6+, ES Modules, `async/await`, `fetch`) |
 | **백엔드** | FastAPI (PuppyTalk API) |
 | **브라우저** | ES Modules 지원 브라우저 (Chrome, Firefox, Safari, Edge 최신 버전) |
+
+---
+
+## 폴더 구조
+
+```
+2-kyjness-community-fe/
+│
+├── index.html              # SPA 단일 HTML
+│
+├── css/
+│   ├── base.css            # 공통 스타일 (리셋, 폰트, 폼, 버튼, 헤더, 모달)
+│   └── app.css             # 페이지별 스타일 (목록, 상세, 작성, 반응형)
+│
+├── img/
+│   ├── anim1.json, anim2.json, anim3.json   # 스플래시 애니메이션 (Lottie)
+│   └── imt.png             # 기본 프로필 이미지
+│
+└── js/
+    ├── main.js             # 앱 진입점 (스플래시 → 라우터 초기화)
+    ├── config.js           # API 주소 등 설정
+    ├── router.js           # 해시 라우팅, 인증 검사, 페이지 로드
+    ├── api.js              # API 호출 (fetch 래퍼, 401 시 로그인 이동)
+    ├── state.js            # 로그인 상태 관리
+    ├── utils.js            # 날짜 포맷, 에러 메시지, 입력 검증 등
+    │
+    ├── pages/              # 화면별 페이지
+    │   ├── login.js        # 로그인
+    │   ├── signup.js       # 회원가입
+    │   ├── postList.js     # 게시글 목록 (무한 스크롤)
+    │   ├── postDetail.js   # 게시글 상세 (댓글, 좋아요, 수정·삭제)
+    │   ├── newPost.js      # 게시글 작성
+    │   ├── editPost.js     # 게시글 수정
+    │   ├── editProfile.js  # 회원정보 수정
+    │   └── changePassword.js   # 비밀번호 변경
+    │
+    └── components/         # 재사용 컴포넌트
+        ├── header.js       # 공통 헤더
+        └── postCard.js     # 게시글 카드
+```
 
 ---
 
@@ -100,7 +139,7 @@ npx http-server . -p 8080
 [화면 갱신]
 ```
 
-### 2. 설계 배경 (선택 이유)
+### 2. 설계 배경
 
 | 선택 | 이유 |
 |------|------|
@@ -109,6 +148,7 @@ npx http-server . -p 8080
 | **인증은 라우터에서** | 인증 필요 경로가 다수일 때 페이지마다 검사하면 중복·누락이 생깁니다. 라우터에서 인증 필요 경로를 일괄 검사하여 접근 제어를 일관되게 하고, 수정 시 한 곳만 보면 되도록 했습니다. |
 | **페이지별 Lazy Loading** | 전체 페이지 모듈을 초기 로드하면 첫 화면 로딩이 길어집니다. 경로 진입 시 해당 페이지만 동적 import하여 초기 로딩 시간과 번들 크기를 줄였습니다. |
 | **페이지 = 렌더 + 이벤트** | 해당 화면의 렌더와 이벤트를 한 모듈에 두어, 구조와 동작을 한 곳에서 관리하고 응집도를 높였습니다. |
+| **무한 스크롤 vs 페이지네이션** | 게시글 목록은 피드 형태로 스크롤하며 읽는 UX가 자연스럽고, 다음 페이지 클릭 없이 계속 로드 가능. 커뮤니티 피드는 새 글 보는 흐름이 중요해 무한 스크롤 선택. 댓글은 "몇 페이지인지", "총 몇 개인지"가 중요해 페이지 번호 버튼 선택. 특정 댓글 찾기·목록 전체 파악이 용이함. |
 
 ### 3. 프론트 ↔ 백엔드
 
@@ -117,46 +157,8 @@ npx http-server . -p 8080
 | 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id` 쿠키로 사용자 식별 |
 | API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
 | 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
-
----
-
-## 폴더 구조
-
-```
-2-kyjness-community-fe/
-│
-├── index.html              # SPA 단일 HTML, 스플래시·app-root, CSS/JS·Lottie 로드
-│
-├── css/
-│   ├── base.css            # 리셋, 폰트, 폼, 버튼, 헤더, 모달
-│   └── app.css             # 목록, 상세, 회원정보수정, 작성, 반응형
-│
-├── img/
-│   ├── anim1.json, anim2.json, anim3.json   # 스플래시 Lottie
-│   └── imt.png             # 기본 프로필 이미지
-│
-└── js/
-    ├── main.js             # 앱 진입점, 스플래시(Lottie) → restoreUser, initRouter, 전역 에러 핸들러
-    ├── config.js           # 프로젝트 설정 (배포 시 BASE_URL 수정)
-    ├── router.js           # 해시 라우팅, 인증 검사, Lazy Loading(dynamic import), 404
-    ├── api.js              # fetch 래퍼, credentials 포함, 401 시 clearUser·로그인 페이지 이동
-    ├── state.js            # 로그인 상태(표시용), localStorage 동기화
-    ├── utils.js            # 날짜 포맷, 에러 메시지, escapeHtml, safeImageUrl, clearErrors 등
-    │
-    ├── pages/
-    │   ├── login.js        # 로그인
-    │   ├── signup.js       # 회원가입 (프로필 사진 업로드 후 가입)
-    │   ├── postList.js     # 게시글 목록, 무한 스크롤
-    │   ├── postDetail.js   # 게시글 상세, 댓글·좋아요·수정·삭제
-    │   ├── newPost.js      # 게시글 작성
-    │   ├── editPost.js     # 게시글 수정
-    │   ├── editProfile.js  # 회원정보 수정, 프로필 이미지·닉네임
-    │   └── changePassword.js   # 비밀번호 변경
-    │
-    └── components/
-        ├── header.js       # 공통 헤더 (뒤로가기, 제목, 프로필 드롭다운)
-        └── postCard.js     # 게시글 카드 (목록용)
-```
+| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /posts?page=&size=` → `{ data, hasMore }` |
+| 댓글 목록 | `GET /posts/{id}/comments?page=&size=20`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
 
 ---
 
@@ -179,3 +181,19 @@ npx http-server . -p 8080
 
 - [ ] `js/config.js`의 `BASE_URL`을 실제 API 서버 URL로 변경
 - [ ] 백엔드 CORS에 배포된 프론트 URL 포함 여부 확인
+
+---
+
+## 확장 전략
+
+### 기능
+
+- **검색/필터**: 견종·지역·태그로 게시글 검색
+- **신고/차단**: 게시글 신고, 사용자 차단 (차단한 사람 글 숨김)
+- **알림**: 내 글에 댓글 달리면 알림 리스트
+- **관리자**: 신고 누적 글 숨김, 유저 제재 (ROLE 기반)
+
+### 인프라 (규모 확대 시)
+
+- **캐시 (Redis)**: 인기 게시글·댓글 캐싱
+- **메시지 큐**: 알림·이미지 처리 등 비동기 작업
