@@ -249,23 +249,24 @@ async function handleProfileUpdate(e) {
     submitBtn.disabled = true;
     submitBtn.textContent = '수정 중...';
 
-    let profileImageUrl = user?.profileImageUrl;
+    let profileImageId = null;
 
-    // 프로필 이미지 선택된 경우 먼저 업로드 (POST /users/me/profile-image)
+    // 프로필 이미지 선택된 경우 먼저 업로드 (POST /v1/media/images) 후 profileImageId 전달
     const file = document.getElementById('profile-image').files[0];
     if (file) {
       const formData = new FormData();
-      formData.append('profileImage', file);
-      const uploadRes = await api.postFormData('/users/me/profile-image', formData);
-      profileImageUrl = uploadRes?.data?.profileImageUrl ?? uploadRes?.profileImageUrl;
+      formData.append('image', file);
+      const uploadRes = await api.postFormData('/media/images?type=profile', formData);
+      profileImageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
     }
 
     const payload = { nickname };
-    if (profileImageUrl != null) payload.profileImageUrl = profileImageUrl;
+    if (profileImageId != null) payload.profileImageId = profileImageId;
 
     await api.patch('/users/me', payload);
 
-    setUser({ ...user, nickname, profileImageUrl });
+    const meRes = await api.get('/users/me');
+    setUser(meRes?.data ?? user);
     updateHeaderProfileImage();
 
     alert('회원정보가 수정되었습니다.');

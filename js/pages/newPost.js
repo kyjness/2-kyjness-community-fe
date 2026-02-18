@@ -136,23 +136,17 @@ async function handleNewPost(e) {
     submitBtn.textContent = '작성 중...';
     submitBtn.disabled = true;
 
-    const result = await api.post('/posts', { title, content, fileUrl: '' });
-    const postId = result?.data?.postId ?? result?.postId;
-
-    for (const file of imageFiles) {
-      if (!postId) break;
+    const imageIds = [];
+    for (const file of imageFiles.slice(0, 5)) {
       const formData = new FormData();
-      formData.append('postFile', file);
-      try {
-        await api.postFormData(`/posts/${postId}/image`, formData);
-      } catch (uploadErr) {
-        if (uploadErr?.code === 'POST_FILE_LIMIT_EXCEEDED') {
-          alert('이미지는 게시글당 최대 5장까지 첨부할 수 있습니다.');
-          break;
-        }
-        throw uploadErr;
-      }
+      formData.append('image', file);
+      const uploadRes = await api.postFormData('/media/images?type=post', formData);
+      const id = uploadRes?.data?.imageId ?? uploadRes?.imageId;
+      if (id != null) imageIds.push(id);
     }
+
+    const result = await api.post('/posts', { title, content, imageIds: imageIds.length ? imageIds : undefined });
+    const postId = result?.data?.postId ?? result?.postId;
 
     alert('게시글이 작성되었습니다!');
     if (postId) {

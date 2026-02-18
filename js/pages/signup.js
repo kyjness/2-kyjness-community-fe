@@ -234,13 +234,13 @@ async function handleSignup(e) {
     submitBtn.textContent = '회원가입 중...';
     submitBtn.disabled = true;
 
-    let profileImageUrl = null;
+    let profileImageId = null;
     const profileInput = document.getElementById('profile-image');
     if (profileInput?.files?.[0]) {
       const formData = new FormData();
-      formData.append('profileImage', profileInput.files[0]);
-      const uploadRes = await api.postFormData('/auth/upload-signup-profile-image', formData);
-      profileImageUrl = uploadRes?.data?.profileImageUrl ?? uploadRes?.profileImageUrl ?? null;
+      formData.append('image', profileInput.files[0]);
+      const uploadRes = await api.postFormData('/media/images?type=profile', formData);
+      profileImageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
     }
 
     const signupData = {
@@ -249,7 +249,7 @@ async function handleSignup(e) {
       passwordConfirm,
       nickname,
     };
-    if (profileImageUrl) signupData.profileImageUrl = profileImageUrl;
+    if (profileImageId != null) signupData.profileImageId = profileImageId;
 
     await api.post('/auth/signup', signupData);
 

@@ -1,4 +1,6 @@
 // 게시글 수정 페이지
+/** 수정 폼 로드 시 채워지는 기존 이미지 ID 목록. 제출 시 새 이미지와 합쳐서 전송 */
+let existingPostImageIds = [];
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
@@ -108,8 +110,9 @@ async function fillEditPostForm(postId) {
       contentInput.value = postData.content ?? '';
       autoResizeTextarea(contentInput);
     }
+    const files = postData.files || (postData.file ? [postData.file] : []);
+    existingPostImageIds = files.map((f) => f.imageId).filter((id) => id != null);
     if (fileText) {
-      const files = postData.files || (postData.file ? [postData.file] : []);
       fileText.textContent = files.length > 0 ? `기존 ${files.length}장` : '';
     }
   }
@@ -182,21 +185,20 @@ async function handleEditPost(e, postId) {
     submitBtn.textContent = '수정 중...';
     submitBtn.disabled = true;
 
-    await api.patch(`/posts/${postId}`, { title, content });
-
-    for (const file of imageFiles) {
+    const newImageIds = [];
+    for (const file of imageFiles.slice(0, 5)) {
       const formData = new FormData();
-      formData.append('postFile', file);
-      try {
-        await api.postFormData(`/posts/${postId}/image`, formData);
-      } catch (uploadErr) {
-        if (uploadErr?.code === 'POST_FILE_LIMIT_EXCEEDED') {
-          alert('이미지는 게시글당 최대 5장까지 첨부할 수 있습니다.');
-          break;
-        }
-        throw uploadErr;
-      }
+      formData.append('image', file);
+      const uploadRes = await api.postFormData('/media/images?type=post', formData);
+      const id = uploadRes?.data?.imageId ?? uploadRes?.imageId;
+      if (id != null) newImageIds.push(id);
     }
+    // 기존 이미지 + 새 이미지 (아래에 추가), 최대 5장
+    const imageIds = [...existingPostImageIds, ...newImageIds].slice(0, 5);
+    const payload = { title, content };
+    if (imageIds.length > 0) payload.imageIds = imageIds;
+
+    await api.patch(`/posts/${postId}`, payload);
 
     alert('게시글이 수정되었습니다!');
 

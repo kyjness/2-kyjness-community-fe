@@ -1,8 +1,10 @@
-// 앱 진입점 (스플래시 후 앱 초기화)
+// 앱 진입점 (스플래시는 웹사이트 최초 진입 시에만, 새로고침/다른 페이지에서 돌아와도 재생 안 함)
 
 import { restoreUser } from './state.js';
 import { initRouter } from './router.js';
 import { SPLASH_ITEMS } from './config.js';
+
+const SPLASH_SHOWN_KEY = 'splashShown';
 
 // 앱 초기화
 function initApp() {
@@ -16,8 +18,11 @@ function initApp() {
   });
 }
 
-// 스플래시 제거 후 앱 시작
+// 스플래시 제거 후 앱 시작 (최초 1회만 스플래시 재생했음을 기록)
 function finishSplash() {
+  try {
+    sessionStorage.setItem(SPLASH_SHOWN_KEY, '1');
+  } catch (_) {}
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('hide');
@@ -72,5 +77,12 @@ async function runSplashSequence() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  runSplashSequence();
+  // 웹사이트 최초 진입 시에만 스플래시(로티) 재생. 새로고침·회원정보수정/비밀번호수정 후 복귀 시에는 스킵
+  if (sessionStorage.getItem(SPLASH_SHOWN_KEY)) {
+    const splash = document.getElementById('splash');
+    if (splash) splash.remove();
+    initApp();
+  } else {
+    runSplashSequence();
+  }
 });

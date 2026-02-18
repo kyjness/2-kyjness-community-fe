@@ -16,8 +16,6 @@
 | **게시글 (Posts)** | 목록(무한 스크롤), 상세, 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
 | **댓글 (Comments)** | 게시글별 댓글 보기(20개 단위 페이지 번호), 작성, 수정, 삭제 |
 
----
-
 ### 기술 스택
 
 | 구분 | 기술 |
@@ -27,8 +25,6 @@
 | **프론트** | HTML5, CSS3, JavaScript (ES6+, ES Modules, `async/await`, `fetch`) |
 | **백엔드** | FastAPI (PuppyTalk API) |
 | **브라우저** | ES Modules 지원 브라우저 (Chrome, Firefox, Safari, Edge 최신 버전) |
-
----
 
 ### 인증·API 연동
 
@@ -50,15 +46,17 @@
 
 ## API 연동
 
-프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다.
+프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.**
 
 | 항목 | 프론트 | 백엔드 |
 |------|--------|--------|
 | 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id` 쿠키로 사용자 식별 |
 | API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
 | 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
-| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /posts?page=&size=` → `{ data, hasMore }` |
-| 댓글 목록 | `GET /posts/{id}/comments?page=&size=20`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
+| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data, hasMore }` |
+| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=20`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
+
+---
 
 ## 폴더 구조
 
@@ -97,6 +95,8 @@
         ├── header.js       # 공통 헤더
         └── postCard.js     # 게시글 카드
 ```
+
+---
 
 ## 전체 흐름
 
