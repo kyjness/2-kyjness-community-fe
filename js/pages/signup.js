@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail } from '../utils.js';
+import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail, validatePassword, validateNickname } from '../utils.js';
 
 // 회원가입 페이지 렌더링
 export function renderSignup() {
@@ -198,30 +198,18 @@ async function handleSignup(e) {
     hasError = true;
   }
 
-  if (!password) {
-    showFieldError('password-error', '비밀번호를 입력해주세요.');
-    hasError = true;
-  } else if (password.length < 8 || password.length > 20) {
-    showFieldError('password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
-    hasError = true;
-  } else if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(password)) {
-    showFieldError('password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) {
+    showFieldError('password-error', passwordCheck.message);
     hasError = true;
   }
-
   if (password !== passwordConfirm) {
-    showFieldError(
-      'password-confirm-error',
-      '비밀번호가 일치하지 않습니다.',
-    );
+    showFieldError('password-confirm-error', '비밀번호가 일치하지 않습니다.');
     hasError = true;
   }
-
-  if (!nickname) {
-    showFieldError('nickname-error', '닉네임을 입력해주세요.');
-    hasError = true;
-  } else if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(nickname.trim())) {
-    showFieldError('nickname-error', getApiErrorMessage('INVALID_NICKNAME_FORMAT'));
+  const nicknameCheck = validateNickname(nickname);
+  if (!nicknameCheck.ok) {
+    showFieldError('nickname-error', nicknameCheck.message);
     hasError = true;
   }
 

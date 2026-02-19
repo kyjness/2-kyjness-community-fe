@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, getApiErrorMessage } from '../utils.js';
+import { showFieldError, clearErrors, getApiErrorMessage, validatePassword } from '../utils.js';
 
 // 비밀번호 변경 페이지 렌더링
 export function renderChangePassword() {
@@ -96,14 +96,9 @@ async function handleChangePassword(e) {
     hasError = true;
   }
 
-  if (!newPassword) {
-    showFieldError('new-password-error', '새 비밀번호를 입력해주세요.');
-    hasError = true;
-  } else if (newPassword.length < 8 || newPassword.length > 20) {
-    showFieldError('new-password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
-    hasError = true;
-  } else if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(newPassword)) {
-    showFieldError('new-password-error', getApiErrorMessage('INVALID_PASSWORD_FORMAT'));
+  const newPasswordCheck = validatePassword(newPassword);
+  if (!newPasswordCheck.ok) {
+    showFieldError('new-password-error', newPasswordCheck.message);
     hasError = true;
   }
 

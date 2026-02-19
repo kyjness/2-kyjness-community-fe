@@ -390,9 +390,11 @@
   gap: 12px;
 }
 
-/* 댓글 페이지네이션 (20개 단위) */
+/* 댓글 페이지네이션 (10개 단위) */
 .comment-pagination {
   margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .comment-pagination-list {
@@ -402,6 +404,7 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  justify-content: center;
 }
 
 .comment-page-btn {
@@ -578,6 +581,55 @@
   font-size: 12px;
   font-family: 'Pretendard';
   color: #000000;
+}
+
+/* 내용 영역 이미지 미리보기 (작성/수정 공통) */
+.post-image-preview {
+  display: none;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+.post-image-preview.has-images {
+  display: flex;
+}
+.post-image-preview-item {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eee;
+  flex-shrink: 0;
+}
+.post-image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.post-image-preview-item .post-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.post-image-preview-item .post-image-remove:hover {
+  background: rgba(0, 0, 0, 0.85);
 }
 
 /* ============================================

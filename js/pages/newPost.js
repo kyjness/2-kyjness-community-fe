@@ -1,9 +1,11 @@
 // 게시글 작성 페이지
+/** 새로 선택한 파일 목록 (미리보기 objectUrl + 제출 시 업로드) */
+let newPreviewFiles = [];
 
 import { api } from '../api.js';
-import { navigateTo } from '../router.js';
+import { navigateTo, route } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage } from '../utils.js';
+import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage, validatePostTitle, validatePostContent } from '../utils.js';
 
 // 게시글 작성 페이지 렌더링
 export function renderNewPost() {
@@ -45,6 +47,7 @@ export function renderNewPost() {
                 placeholder="내용을 입력해주세요."
                 required
               ></textarea>
+              <div id="post-image-preview" class="post-image-preview" aria-label="첨부 이미지 미리보기"></div>
               <span class="helper-text" id="content-error"></span>
             </div>
 
@@ -67,7 +70,7 @@ export function renderNewPost() {
                 </label>
 
                 <span class="file-input-text" id="file-input-text">
-                  파일을 선택해주세요. (최대 5장)
+                  파일을 선택해주세요.
                 </span>
               </div>
             </div>
@@ -84,18 +87,59 @@ export function renderNewPost() {
   initAutoResizeTextarea('content');
 }
 
+// 내용 영역 이미지 미리보기 (새로 선택한 파일만, 오른쪽 위 X로 제거)
+function renderImagePreviews() {
+  const container = document.getElementById('post-image-preview');
+  if (!container) return;
+  const items = (newPreviewFiles || []).map(
+    (item, i) =>
+      `<div class="post-image-preview-item" data-type="new" data-index="${i}">
+        <img src="${item.objectUrl}" alt="새 이미지" />
+        <button type="button" class="post-image-remove" aria-label="이미지 제거">×</button>
+      </div>`
+  );
+  container.innerHTML = items.join('');
+  container.classList.toggle('has-images', items.length > 0);
+}
+
 // 게시글 작성 페이지 이벤트 리스너
 function attachNewPostEvents() {
   const form = document.getElementById('form');
   form.addEventListener('submit', handleNewPost);
 
-  // 파일 선택 시 오른쪽 텍스트 변경 (최대 5장)
   const imageInput = document.getElementById('image');
   const fileText = document.getElementById('file-input-text');
+  const previewContainer = document.getElementById('post-image-preview');
+  const maxTotal = 5;
+
+  if (previewContainer) {
+    previewContainer.addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('.post-image-remove');
+      if (!removeBtn) return;
+      const item = removeBtn.closest('.post-image-preview-item');
+      if (!item) return;
+      e.preventDefault();
+      const index = parseInt(item.dataset.index, 10);
+      const entry = newPreviewFiles[index];
+      if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+      newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index);
+      renderImagePreviews();
+      if (fileText) {
+        fileText.textContent = newPreviewFiles.length > 0 ? `총 ${newPreviewFiles.length}장` : '파일을 선택해주세요.';
+      }
+    });
+  }
+
   if (imageInput && fileText) {
     imageInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files || []).slice(0, 5);
-      fileText.textContent = files.length > 0 ? `${files.length}개 파일 선택됨` : '파일을 선택해주세요. (최대 5장)';
+      const added = Array.from(e.target.files || []).slice(0, maxTotal - newPreviewFiles.length);
+      for (const file of added) {
+        if (newPreviewFiles.length >= maxTotal) break;
+        newPreviewFiles.push({ file, objectUrl: URL.createObjectURL(file) });
+      }
+      imageInput.value = '';
+      renderImagePreviews();
+      fileText.textContent = newPreviewFiles.length > 0 ? `총 ${newPreviewFiles.length}장` : '파일을 선택해주세요.';
     });
   }
 }
@@ -109,25 +153,18 @@ async function handleNewPost(e) {
   const form = e.target;
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
-  const imageInput = document.getElementById('image');
-  const imageFiles = Array.from(imageInput?.files || []).slice(0, 5);
+  const imageFiles = (newPreviewFiles || []).map((item) => item.file).filter(Boolean);
 
-  let hasError = false;
-
-  if (!title) {
-    showFieldError('title-error', '제목을 입력해주세요.');
-    hasError = true;
-  } else if (title.length > 26) {
-    showFieldError('title-error', '제목은 26자 이하여야 합니다.');
-    hasError = true;
+  const titleCheck = validatePostTitle(title);
+  if (!titleCheck.ok) {
+    showFieldError('title-error', titleCheck.message);
+    return;
   }
-
-  if (!content) {
-    showFieldError('content-error', '내용을 입력해주세요.');
-    hasError = true;
+  const contentCheck = validatePostContent(content);
+  if (!contentCheck.ok) {
+    showFieldError('content-error', contentCheck.message);
+    return;
   }
-
-  if (hasError) return;
 
   const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;
@@ -146,13 +183,16 @@ async function handleNewPost(e) {
     }
 
     const result = await api.post('/posts', { title, content, imageIds: imageIds.length ? imageIds : undefined });
-    const postId = result?.data?.postId ?? result?.postId;
+    const postId = result?.data?.postId ?? result?.postId ?? null;
+    const id = postId != null && postId !== '' ? String(postId) : null;
 
     alert('게시글이 작성되었습니다!');
-    if (postId) {
-      navigateTo(`/posts/${postId}`);
+    if (id) {
+      navigateTo(`/posts/${id}`);
+      await route();
     } else {
       navigateTo('/posts');
+      await route();
     }
   } catch (error) {
     const msg = getApiErrorMessage(error?.code || error?.message, '게시글 작성에 실패했습니다.');

@@ -4,9 +4,6 @@
 // 백엔드에서 BE_API_URL 바꾸면 여기도 같은 호스트로 맞춰 수정 (예: BE_API_URL=http://127.0.0.1:8000 → 아래도 127.0.0.1:8000)
 export const BASE_URL = 'http://127.0.0.1:8000/v1';
 
-// 이미지/애니 리소스는 모두 img/ 폴더 기준
-export const IMG_PATH = './img';
-
 // 기본 프로필 이미지 경로
 export const DEFAULT_PROFILE_IMAGE = './img/imt.png';
 

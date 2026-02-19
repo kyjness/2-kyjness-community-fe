@@ -52,11 +52,3 @@ export function restoreUser() {
   }
   return null;
 }
-
-// 사용자 정보 업데이트 (프로필 수정 시)
-export function updateUser(updates) {
-  if (state.user) {
-    state.user = { ...state.user, ...updates };
-    localStorage.setItem('user', JSON.stringify(state.user));
-  }
-}

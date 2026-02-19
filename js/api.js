@@ -4,9 +4,9 @@ import { BASE_URL } from './config.js';
 import { clearUser } from './state.js';
 import { navigateTo } from './router.js';
 
-function getDefaultHeaders(isFormData) {
-  if (isFormData) return {};
-  return { 'Content-Type': 'application/json' };
+function getDefaultHeaders(isFormData, extra = {}) {
+  if (isFormData) return { ...extra };
+  return { 'Content-Type': 'application/json', ...extra };
 }
 
 async function handleResponse(response) {
@@ -37,11 +37,11 @@ export const api = {
     return handleResponse(response);
   },
 
-  async post(endpoint, data) {
+  async post(endpoint, data, options = {}) {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',
       credentials: 'include',
-      headers: getDefaultHeaders(false),
+      headers: getDefaultHeaders(false, options.headers),
       body: data != null ? JSON.stringify(data) : undefined,
     });
     return handleResponse(response);
@@ -57,16 +57,6 @@ export const api = {
     return handleResponse(response);
   },
 
-  async put(endpoint, data) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: getDefaultHeaders(false),
-      body: data != null ? JSON.stringify(data) : undefined,
-    });
-    return handleResponse(response);
-  },
-
   async patch(endpoint, data) {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'PATCH',
@@ -77,11 +67,11 @@ export const api = {
     return handleResponse(response);
   },
 
-  async delete(endpoint) {
+  async delete(endpoint, options = {}) {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'DELETE',
       credentials: 'include',
-      headers: getDefaultHeaders(false),
+      headers: getDefaultHeaders(false, options.headers),
     });
     if (response.status === 204) return { code: 'OK', data: null };
     return handleResponse(response);

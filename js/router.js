@@ -36,6 +36,9 @@ const authRequiredRoutes = [
   '/posts/new',
 ];
 
+// 첫 route() 호출 여부 (조회수: 상세 새로고침/직접URL 진입 감지)
+let isFirstRoute = true;
+
 // URL 해시 파싱 (#/posts/123 -> path, params)
 function parseHash() {
   const hash = window.location.hash.slice(1) || '/';
@@ -64,6 +67,8 @@ function parseHash() {
 // 라우팅 처리 (Lazy Loading)
 export async function route() {
   const { path, params } = parseHash();
+  const firstRoutePath = isFirstRoute ? path : null;
+  if (isFirstRoute) isFirstRoute = false;
   const load = routeLoaders[path];
 
   if (authRequiredRoutes.includes(path) && !isLoggedIn()) {
@@ -81,7 +86,7 @@ export async function route() {
       const mod = await load();
       const renderFn = mod[renderKeys[path]];
       if (typeof renderFn === 'function') {
-        await renderFn(params);
+        await renderFn({ ...params, _firstRoutePath: firstRoutePath });
       } else {
         render404();
       }

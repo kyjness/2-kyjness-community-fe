@@ -54,16 +54,20 @@ export function renderHeader(options = {}) {
   `;
 }
 
-// 헤더 이벤트 리스너 초기화 (렌더링 후 반드시 호출, options.backButtonHref)
+// 헤더 이벤트 리스너 초기화 (렌더링 후 반드시 호출, options.backButtonHref, options.backButtonOnClick)
 export function initHeaderEvents(options = {}) {
-  const { backButtonHref = '/posts' } = options;
+  const { backButtonHref = '/posts', backButtonOnClick } = options;
 
   // 뒤로가기 버튼
   const backBtn = document.getElementById('header-back-btn');
   if (backBtn) {
     backBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      navigateTo(backButtonHref);
+      if (typeof backButtonOnClick === 'function') {
+        backButtonOnClick();
+      } else {
+        navigateTo(backButtonHref);
+      }
     });
   }
 

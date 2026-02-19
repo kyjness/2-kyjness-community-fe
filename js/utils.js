@@ -50,16 +50,6 @@ export function formatDate(dateString) {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// 파일을 Base64로 변환
-export function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 // 필드별 에러 메시지 표시 (elementId, message)
 export function showFieldError(elementId, message) {
   const errorElement = document.getElementById(elementId);
@@ -98,6 +88,7 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
     POST_NOT_FOUND: '게시글을 찾을 수 없습니다.',
     COMMENT_NOT_FOUND: '댓글을 찾을 수 없습니다.',
     LIKE_NOT_FOUND: '좋아요를 찾을 수 없습니다.',
+    ALREADY_LIKED: '이미 좋아요를 누르셨습니다.',
     // 파일
     INVALID_FILE_TYPE: '지원하지 않는 파일 형식입니다.',
     INVALID_IMAGE_FILE: '유효하지 않은 이미지 파일입니다.',
@@ -129,6 +120,38 @@ export function safeImageUrl(url, fallback = '') {
 export function isValidEmail(email) {
   if (!email || typeof email !== 'string') return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+// 게시글 제목 검증 (필수, 최대 26자)
+export function validatePostTitle(title) {
+  const t = (title ?? '').trim();
+  if (!t) return { ok: false, message: '제목을 입력해주세요.' };
+  if (t.length > 26) return { ok: false, message: '제목은 26자 이하여야 합니다.' };
+  return { ok: true };
+}
+
+// 게시글 내용 검증 (필수)
+export function validatePostContent(content) {
+  if (!(content ?? '').trim()) return { ok: false, message: '내용을 입력해주세요.' };
+  return { ok: true };
+}
+
+// 비밀번호 형식 검증 (8~20자, 영대/소/숫자/특수문자 각 1자 이상)
+export function validatePassword(value) {
+  if (!value || typeof value !== 'string') return { ok: false, message: '비밀번호를 입력해주세요.' };
+  const v = value.trim();
+  if (v.length < 8 || v.length > 20) return { ok: false, message: getApiErrorMessage('INVALID_PASSWORD_FORMAT') };
+  if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(v)) {
+    return { ok: false, message: getApiErrorMessage('INVALID_PASSWORD_FORMAT') };
+  }
+  return { ok: true };
+}
+
+// 닉네임 검증 (한글/영문/숫자 1~10자)
+export function validateNickname(value) {
+  if (!value || typeof value !== 'string') return { ok: false, message: '닉네임을 입력해주세요.' };
+  if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(value.trim())) return { ok: false, message: getApiErrorMessage('INVALID_NICKNAME_FORMAT') };
+  return { ok: true };
 }
 
 // textarea auto-grow (글 쓸수록 늘어남, 스크롤 따라감)

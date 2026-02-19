@@ -13,8 +13,8 @@
 |------|------|
 | **인증 (Auth)** | 회원가입(프로필 사진 선택 가능), 로그인, 로그아웃. 로그인 상태는 `localStorage`(표시용)와 쿠키(실제 인증)로 유지 |
 | **사용자 (Users)** | 프로필 조회·수정, 비밀번호 변경, 프로필 사진 업로드. `/users/me` 경로에 대응 |
-| **게시글 (Posts)** | 목록(무한 스크롤), 상세, 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
-| **댓글 (Comments)** | 게시글별 댓글 보기(20개 단위 페이지 번호), 작성, 수정, 삭제 |
+| **게시글 (Posts)** | 목록(무한 스크롤), 상세(조회수 반영), 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
+| **댓글 (Comments)** | 게시글별 댓글 보기(10개 단위 페이지 번호), 작성, 수정, 삭제 |
 
 ### 기술 스택
 
@@ -54,7 +54,7 @@
 | API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
 | 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
 | 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data, hasMore }` |
-| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=20`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
+| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
 
 ---
 
@@ -79,7 +79,7 @@
     ├── router.js           # 해시 라우팅, 인증 검사, 페이지 로드
     ├── api.js              # API 호출 (fetch 래퍼, 401 시 로그인 이동)
     ├── state.js            # 로그인 상태 관리
-    ├── utils.js            # 날짜 포맷, 에러 메시지, 입력 검증 등
+    ├── utils.js            # 날짜 포맷, 에러 메시지, 입력 검증(제목/내용/비밀번호/닉네임) 등
     │
     ├── pages/              # 화면별 페이지
     │   ├── login.js        # 로그인

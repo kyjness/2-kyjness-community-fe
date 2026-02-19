@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
-import { escapeHtml, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors } from '../utils.js';
+import { escapeHtml, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors, validateNickname } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 // 회원정보 수정 페이지 렌더링
@@ -77,7 +77,7 @@ export function renderEditProfile() {
             <span class="helper-text" id="nickname-error"></span>
           </div>
 
-          <!-- 4) 수정하기 버튼 (폼 submit) -->
+          <!-- 4) 수정하기 버튼 -->
           <button type="submit" class="btn btn-primary">
             수정하기
           </button>
@@ -133,6 +133,9 @@ export function renderEditProfile() {
   attachEditProfileEvents();
 }
 
+// 페이지 로드 시·저장 성공 후 기준 닉네임 (변경 여부 판단용)
+let initialNickname = '';
+
 // 이벤트 등록
 function attachEditProfileEvents() {
   const form = document.getElementById('form');
@@ -143,19 +146,24 @@ function attachEditProfileEvents() {
   const deleteBtn = document.getElementById('delete-account-btn');
   const editCompleteBtn = document.getElementById('edit-complete-btn');
 
+  initialNickname = (getUser()?.nickname ?? '').trim();
+
   const deleteModal = document.getElementById('delete-modal');
   const deleteModalCancel = document.getElementById('delete-modal-cancel');
   const deleteModalConfirm = document.getElementById('delete-modal-confirm');
 
-  // 폼 제출 → 회원정보 수정
   if (form) {
     form.addEventListener('submit', handleProfileUpdate);
   }
 
-  // 하단 "수정완료" 버튼도 같은 동작 수행
+  // 수정완료: 저장된 변경 없으면 홈으로, 미저장 변경 있으면 수정하기 먼저 누르라는 안내
   if (editCompleteBtn) {
     editCompleteBtn.addEventListener('click', () => {
-      form.requestSubmit();
+      if (hasUnsavedChanges()) {
+        alert('수정하기 버튼을 눌러주세요.');
+        return;
+      }
+      navigateTo('/posts');
     });
   }
 
@@ -177,7 +185,7 @@ function attachEditProfileEvents() {
     });
   }
 
-  // 프로필 사진 선택 시 미리보기 (회원정보 수정 페이지 + 헤더 모두 업데이트)
+  // 프로필 사진 선택 시 미리보기 (회원정보 수정 페이지만, 헤더/토글은 수정 성공 후 반영)
   if (profileInput && avatarImg) {
     profileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -185,14 +193,7 @@ function attachEditProfileEvents() {
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        const imageDataUrl = event.target.result;
-        // 회원정보 수정 페이지의 프로필 이미지 업데이트
-        avatarImg.src = imageDataUrl;
-        // 헤더의 프로필 이미지도 즉시 업데이트 (미리보기)
-        const headerProfileImg = document.querySelector('.profile-avatar-img');
-        if (headerProfileImg) {
-          headerProfileImg.src = imageDataUrl;
-        }
+        avatarImg.src = event.target.result;
       };
       reader.readAsDataURL(file);
     });
@@ -222,24 +223,37 @@ function attachEditProfileEvents() {
   }
 }
 
+// 닉네임·프로필 사진 변경 여부 (저장 기준 대비)
+function hasUnsavedChanges() {
+  const nicknameInput = document.getElementById('nickname');
+  const fileInput = document.getElementById('profile-image');
+  const currentNickname = (nicknameInput?.value ?? '').trim();
+  const nicknameChanged = currentNickname !== initialNickname;
+  const hasNewFile = fileInput?.files?.length > 0;
+  return nicknameChanged || hasNewFile;
+}
+
 // 회원정보 수정 처리
 async function handleProfileUpdate(e) {
   e.preventDefault();
 
   clearErrors();
 
+  const form = e.target;
   const nicknameInput = document.getElementById('nickname');
   const nickname = nicknameInput.value.trim();
-  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.textContent;
 
-  if (!nickname) {
-    showFieldError('nickname-error', '닉네임을 입력해주세요.');
+  // 2. 변경 없이 수정하기만 누른 경우
+  if (!hasUnsavedChanges()) {
+    alert('회원정보를 수정해주세요.');
     return;
   }
 
-  if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(nickname)) {
-    showFieldError('nickname-error', getApiErrorMessage('INVALID_NICKNAME_FORMAT'));
+  const nicknameCheck = validateNickname(nickname);
+  if (!nicknameCheck.ok) {
+    showFieldError('nickname-error', nicknameCheck.message);
     return;
   }
 
@@ -250,9 +264,8 @@ async function handleProfileUpdate(e) {
     submitBtn.textContent = '수정 중...';
 
     let profileImageId = null;
-
-    // 프로필 이미지 선택된 경우 먼저 업로드 (POST /v1/media/images) 후 profileImageId 전달
-    const file = document.getElementById('profile-image').files[0];
+    const fileInput = document.getElementById('profile-image');
+    const file = fileInput?.files?.[0];
     if (file) {
       const formData = new FormData();
       formData.append('image', file);
@@ -261,18 +274,32 @@ async function handleProfileUpdate(e) {
     }
 
     const payload = { nickname };
-    if (profileImageId != null) payload.profileImageId = profileImageId;
+    if (profileImageId != null) payload.profileImageId = Number(profileImageId);
 
     await api.patch('/users/me', payload);
 
-    const meRes = await api.get('/users/me');
-    setUser(meRes?.data ?? user);
+    // 수정 반영된 정보로 state 갱신 (GET 실패해도 PATCH 성공이면 성공 처리)
+    try {
+      const meRes = await api.get('/users/me');
+      setUser(meRes?.data ?? user);
+    } catch (getErr) {
+      setUser({ ...user, nickname });
+    }
     updateHeaderProfileImage();
 
     alert('회원정보가 수정되었습니다.');
-    navigateTo('/posts');
+    initialNickname = nickname;
+    const avatarImgEl = document.getElementById('avatar-img');
+    if (avatarImgEl) {
+      const u = getUser();
+      avatarImgEl.src = safeImageUrl(u?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
+    }
+    if (fileInput) fileInput.value = '';
   } catch (error) {
-    alert(getApiErrorMessage(error?.code || error?.message, '회원정보 수정에 실패했습니다.'));
+    console.error('회원정보 수정 실패:', error?.status, error?.code, error?.message);
+    const msg = getApiErrorMessage(error?.code || error?.message, '회원정보 수정에 실패했습니다.');
+    const detail = [error?.code, error?.status && `HTTP ${error.status}`].filter(Boolean).join(', ');
+    alert(detail ? `${msg}\n(${detail})` : msg);
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;

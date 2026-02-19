@@ -4,11 +4,11 @@ import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { getUser } from '../state.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, showFieldError, clearErrors, safeImageUrl, openModal, closeModal } from '../utils.js';
+import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, safeImageUrl, openModal, closeModal } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
-const COMMENT_PAGE_SIZE = 20;
+const COMMENT_PAGE_SIZE = 10;
 
 // 게시글 상세 페이지 렌더링
 export async function renderPostDetail(param) {
@@ -80,7 +80,8 @@ export async function renderPostDetail(param) {
   initHeaderEvents();
   if (postId) {
     attachModalEvents(postId);
-    await loadPostDetail(postId);
+    const isInitialLoadToPost = param?._firstRoutePath === '/posts/:id';
+    await loadPostDetail(postId, { recordView: true, skipView: isInitialLoadToPost });
   } else {
     const card = document.getElementById('post-detail-card');
     if (card)
@@ -107,10 +108,15 @@ async function loadCommentsPage(postId, page) {
 
     const commentsHTML = comments
       .map(
-        (c) => `
+        (c) => {
+          const isMine = currentUser && c.author?.userId === currentUser.userId;
+          const avatarUrl = isMine && currentUser?.profileImageUrl
+            ? (safeImageUrl(currentUser.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE)
+            : (safeImageUrl(c.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE);
+          return `
       <article class="comment-item" data-comment-id="${c.commentId}">
         <div class="comment-avatar">
-          <img src="${safeImageUrl(c.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE}" alt="댓글 작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+          <img src="${avatarUrl}" alt="댓글 작성자 프로필" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
         </div>
         <div class="comment-body">
           <div class="comment-header">
@@ -118,8 +124,7 @@ async function loadCommentsPage(postId, page) {
               <span class="comment-author-name">${escapeHtml(c.author?.nickname ?? '')}</span>
               <span class="comment-date">${escapeHtml(String(c.createdAt ?? ''))}</span>
             </div>
-            ${
-              currentUser && c.author?.userId === currentUser.userId
+            ${isMine
                 ? `
             <div class="detail-action-group">
               <button type="button" class="detail-action-btn comment-edit-btn" data-comment-id="${c.commentId}">수정</button>
@@ -132,7 +137,8 @@ async function loadCommentsPage(postId, page) {
           <p class="comment-content">${escapeHtml(c.content ?? '')}</p>
         </div>
       </article>
-    `,
+    `;
+        },
       )
       .join('');
 
@@ -199,11 +205,20 @@ function attachModalEvents(postId) {
   commentDeleteConfirm.addEventListener('click', async () => {
     if (!currentCommentIdForDelete) return;
 
+    const commentIdToRemove = currentCommentIdForDelete;
     try {
-      await api.delete(`/posts/${postId}/comments/${currentCommentIdForDelete}`);
+      await api.delete(`/posts/${postId}/comments/${commentIdToRemove}`);
       currentCommentIdForDelete = null;
       closeModal(commentDeleteModal);
-      await loadPostDetail(postId); // 다시 로드
+      // 새로고침 없이 해당 댓글만 DOM에서 제거
+      const commentItem = document.querySelector(`.comment-item[data-comment-id="${commentIdToRemove}"]`);
+      if (commentItem) commentItem.remove();
+      const statBoxes = document.querySelectorAll('.post-detail-stat-box');
+      const commentCountEl = statBoxes[2]?.querySelector('.post-detail-stat-count');
+      if (commentCountEl) {
+        const n = parseInt(commentCountEl.textContent, 10) || 0;
+        commentCountEl.textContent = Math.max(0, n - 1);
+      }
     } catch (error) {
       alert(getApiErrorMessage(error?.code || error?.message, '댓글 삭제에 실패했습니다.'));
     }
@@ -222,7 +237,12 @@ function attachModalEvents(postId) {
    ========================= */
 
 
-async function loadPostDetail(postId) {
+/**
+ * @param {string|number} postId
+ * @param {{ recordView?: boolean }} options - recordView: true면 조회수 증가 (페이지 진입 시), false면 미증가 (댓글 등으로 재조회 시)
+ */
+async function loadPostDetail(postId, options = {}) {
+  const { recordView = false } = options;
   const card = document.getElementById('post-detail-card');
   if (!card) return;
   if (!postId) {
@@ -234,7 +254,19 @@ async function loadPostDetail(postId) {
   card.innerHTML = LOADING_MSG;
 
   try {
-    // 게시글 상세 조회 (백엔드에서 조회수 자동 증가)
+    // 조회수: 링크로 상세 진입 시에만 증가. 수정 후 복귀·새로고침·직접URL은 미증가
+    if (recordView) {
+      const fromEdit = sessionStorage.getItem('post_detail_skip_view') === String(postId);
+      if (fromEdit) sessionStorage.removeItem('post_detail_skip_view');
+      if (!options.skipView && !fromEdit) {
+        try {
+          await api.post(`/posts/${postId}/view`);
+        } catch (e) {
+          console.warn('조회수 기록 실패:', e);
+        }
+      }
+    }
+    // 게시글 상세 조회
     const response = await api.get(`/posts/${postId}`);
 
     // API 응답 구조: { code: "POST_RETRIEVED", data: {...} }
@@ -242,22 +274,24 @@ async function loadPostDetail(postId) {
 
     // 백엔드 필드명을 프론트엔드 필드명으로 변환. isMine은 백엔드에서 안 내려오므로 로그인 사용자와 작성자 비교
     const currentUser = getUser();
+    const isMine = !!(currentUser && postData.author?.userId === currentUser.userId);
     const normalizedPost = {
       id: postData.postId,
       title: postData.title || '',
       content: postData.content || '',
       author_nickname: postData.author?.nickname || '',
-      author_profile_image:
-        safeImageUrl(postData.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE,
+      author_profile_image: isMine && currentUser?.profileImageUrl
+        ? (safeImageUrl(currentUser.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE)
+        : (safeImageUrl(postData.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE),
       created_at: postData.createdAt || '',
       files: postData.files || (postData.file ? [postData.file] : []),
       likes: postData.likeCount || 0,
       views: postData.hits || 0,
       commentCount: postData.commentCount ?? 0,
-      isMine: !!(currentUser && postData.author?.userId === currentUser.userId),
+      isMine,
     };
 
-    // 댓글 목록 조회 (20개 단위 페이지네이션)
+    // 댓글 목록 조회 (10개 단위 페이지네이션)
     let comments = [];
     let commentTotalPages = 1;
     let commentTotalCount = 0;
@@ -265,15 +299,19 @@ async function loadPostDetail(postId) {
       const commentsResponse = await api.get(`/posts/${postId}/comments?page=1&size=${COMMENT_PAGE_SIZE}`);
       const commentsData = commentsResponse.data || commentsResponse;
       comments = (Array.isArray(commentsData) ? commentsData : []).map(
-        (c) => ({
-          id: c.commentId,
-          author_nickname: c.author?.nickname || '',
-          author_profile_image:
-            safeImageUrl(c.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE,
-          created_at: c.createdAt || '',
-          content: c.content || '',
-          isMine: !!(currentUser && c.author?.userId === currentUser.userId),
-        }),
+        (c) => {
+          const commentIsMine = !!(currentUser && c.author?.userId === currentUser.userId);
+          return {
+            id: c.commentId,
+            author_nickname: c.author?.nickname || '',
+            author_profile_image: commentIsMine && currentUser?.profileImageUrl
+              ? (safeImageUrl(currentUser.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE)
+              : (safeImageUrl(c.author?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE),
+            created_at: c.createdAt || '',
+            content: c.content || '',
+            isMine: commentIsMine,
+          };
+        },
       );
       commentTotalPages = commentsResponse.totalPages ?? 1;
       commentTotalCount = commentsResponse.totalCount ?? comments.length;
@@ -377,7 +415,6 @@ function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, co
             class="form-input comment-textarea"
             placeholder="댓글을 남겨주세요!"
           ></textarea>
-          <span class="helper-text" id="comment-content-error"></span>
           <div class="comment-write-box-divider"></div>
           <button type="submit" class="btn btn-submit">댓글 등록</button>
         </form>
@@ -450,8 +487,146 @@ function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, co
 }
 
 /* =========================
-   상세 화면 내부 이벤트
+   상세 화면 내부 이벤트 (핸들러 분리)
    ========================= */
+
+async function onCommentPageClick(e, postId) {
+  const btn = e.target.closest('.comment-page-btn');
+  if (!btn || btn.classList.contains('active')) return;
+  const page = parseInt(btn.dataset.page, 10);
+  if (!page) return;
+  await loadCommentsPage(postId, page);
+}
+
+async function onLikeClick(postId) {
+  if (!getUser()) {
+    alert(getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
+    navigateTo('/login');
+    return;
+  }
+  const likeCountEl = document.getElementById('like-count');
+  if (!likeCountEl) return;
+  try {
+    const response = await api.post(`/posts/${postId}/likes`, undefined);
+    if (response.data && response.data.likeCount !== undefined) {
+      likeCountEl.textContent = response.data.likeCount;
+    }
+    if (response.code === 'ALREADY_LIKED') {
+      alert(getApiErrorMessage('ALREADY_LIKED', '이미 좋아요를 누르셨습니다.'));
+    }
+  } catch (err) {
+    console.error('좋아요 실패:', err);
+    try {
+      const response = await api.delete(`/posts/${postId}/likes`);
+      if (response.data && response.data.likeCount !== undefined) {
+        likeCountEl.textContent = response.data.likeCount;
+      }
+    } catch (deleteErr) {
+      console.error('좋아요 취소 실패:', deleteErr);
+      alert(getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다.'));
+    }
+  }
+}
+
+async function onCommentFormSubmit(e, postId) {
+  e.preventDefault();
+  if (!getUser()) {
+    alert(getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
+    navigateTo('/login');
+    return;
+  }
+  const commentForm = document.getElementById('comment-form');
+  const textarea = document.getElementById('comment-content');
+  const content = (textarea?.value ?? '').trim();
+  if (!content) return;
+
+  const submitBtn = commentForm?.querySelector('.btn-submit');
+  const orig = submitBtn?.textContent;
+  try {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = '등록 중...';
+    }
+    await api.post(`/posts/${postId}/comments`, { content });
+    if (textarea) textarea.value = '';
+    await loadPostDetail(postId);
+  } catch (err) {
+    alert(getApiErrorMessage(err?.code || err?.message, '댓글 등록에 실패했습니다.'));
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = orig;
+    }
+  }
+}
+
+function onCommentListClick(e, postId, commentDeleteModal) {
+  const deleteBtn = e.target.closest('.comment-delete-btn');
+  if (deleteBtn) {
+    currentCommentIdForDelete = deleteBtn.dataset.commentId;
+    openModal(commentDeleteModal);
+    return;
+  }
+
+  const editBtn = e.target.closest('.comment-edit-btn');
+  if (editBtn) {
+    const commentId = editBtn.dataset.commentId;
+    const commentItem = editBtn.closest('.comment-item');
+    if (!commentItem) return;
+    const existingForm = commentItem.querySelector('.comment-edit-form');
+    if (existingForm) return;
+
+    const contentEl = commentItem.querySelector('.comment-content');
+    if (!contentEl) return;
+    const content = contentEl.textContent.trim();
+    contentEl.style.display = 'none';
+    const editForm = document.createElement('form');
+    editForm.className = 'comment-edit-form';
+    editForm.dataset.commentId = commentId;
+    editForm.innerHTML = `
+      <textarea class="comment-edit-textarea" aria-label="댓글 수정">${escapeHtml(content)}</textarea>
+      <div class="detail-action-group">
+        <button type="submit" class="detail-action-btn">저장</button>
+        <button type="button" class="detail-action-btn comment-edit-cancel-btn" data-comment-id="${commentId}">취소</button>
+      </div>
+    `;
+    contentEl.parentNode.insertBefore(editForm, contentEl.nextSibling);
+    editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    editForm.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const editTextarea = editForm.querySelector('.comment-edit-textarea');
+      const newContent = (editTextarea?.value ?? '').trim();
+      if (!newContent) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+      try {
+        await api.patch(`/posts/${postId}/comments/${commentId}`, { content: newContent });
+        editForm.remove();
+        contentEl.textContent = newContent;
+        contentEl.style.display = '';
+      } catch (err) {
+        alert(getApiErrorMessage(err?.code || err?.message, '댓글 수정에 실패했습니다.'));
+      }
+    });
+    editForm.querySelector('.comment-edit-cancel-btn')?.addEventListener('click', () => {
+      editForm.remove();
+      contentEl.style.display = '';
+    });
+    return;
+  }
+
+  const cancelBtn = e.target.closest('.comment-edit-cancel-btn');
+  if (cancelBtn) {
+    const form = cancelBtn.closest('.comment-edit-form');
+    const commentItem = form?.closest('.comment-item');
+    if (commentItem) {
+      const contentEl = commentItem.querySelector('.comment-content');
+      if (contentEl) contentEl.style.display = '';
+      form?.remove();
+    }
+  }
+}
 
 function attachPostBodyEvents(postId, commentTotalPages = 1, commentTotalCount = 0) {
   const postEditBtn = document.getElementById('post-edit-btn');
@@ -463,54 +638,21 @@ function attachPostBodyEvents(postId, commentTotalPages = 1, commentTotalCount =
   const likeStatBox = document.getElementById('like-stat-box');
   const commentPagination = document.getElementById('comment-pagination');
 
-  // 댓글 페이지 번호 클릭
   if (commentPagination && postId && commentTotalPages > 1) {
-    commentPagination.addEventListener('click', async (e) => {
-      const btn = e.target.closest('.comment-page-btn');
-      if (!btn || btn.classList.contains('active')) return;
-      const page = parseInt(btn.dataset.page, 10);
-      if (!page) return;
-      await loadCommentsPage(postId, page);
-    });
+    commentPagination.addEventListener('click', (e) => onCommentPageClick(e, postId));
   }
 
   if (postEditBtn && postId) {
-    postEditBtn.addEventListener('click', () =>
-      navigateTo(`/posts/${postId}/edit`),
-    );
+    postEditBtn.addEventListener('click', () => navigateTo(`/posts/${postId}/edit`));
   }
 
-  if (postDeleteBtn) {
+  if (postDeleteBtn && postDeleteModal) {
     postDeleteBtn.addEventListener('click', () => openModal(postDeleteModal));
   }
 
-  // 좋아요 기능
-  if (likeStatBox) {
+  if (likeStatBox && postId) {
     likeStatBox.style.cursor = 'pointer';
-    likeStatBox.addEventListener('click', async () => {
-      const likeCountEl = document.getElementById('like-count');
-      if (!likeCountEl) return;
-      try {
-        // 백엔드 API는 /posts/{post_id}/likes (복수형)
-        const response = await api.post(`/posts/${postId}/likes`);
-        // 서버에서 반환하는 실제 좋아요 수 사용
-        if (response.data && response.data.likeCount !== undefined) {
-          likeCountEl.textContent = response.data.likeCount;
-        }
-      } catch (err) {
-        console.error('좋아요 실패:', err);
-        // 이미 좋아요를 눌렀다면 취소 시도
-        try {
-          const response = await api.delete(`/posts/${postId}/likes`);
-          if (response.data && response.data.likeCount !== undefined) {
-            likeCountEl.textContent = response.data.likeCount;
-          }
-        } catch (deleteErr) {
-          console.error('좋아요 취소 실패:', deleteErr);
-          alert(getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다.'));
-        }
-      }
-    });
+    likeStatBox.addEventListener('click', () => onLikeClick(postId));
   }
 
   const commentTextarea = document.getElementById('comment-content');
@@ -521,109 +663,10 @@ function attachPostBodyEvents(postId, commentTotalPages = 1, commentTotalCount =
   }
 
   if (commentForm && postId) {
-    commentForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const textarea = document.getElementById('comment-content');
-      const content = textarea.value.trim();
-      
-      // 빈 값 검증
-      if (!content) {
-        showFieldError('comment-content-error', '댓글 내용을 입력해주세요.');
-        return;
-      }
-
-      const submitBtn = commentForm.querySelector('.btn-submit');
-      const orig = submitBtn.textContent;
-      try {
-        clearErrors();
-        submitBtn.disabled = true;
-        submitBtn.textContent = '등록 중...';
-        await api.post(`/posts/${postId}/comments`, { content });
-        textarea.value = '';
-        // 댓글 등록 후 전체 페이지 다시 로드
-        await loadPostDetail(postId);
-      } catch (err) {
-        showFieldError('comment-content-error', getApiErrorMessage(err?.code || err?.message, '댓글 등록에 실패했습니다.'));
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = orig;
-      }
-    });
+    commentForm.addEventListener('submit', (e) => onCommentFormSubmit(e, postId));
   }
 
-  if (commentList) {
-    commentList.addEventListener('click', async (e) => {
-      const deleteBtn = e.target.closest('.comment-delete-btn');
-      if (deleteBtn) {
-        currentCommentIdForDelete = deleteBtn.dataset.commentId;
-        openModal(commentDeleteModal);
-        return;
-      }
-
-      const editBtn = e.target.closest('.comment-edit-btn');
-      if (editBtn) {
-        const commentId = editBtn.dataset.commentId;
-        const commentItem = editBtn.closest('.comment-item');
-        if (!commentItem) return;
-        
-        // 이미 수정 폼이 있는지 확인
-        const existingForm = commentItem.querySelector('.comment-edit-form');
-        if (existingForm) {
-          // 이미 수정 모드면 아무 동작 안 함
-          return;
-        }
-        
-        const contentEl = commentItem.querySelector('.comment-content');
-        if (!contentEl) return;
-        const content = contentEl.textContent.trim();
-        contentEl.style.display = 'none';
-        const editForm = document.createElement('form');
-        editForm.className = 'comment-edit-form';
-        editForm.dataset.commentId = commentId;
-        editForm.innerHTML = `
-          <textarea class="comment-edit-textarea" aria-label="댓글 수정">${escapeHtml(content)}</textarea>
-          <div class="detail-action-group">
-            <button type="submit" class="detail-action-btn">저장</button>
-            <button type="button" class="detail-action-btn comment-edit-cancel-btn" data-comment-id="${commentId}">취소</button>
-          </div>
-        `;
-        contentEl.parentNode.insertBefore(editForm, contentEl.nextSibling);
-        editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        editForm.addEventListener('submit', async (ev) => {
-          ev.preventDefault();
-          const textarea = editForm.querySelector('.comment-edit-textarea');
-          const newContent = (textarea?.value ?? '').trim();
-          
-          // 빈 값 검증
-          if (!newContent) {
-            alert('댓글 내용을 입력해주세요.');
-            return;
-          }
-          
-          try {
-            await api.patch(`/posts/${postId}/comments/${commentId}`, { content: newContent });
-            await loadPostDetail(postId);
-          } catch (err) {
-            alert(getApiErrorMessage(err?.code || err?.message, '댓글 수정에 실패했습니다.'));
-          }
-        });
-        editForm.querySelector('.comment-edit-cancel-btn')?.addEventListener('click', () => {
-          editForm.remove();
-          contentEl.style.display = '';
-        });
-        return;
-      }
-
-      const cancelBtn = e.target.closest('.comment-edit-cancel-btn');
-      if (cancelBtn) {
-        const form = cancelBtn.closest('.comment-edit-form');
-        const commentItem = form?.closest('.comment-item');
-        if (commentItem) {
-          const contentEl = commentItem.querySelector('.comment-content');
-          if (contentEl) contentEl.style.display = '';
-          form?.remove();
-        }
-      }
-    });
+  if (commentList && postId && commentDeleteModal) {
+    commentList.addEventListener('click', (e) => onCommentListClick(e, postId, commentDeleteModal));
   }
 }

@@ -2,6 +2,7 @@
 
 import { escapeHtml, escapeAttr, formatDate, safeImageUrl } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
+import { getUser } from '../state.js';
 
 // 게시글 카드 렌더링
 export function renderPostCard(post) {
@@ -12,9 +13,13 @@ export function renderPostCard(post) {
   const hits = post.hits || 0;
   const createdAt = post.createdAt || post.created_at || '';
   const author = post.author || {};
+  const currentUser = getUser();
 
   const authorName = author.nickname || '알 수 없음';
-  const authorAvatar = safeImageUrl(author.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
+  const isMine = currentUser && author.userId === currentUser.userId;
+  const authorAvatar = isMine && currentUser?.profileImageUrl
+    ? (safeImageUrl(currentUser.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE)
+    : (safeImageUrl(author.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE);
 
   return `
     <div class="post-card" data-id="${escapeAttr(postId)}">
