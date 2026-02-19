@@ -16,7 +16,7 @@ export function renderSignup() {
       <div class="form-container">
         <h2 class="form-title">회원가입</h2>
         
-        <form id="form" class="form">
+        <form id="form" class="form" novalidate>
           <!-- 프로필 사진 업로드 -->
           <div class="profile-group form-group">
            <label class="form-label">프로필 사진</label>
@@ -204,7 +204,7 @@ async function handleSignup(e) {
     hasError = true;
   }
   if (password !== passwordConfirm) {
-    showFieldError('password-confirm-error', '비밀번호가 일치하지 않습니다.');
+    showFieldError('password-confirm-error', '비밀번호 확인이 위 비밀번호와 일치하지 않습니다.');
     hasError = true;
   }
   const nicknameCheck = validateNickname(nickname);
@@ -241,12 +241,27 @@ async function handleSignup(e) {
 
     await api.post('/auth/signup', signupData);
 
-    // 성공 메시지 표시 후 로그인 페이지로 이동
+    // 프로필 파일 입력 비우기
+    if (profileInput) profileInput.value = '';
+
     alert('회원가입이 완료되었습니다! 로그인해주세요.');
-    navigateTo('/login');
+
+    // 프로필 사진 업로드 시 해시만 바꿔서는 이동이 안 되는 경우가 있으므로, 해시 설정 후 reload로 확실히 로그인 페이지 표시
+    window.location.hash = '/login';
+    window.location.reload();
   } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '회원가입에 실패했습니다.');
-    alert(msg);
+    const code = String(error?.code ?? error?.message ?? '').trim();
+    const codeUpper = code.toUpperCase();
+    const msg = getApiErrorMessage(code || undefined, '회원가입에 실패했습니다. 이메일·닉네임 중복 여부와 입력 형식을 확인한 뒤 다시 시도해주세요.');
+    if (codeUpper === 'NICKNAME_ALREADY_EXISTS') {
+      showFieldError('nickname-error', msg);
+      showFieldError('form-error', msg);
+    } else if (codeUpper === 'EMAIL_ALREADY_EXISTS') {
+      showFieldError('email-error', msg);
+      showFieldError('form-error', msg);
+    } else {
+      showFieldError('form-error', msg);
+    }
   } finally {
     // 버튼 상태 복원
     submitBtn.textContent = originalText;

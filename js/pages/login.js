@@ -17,7 +17,7 @@ export function renderLogin() {
       <div class="form-container">
         <h2 class="form-title">로그인</h2>
         
-        <form id="form" class="form">
+        <form id="form" class="form" novalidate>
           <div class="form-group">
             <label for="email" class="form-label">이메일</label>
             <input 
@@ -52,6 +52,15 @@ export function renderLogin() {
       </div>
     </main>
   `;
+
+  // 라우터에서 "로그인 필요"로 넘어온 경우 helper-text에 표시
+  try {
+    const msg = sessionStorage.getItem('login_required_message');
+    if (msg) {
+      sessionStorage.removeItem('login_required_message');
+      showFieldError('error-message', msg);
+    }
+  } catch (_) {}
 
   // 이벤트 리스너 등록
   initHeaderEvents();
@@ -88,13 +97,13 @@ async function handleLogin(e) {
   let hasError = false;
   let errorMessage = '';
 
-  if (!email) {
+  if (!email || !String(email).trim()) {
     errorMessage = '이메일을 입력해주세요.';
     hasError = true;
   } else if (!isValidEmail(email)) {
     errorMessage = getApiErrorMessage('INVALID_EMAIL_FORMAT');
     hasError = true;
-  } else if (!password) {
+  } else if (!password || !String(password).trim()) {
     errorMessage = '비밀번호를 입력해주세요.';
     hasError = true;
   }
@@ -128,7 +137,12 @@ async function handleLogin(e) {
 
     navigateTo('/posts');
   } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '로그인에 실패했습니다.');
+    const code = (error?.code || error?.message || '').toString().toUpperCase();
+    // 로그인 요청 body 검증 실패(짧은 비밀번호·형식 등)는 INVALID_REQUEST_BODY로 올 수 있음 → 비밀번호 형식 안내로 통일
+    const isBodyValidationError = code === 'INVALID_REQUEST_BODY' || code === 'UNPROCESSABLE_ENTITY';
+    const msg = isBodyValidationError
+      ? getApiErrorMessage('INVALID_PASSWORD_FORMAT')
+      : getApiErrorMessage(code || undefined, '이메일과 비밀번호를 확인한 뒤 다시 시도해주세요.');
     showFieldError('error-message', msg);
   } finally {
     // 버튼 상태 복원

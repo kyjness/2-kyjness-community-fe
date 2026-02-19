@@ -60,6 +60,16 @@ export function showFieldError(elementId, message) {
   }
 }
 
+// 한 필드의 에러만 제거 (해당 input의 validation state를 valid로)
+export function clearFieldError(elementId) {
+  const errorElement = document.getElementById(elementId);
+  if (errorElement) {
+    errorElement.textContent = '';
+    errorElement.classList.remove('has-error');
+    errorElement.style.removeProperty('visibility');
+  }
+}
+
 // API 에러 코드 → 한글 메시지 (code, fallback)
 export function getApiErrorMessage(code, fallback = '처리에 실패했습니다.') {
   const messages = {
@@ -126,7 +136,7 @@ export function isValidEmail(email) {
 export function validatePostTitle(title) {
   const t = (title ?? '').trim();
   if (!t) return { ok: false, message: '제목을 입력해주세요.' };
-  if (t.length > 26) return { ok: false, message: '제목은 26자 이하여야 합니다.' };
+  if (t.length > 26) return { ok: false, message: '제목은 26자 이내로 입력해주세요.' };
   return { ok: true };
 }
 
@@ -136,13 +146,14 @@ export function validatePostContent(content) {
   return { ok: true };
 }
 
-// 비밀번호 형식 검증 (8~20자, 영대/소/숫자/특수문자 각 1자 이상)
+// 비밀번호 형식 검증 (8~20자, 영대/소/숫자/특수문자 각 1자 이상) — 구체적 메시지
 export function validatePassword(value) {
   if (!value || typeof value !== 'string') return { ok: false, message: '비밀번호를 입력해주세요.' };
   const v = value.trim();
-  if (v.length < 8 || v.length > 20) return { ok: false, message: getApiErrorMessage('INVALID_PASSWORD_FORMAT') };
+  if (v.length < 8) return { ok: false, message: '비밀번호는 8자 이상 입력해주세요.' };
+  if (v.length > 20) return { ok: false, message: '비밀번호는 20자 이내로 입력해주세요.' };
   if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(v)) {
-    return { ok: false, message: getApiErrorMessage('INVALID_PASSWORD_FORMAT') };
+    return { ok: false, message: '비밀번호에 영문 대문자·소문자·숫자·특수문자를 각각 1자 이상 포함해주세요.' };
   }
   return { ok: true };
 }
@@ -150,7 +161,9 @@ export function validatePassword(value) {
 // 닉네임 검증 (한글/영문/숫자 1~10자)
 export function validateNickname(value) {
   if (!value || typeof value !== 'string') return { ok: false, message: '닉네임을 입력해주세요.' };
-  if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(value.trim())) return { ok: false, message: getApiErrorMessage('INVALID_NICKNAME_FORMAT') };
+  const t = value.trim();
+  if (t.length > 10) return { ok: false, message: '닉네임은 10자 이내로 입력해주세요.' };
+  if (!/^[가-힣a-zA-Z0-9]{1,10}$/.test(t)) return { ok: false, message: getApiErrorMessage('INVALID_NICKNAME_FORMAT') };
   return { ok: true };
 }
 
@@ -208,7 +221,7 @@ export function clearErrors() {
   errorElements.forEach((el) => {
     el.textContent = '';
     el.classList.remove('has-error');
-    el.style.visibility = 'hidden';
+    el.style.removeProperty('visibility');
   });
 }
 

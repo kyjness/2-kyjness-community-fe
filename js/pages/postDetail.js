@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { getUser } from '../state.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, safeImageUrl, openModal, closeModal } from '../utils.js';
+import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
@@ -153,7 +153,7 @@ async function loadCommentsPage(postId, page) {
     }
   } catch (err) {
     console.warn('댓글 페이지 로드 실패:', err);
-    alert(getApiErrorMessage(err?.code || err?.message, '댓글을 불러오지 못했습니다.'));
+    showFieldError('post-detail-message', getApiErrorMessage(err?.code || err?.message, '댓글 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'));
   }
 }
 
@@ -183,10 +183,10 @@ function attachModalEvents(postId) {
     try {
       await api.delete(`/posts/${postId}`);
       closeModal(postDeleteModal);
-      alert('게시글이 삭제되었습니다.');
       navigateTo('/posts');
     } catch (error) {
-      alert(getApiErrorMessage(error?.code || error?.message, '게시글 삭제에 실패했습니다.'));
+      closeModal(postDeleteModal);
+      showFieldError('post-detail-message', getApiErrorMessage(error?.code || error?.message, '게시글 삭제에 실패했습니다. 권한을 확인한 뒤 다시 시도해주세요.'));
     }
   });
 
@@ -220,7 +220,7 @@ function attachModalEvents(postId) {
         commentCountEl.textContent = Math.max(0, n - 1);
       }
     } catch (error) {
-      alert(getApiErrorMessage(error?.code || error?.message, '댓글 삭제에 실패했습니다.'));
+      showFieldError('post-detail-message', getApiErrorMessage(error?.code || error?.message, '댓글 삭제에 실패했습니다. 본인 댓글인지 확인한 뒤 다시 시도해주세요.'));
     }
   });
 
@@ -297,8 +297,9 @@ async function loadPostDetail(postId, options = {}) {
     let commentTotalCount = 0;
     try {
       const commentsResponse = await api.get(`/posts/${postId}/comments?page=1&size=${COMMENT_PAGE_SIZE}`);
-      const commentsData = commentsResponse.data || commentsResponse;
-      comments = (Array.isArray(commentsData) ? commentsData : []).map(
+      const commentsPayload = commentsResponse.data || commentsResponse;
+      const commentsList = Array.isArray(commentsPayload) ? commentsPayload : (commentsPayload?.comments ?? []);
+      comments = commentsList.map(
         (c) => {
           const commentIsMine = !!(currentUser && c.author?.userId === currentUser.userId);
           return {
@@ -313,8 +314,9 @@ async function loadPostDetail(postId, options = {}) {
           };
         },
       );
-      commentTotalPages = commentsResponse.totalPages ?? 1;
-      commentTotalCount = commentsResponse.totalCount ?? comments.length;
+      const payload = commentsResponse.data || commentsResponse;
+      commentTotalPages = payload?.totalPages ?? commentsResponse.totalPages ?? 1;
+      commentTotalCount = payload?.totalCount ?? commentsResponse.totalCount ?? comments.length;
     } catch (commentError) {
       console.warn('댓글 조회 실패:', commentError);
     }
@@ -325,7 +327,7 @@ async function loadPostDetail(postId, options = {}) {
     card.innerHTML = `
       <div style="text-align:center;padding:40px;">
         <p class="post-list-message">게시글을 불러올 수 없습니다.</p>
-        <p style="color:#777;font-size:12px;margin-top:8px;">${escapeHtml(getApiErrorMessage(error?.code || error?.message, '서버 오류가 발생했습니다.'))}</p>
+        <p style="color:#777;font-size:12px;margin-top:8px;">${escapeHtml(getApiErrorMessage(error?.code || error?.message, '게시글을 불러오지 못했습니다. 삭제되었거나 일시적인 오류일 수 있습니다.'))}</p>
         <button type="button" id="post-detail-back-to-list" style="margin-top:16px;padding:8px 16px;background:#aca0eb;color:white;border:none;border-radius:6px;cursor:pointer;">목록으로 돌아가기</button>
       </div>
     `;
@@ -407,9 +409,11 @@ function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, co
 
       <div class="divider"></div>
 
+      <span class="helper-text" id="post-detail-message"></span>
+
       <!-- 댓글 입력 -->
       <section class="comment-write-box">
-        <form id="comment-form" class="comment-form">
+        <form id="comment-form" class="comment-form" novalidate>
           <textarea
             id="comment-content"
             class="form-input comment-textarea"
@@ -499,8 +503,9 @@ async function onCommentPageClick(e, postId) {
 }
 
 async function onLikeClick(postId) {
+  clearErrors();
   if (!getUser()) {
-    alert(getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
+    showFieldError('post-detail-message', getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
     navigateTo('/login');
     return;
   }
@@ -508,37 +513,38 @@ async function onLikeClick(postId) {
   if (!likeCountEl) return;
   try {
     const response = await api.post(`/posts/${postId}/likes`, undefined);
+    if (response.code === 'ALREADY_LIKED') {
+      // 이미 좋아요한 상태에서 클릭 → 취소(토글)
+      const delResponse = await api.delete(`/posts/${postId}/likes`);
+      if (delResponse.data && delResponse.data.likeCount !== undefined) {
+        likeCountEl.textContent = delResponse.data.likeCount;
+      }
+      return;
+    }
     if (response.data && response.data.likeCount !== undefined) {
       likeCountEl.textContent = response.data.likeCount;
     }
-    if (response.code === 'ALREADY_LIKED') {
-      alert(getApiErrorMessage('ALREADY_LIKED', '이미 좋아요를 누르셨습니다.'));
-    }
   } catch (err) {
-    console.error('좋아요 실패:', err);
-    try {
-      const response = await api.delete(`/posts/${postId}/likes`);
-      if (response.data && response.data.likeCount !== undefined) {
-        likeCountEl.textContent = response.data.likeCount;
-      }
-    } catch (deleteErr) {
-      console.error('좋아요 취소 실패:', deleteErr);
-      alert(getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다.'));
-    }
+    console.error('좋아요 처리 실패:', err);
+    showFieldError('post-detail-message', getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다. 로그인 상태를 확인한 뒤 다시 시도해주세요.'));
   }
 }
 
 async function onCommentFormSubmit(e, postId) {
   e.preventDefault();
+  clearErrors();
   if (!getUser()) {
-    alert(getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
+    showFieldError('post-detail-message', getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
     navigateTo('/login');
     return;
   }
   const commentForm = document.getElementById('comment-form');
   const textarea = document.getElementById('comment-content');
   const content = (textarea?.value ?? '').trim();
-  if (!content) return;
+  if (!content) {
+    showFieldError('post-detail-message', '댓글 내용을 입력해주세요.');
+    return;
+  }
 
   const submitBtn = commentForm?.querySelector('.btn-submit');
   const orig = submitBtn?.textContent;
@@ -549,9 +555,16 @@ async function onCommentFormSubmit(e, postId) {
     }
     await api.post(`/posts/${postId}/comments`, { content });
     if (textarea) textarea.value = '';
-    await loadPostDetail(postId);
+    // 전체 상세 재로드 없이 댓글 목록만 1페이지로 갱신 + 댓글 수 반영
+    const statBoxes = document.querySelectorAll('.post-detail-stat-box');
+    const commentCountEl = statBoxes[2]?.querySelector('.post-detail-stat-count');
+    if (commentCountEl) {
+      const n = parseInt(commentCountEl.textContent, 10) || 0;
+      commentCountEl.textContent = n + 1;
+    }
+    await loadCommentsPage(postId, 1);
   } catch (err) {
-    alert(getApiErrorMessage(err?.code || err?.message, '댓글 등록에 실패했습니다.'));
+    showFieldError('post-detail-message', getApiErrorMessage(err?.code || err?.message, '댓글 등록에 실패했습니다. 로그인 상태와 댓글 내용을 확인한 뒤 다시 시도해주세요.'));
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -591,13 +604,12 @@ function onCommentListClick(e, postId, commentDeleteModal) {
       </div>
     `;
     contentEl.parentNode.insertBefore(editForm, contentEl.nextSibling);
-    editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
     editForm.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const editTextarea = editForm.querySelector('.comment-edit-textarea');
       const newContent = (editTextarea?.value ?? '').trim();
       if (!newContent) {
-        alert('댓글 내용을 입력해주세요.');
+        showFieldError('post-detail-message', '댓글 내용을 입력해주세요.');
         return;
       }
       try {
@@ -606,7 +618,7 @@ function onCommentListClick(e, postId, commentDeleteModal) {
         contentEl.textContent = newContent;
         contentEl.style.display = '';
       } catch (err) {
-        alert(getApiErrorMessage(err?.code || err?.message, '댓글 수정에 실패했습니다.'));
+        showFieldError('post-detail-message', getApiErrorMessage(err?.code || err?.message, '댓글 수정에 실패했습니다. 본인 댓글인지와 내용을 확인한 뒤 다시 시도해주세요.'));
       }
     });
     editForm.querySelector('.comment-edit-cancel-btn')?.addEventListener('click', () => {
@@ -653,13 +665,6 @@ function attachPostBodyEvents(postId, commentTotalPages = 1, commentTotalCount =
   if (likeStatBox && postId) {
     likeStatBox.style.cursor = 'pointer';
     likeStatBox.addEventListener('click', () => onLikeClick(postId));
-  }
-
-  const commentTextarea = document.getElementById('comment-content');
-  if (commentTextarea) {
-    commentTextarea.addEventListener('focus', () => {
-      commentTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
   }
 
   if (commentForm && postId) {

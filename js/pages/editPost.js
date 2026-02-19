@@ -29,7 +29,7 @@ export async function renderEditPost(param) {
         <div class="form-container">
           <h2 class="form-title">게시글 수정</h2>
           
-          <form id="edit-post-form" class="form new-post-form">
+          <form id="edit-post-form" class="form new-post-form" novalidate>
             <!-- 제목 -->
             <div class="form-group">
               <label for="title" class="form-label">제목*</label>
@@ -105,7 +105,7 @@ export async function renderEditPost(param) {
   if (postId) {
     await fillEditPostForm(postId);
   } else {
-    alert('유효하지 않은 게시글입니다.');
+    showFieldError('form-error', '유효하지 않은 게시글입니다.');
     navigateTo('/posts');
   }
 }
@@ -141,7 +141,7 @@ async function fillEditPostForm(postId) {
     applyToForm(postData);
   } catch (error) {
     console.error('게시글 정보를 불러올 수 없습니다:', error);
-    alert(getApiErrorMessage(error?.code || error?.message, '게시글 정보를 불러올 수 없습니다.'));
+    showFieldError('form-error', getApiErrorMessage(error?.code || error?.message, '게시글을 불러오지 못했습니다. 삭제되었거나 주소가 잘못되었을 수 있습니다.'));
   }
 }
 
@@ -241,7 +241,7 @@ async function handleEditPost(e, postId) {
   isSubmittingEdit = true;
 
   if (!postId) {
-    alert('유효하지 않은 게시글입니다.');
+    showFieldError('form-error', '유효하지 않은 게시글입니다.');
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
     isSubmittingEdit = false;
     return;
@@ -288,8 +288,8 @@ async function handleEditPost(e, postId) {
     sessionStorage.setItem('post_detail_skip_view', String(postId));
     navigateTo(`/posts/${postId}`);
   } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 수정에 실패했습니다.');
-    alert(msg);
+    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 수정에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');
+    showFieldError('form-error', msg);
   } finally {
     if (submitBtn) {
       submitBtn.textContent = originalText;

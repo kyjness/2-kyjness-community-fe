@@ -21,7 +21,7 @@ export function renderNewPost() {
           <h2 class="form-title">게시글 작성</h2>
           
           <!-- 🔥 새 게시글 전용 클래스 추가 -->
-          <form id="form" class="form new-post-form">
+          <form id="form" class="form new-post-form" novalidate>
             <!-- 제목 -->
             <div class="form-group">
               <label for="title" class="form-label">제목*</label>
@@ -195,8 +195,8 @@ async function handleNewPost(e) {
       await route();
     }
   } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 작성에 실패했습니다.');
-    alert(msg);
+    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 작성에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');
+    showFieldError('form-error', msg);
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;

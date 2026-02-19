@@ -16,7 +16,7 @@ export function renderChangePassword() {
       <div class="form-container">
         <h2 class="form-title">비밀번호 수정</h2>
         
-        <form id="form" class="form">
+        <form id="form" class="form" novalidate>
           <!-- 현재 비밀번호 -->
           <div class="form-group">
             <label for="current-password" class="form-label">현재 비밀번호</label>
@@ -105,7 +105,7 @@ async function handleChangePassword(e) {
   if (newPassword !== newPasswordConfirm) {
     showFieldError(
       'new-password-confirm-error',
-      '새 비밀번호가 일치하지 않습니다.',
+      '새 비밀번호 확인이 위 새 비밀번호와 일치하지 않습니다.',
     );
     hasError = true;
   }
@@ -127,8 +127,8 @@ async function handleChangePassword(e) {
     alert('비밀번호가 변경되었습니다!');
     navigateTo('/posts');
   } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '비밀번호 변경에 실패했습니다.');
-    alert(msg);
+    const msg = getApiErrorMessage(error?.code || error?.message, '현재 비밀번호가 맞는지 확인한 뒤 다시 시도해주세요.');
+    showFieldError('form-error', msg);
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;

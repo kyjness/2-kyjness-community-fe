@@ -19,7 +19,7 @@ export function renderEditProfile() {
       <div class="form-container profile-edit">
         <h2 class="form-title">회원정보수정</h2>
 
-        <form id="form" class="form">
+        <form id="form" class="form" novalidate>
           <!-- 1) 프로필 사진 -->
           <div class="form-group signup-profile-group">
             <label class="form-label">프로필 사진*</label>
@@ -159,8 +159,9 @@ function attachEditProfileEvents() {
   // 수정완료: 저장된 변경 없으면 홈으로, 미저장 변경 있으면 수정하기 먼저 누르라는 안내
   if (editCompleteBtn) {
     editCompleteBtn.addEventListener('click', () => {
+      clearErrors();
       if (hasUnsavedChanges()) {
-        alert('수정하기 버튼을 눌러주세요.');
+        showFieldError('form-error', '수정하기 버튼을 눌러주세요.');
         return;
       }
       navigateTo('/posts');
@@ -247,7 +248,7 @@ async function handleProfileUpdate(e) {
 
   // 2. 변경 없이 수정하기만 누른 경우
   if (!hasUnsavedChanges()) {
-    alert('회원정보를 수정해주세요.');
+    showFieldError('form-error', '회원정보를 수정해주세요.');
     return;
   }
 
@@ -278,28 +279,28 @@ async function handleProfileUpdate(e) {
 
     await api.patch('/users/me', payload);
 
-    // 수정 반영된 정보로 state 갱신 (GET 실패해도 PATCH 성공이면 성공 처리)
+    // 수정 반영된 정보로 state 갱신 (GET 실패 시 닉네임만 반영, 프로필 이미지는 서버에 저장됨)
     try {
       const meRes = await api.get('/users/me');
-      setUser(meRes?.data ?? user);
+      const updated = meRes?.data ?? null;
+      if (updated) {
+        setUser(updated);
+      } else {
+        setUser({ ...user, nickname });
+      }
     } catch (getErr) {
       setUser({ ...user, nickname });
     }
     updateHeaderProfileImage();
 
     alert('회원정보가 수정되었습니다.');
-    initialNickname = nickname;
-    const avatarImgEl = document.getElementById('avatar-img');
-    if (avatarImgEl) {
-      const u = getUser();
-      avatarImgEl.src = safeImageUrl(u?.profileImageUrl, DEFAULT_PROFILE_IMAGE) || DEFAULT_PROFILE_IMAGE;
-    }
-    if (fileInput) fileInput.value = '';
+    initialNickname = (getUser()?.nickname ?? '').trim();
+    // 화면을 갱신된 사용자 정보로 다시 그려서 프로필 사진·닉네임 등이 확실히 반영되도록 함
+    renderEditProfile();
   } catch (error) {
     console.error('회원정보 수정 실패:', error?.status, error?.code, error?.message);
-    const msg = getApiErrorMessage(error?.code || error?.message, '회원정보 수정에 실패했습니다.');
-    const detail = [error?.code, error?.status && `HTTP ${error.status}`].filter(Boolean).join(', ');
-    alert(detail ? `${msg}\n(${detail})` : msg);
+    const msg = getApiErrorMessage(error?.code || error?.message, '회원정보 수정에 실패했습니다. 닉네임·프로필 사진을 확인한 뒤 다시 시도해주세요.');
+    showFieldError('form-error', msg);
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;
@@ -317,6 +318,7 @@ async function handleDeleteAccount() {
     alert('회원 탈퇴가 완료되었습니다.');
     navigateTo('/signup');
   } catch (error) {
-    alert(getApiErrorMessage(error?.code || error?.message, '회원 탈퇴에 실패했습니다.'));
+    closeModal(deleteModal);
+    showFieldError('form-error', getApiErrorMessage(error?.code || error?.message, '회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.'));
   }
 }
