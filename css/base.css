@@ -244,6 +244,14 @@ body {
   visibility: hidden;
 }
 
+/* form-error: 비어 있을 때 공간 제거 (닉네임-회원가입 버튼 간격 축소) */
+#form-error:empty {
+  display: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
 .form-input:focus ~ .helper-text:not(.has-error),
 .form-textarea:focus ~ .helper-text:not(.has-error),
 .comment-textarea:focus ~ .helper-text:not(.has-error) {

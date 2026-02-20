@@ -152,7 +152,6 @@ async function loadCommentsPage(postId, page) {
       });
     }
   } catch (err) {
-    console.warn('댓글 페이지 로드 실패:', err);
     showFieldError('post-detail-message', getApiErrorMessage(err?.code || err?.message, '댓글 목록을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'));
   }
 }
@@ -261,9 +260,7 @@ async function loadPostDetail(postId, options = {}) {
       if (!options.skipView && !fromEdit) {
         try {
           await api.post(`/posts/${postId}/view`);
-        } catch (e) {
-          console.warn('조회수 기록 실패:', e);
-        }
+        } catch (_) {}
       }
     }
     // 게시글 상세 조회
@@ -317,13 +314,10 @@ async function loadPostDetail(postId, options = {}) {
       const payload = commentsResponse.data || commentsResponse;
       commentTotalPages = payload?.totalPages ?? commentsResponse.totalPages ?? 1;
       commentTotalCount = payload?.totalCount ?? commentsResponse.totalCount ?? comments.length;
-    } catch (commentError) {
-      console.warn('댓글 조회 실패:', commentError);
-    }
+    } catch (_) {}
 
     renderPostDetailCard(normalizedPost, comments, postId, 1, commentTotalPages, commentTotalCount);
   } catch (error) {
-    console.error('게시글 상세 조회 실패:', error);
     card.innerHTML = `
       <div style="text-align:center;padding:40px;">
         <p class="post-list-message">게시글을 불러올 수 없습니다.</p>
@@ -505,7 +499,7 @@ async function onCommentPageClick(e, postId) {
 async function onLikeClick(postId) {
   clearErrors();
   if (!getUser()) {
-    showFieldError('post-detail-message', getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
+    alert('로그인이 필요합니다.');
     navigateTo('/login');
     return;
   }
@@ -525,7 +519,6 @@ async function onLikeClick(postId) {
       likeCountEl.textContent = response.data.likeCount;
     }
   } catch (err) {
-    console.error('좋아요 처리 실패:', err);
     showFieldError('post-detail-message', getApiErrorMessage(err?.code || err?.message, '좋아요 처리에 실패했습니다. 로그인 상태를 확인한 뒤 다시 시도해주세요.'));
   }
 }
@@ -534,17 +527,14 @@ async function onCommentFormSubmit(e, postId) {
   e.preventDefault();
   clearErrors();
   if (!getUser()) {
-    showFieldError('post-detail-message', getApiErrorMessage('UNAUTHORIZED', '로그인이 필요합니다.'));
+    alert('로그인이 필요합니다.');
     navigateTo('/login');
     return;
   }
   const commentForm = document.getElementById('comment-form');
   const textarea = document.getElementById('comment-content');
   const content = (textarea?.value ?? '').trim();
-  if (!content) {
-    showFieldError('post-detail-message', '댓글 내용을 입력해주세요.');
-    return;
-  }
+  if (!content) return;
 
   const submitBtn = commentForm?.querySelector('.btn-submit');
   const orig = submitBtn?.textContent;

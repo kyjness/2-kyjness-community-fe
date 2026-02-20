@@ -1,7 +1,7 @@
 // 회원가입 페이지
 
 import { api } from '../api.js';
-import { navigateTo } from '../router.js';
+import { navigateTo, route } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail, validatePassword, validateNickname } from '../utils.js';
 
@@ -97,6 +97,7 @@ export function renderSignup() {
             <span class="helper-text" id="nickname-error"></span>
           </div>
           
+          <span class="helper-text" id="form-error"></span>
           <button type="submit" class="btn btn-primary">회원가입</button>
           
           <button type="button" id="login-link" class="btn btn-secondary">
@@ -156,16 +157,30 @@ function attachSignupEvents() {
     });
   }
 
-  // 프로필 사진 선택 시 미리보기
+  // 프로필 사진 선택 시 확장자 검증 후 미리보기 (지원: jpeg, jpg, png)
+  const ALLOWED_PROFILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
   if (profileInput) {
     profileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
+      const profileErrorEl = document.getElementById('profile-error');
+      if (profileErrorEl) {
+        profileErrorEl.textContent = '';
+        profileErrorEl.classList.remove('has-error');
+      }
       if (file) {
+        if (!ALLOWED_PROFILE_TYPES.includes(file.type)) {
+          showFieldError('profile-error', getApiErrorMessage('INVALID_FILE_TYPE'));
+          profileInput.value = '';
+          if (avatarImg) {
+            avatarImg.src = '';
+            avatarImg.style.display = 'none';
+          }
+          return;
+        }
         const reader = new FileReader();
         reader.onload = (event) => {
           avatarImg.src = event.target.result;
           avatarImg.style.display = 'block';
-          // + 아이콘은 계속 표시 (사진이 있어도)
         };
         reader.readAsDataURL(file);
       }
@@ -173,11 +188,15 @@ function attachSignupEvents() {
   }
 }
 
-// 회원가입 처리
+// 회원가입 처리 (프로필 사진은 무시 - JSON 단일 요청만)
+let _isSubmitting = false;
+
 async function handleSignup(e) {
   e.preventDefault();
 
-  // 에러 메시지 초기화
+  if (_isSubmitting) return;
+  _isSubmitting = true;
+
   clearErrors();
 
   const form = e.target;
@@ -187,7 +206,6 @@ async function handleSignup(e) {
   const passwordConfirm = formData.get('password-confirm');
   const nickname = formData.get('nickname');
 
-  // 입력값 검증
   let hasError = false;
 
   if (!email) {
@@ -213,7 +231,10 @@ async function handleSignup(e) {
     hasError = true;
   }
 
-  if (hasError) return;
+  if (hasError) {
+    _isSubmitting = false;
+    return;
+  }
 
   const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;
@@ -222,48 +243,27 @@ async function handleSignup(e) {
     submitBtn.textContent = '회원가입 중...';
     submitBtn.disabled = true;
 
-    let profileImageId = null;
-    const profileInput = document.getElementById('profile-image');
-    if (profileInput?.files?.[0]) {
-      const formData = new FormData();
-      formData.append('image', profileInput.files[0]);
-      const uploadRes = await api.postFormData('/media/images?type=profile', formData);
-      profileImageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
-    }
-
     const signupData = {
-      email,
-      password,
-      passwordConfirm,
-      nickname,
+      email: String(email ?? '').trim(),
+      password: String(password ?? ''),
+      passwordConfirm: String(passwordConfirm ?? ''),
+      nickname: String(nickname ?? '').trim(),
     };
-    if (profileImageId != null) signupData.profileImageId = profileImageId;
-
     await api.post('/auth/signup', signupData);
 
-    // 프로필 파일 입력 비우기
-    if (profileInput) profileInput.value = '';
-
     alert('회원가입이 완료되었습니다! 로그인해주세요.');
-
-    // 프로필 사진 업로드 시 해시만 바꿔서는 이동이 안 되는 경우가 있으므로, 해시 설정 후 reload로 확실히 로그인 페이지 표시
-    window.location.hash = '/login';
+    window.location.hash = '#/login';
     window.location.reload();
+    await route();
   } catch (error) {
     const code = String(error?.code ?? error?.message ?? '').trim();
     const codeUpper = code.toUpperCase();
     const msg = getApiErrorMessage(code || undefined, '회원가입에 실패했습니다. 이메일·닉네임 중복 여부와 입력 형식을 확인한 뒤 다시 시도해주세요.');
-    if (codeUpper === 'NICKNAME_ALREADY_EXISTS') {
-      showFieldError('nickname-error', msg);
-      showFieldError('form-error', msg);
-    } else if (codeUpper === 'EMAIL_ALREADY_EXISTS') {
-      showFieldError('email-error', msg);
-      showFieldError('form-error', msg);
-    } else {
-      showFieldError('form-error', msg);
-    }
+    if (codeUpper === 'NICKNAME_ALREADY_EXISTS') showFieldError('nickname-error', msg);
+    else if (codeUpper === 'EMAIL_ALREADY_EXISTS') showFieldError('email-error', msg);
+    showFieldError('form-error', msg);
   } finally {
-    // 버튼 상태 복원
+    _isSubmitting = false;
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
   }

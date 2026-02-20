@@ -9,7 +9,7 @@ let newPreviewFiles = [];
 let isSubmittingEdit = false;
 
 import { api } from '../api.js';
-import { navigateTo } from '../router.js';
+import { navigateTo, route } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, initAutoResizeTextarea, autoResizeTextarea, resolvePostId, getApiErrorMessage, safeImageUrl, validatePostTitle, validatePostContent } from '../utils.js';
 
@@ -81,7 +81,7 @@ export async function renderEditPost(param) {
               </div>
             </div>
             
-            <button type="submit" class="btn btn-primary">수정하기</button>
+            <button type="button" class="btn btn-primary" id="edit-submit-btn" disabled>수정하기</button>
           </form>
         </div>
       </div>
@@ -130,9 +130,11 @@ async function fillEditPostForm(postId) {
       .map((f) => ({ imageId: f.imageId, fileUrl: f.fileUrl || f.url || '' }));
     newPreviewFiles = [];
     if (fileText) {
-      fileText.textContent = files.length > 0 ? `기존 ${files.length}장` : '';
+      fileText.textContent = files.length > 0 ? `총 ${files.length}장` : '';
     }
     renderImagePreviews();
+    const submitBtn = document.getElementById('edit-submit-btn');
+    if (submitBtn) submitBtn.disabled = false;
   }
 
   try {
@@ -140,8 +142,9 @@ async function fillEditPostForm(postId) {
     const postData = response.data || response;
     applyToForm(postData);
   } catch (error) {
-    console.error('게시글 정보를 불러올 수 없습니다:', error);
     showFieldError('form-error', getApiErrorMessage(error?.code || error?.message, '게시글을 불러오지 못했습니다. 삭제되었거나 주소가 잘못되었을 수 있습니다.'));
+    const submitBtn = document.getElementById('edit-submit-btn');
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
@@ -173,8 +176,13 @@ function renderImagePreviews() {
 // 게시글 수정 페이지 이벤트 리스너
 function attachEditPostEvents(postId) {
   const form = document.getElementById('edit-post-form');
-  if (form) {
-    form.addEventListener('submit', (e) => handleEditPost(e, postId));
+  const submitBtn = document.getElementById('edit-submit-btn');
+  if (form && submitBtn) {
+    submitBtn.addEventListener('click', () => handleEditPost(postId));
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleEditPost(postId);
+    });
   }
 
   const imageInput = document.getElementById('image');
@@ -198,7 +206,7 @@ function attachEditPostEvents(postId) {
       } else if (type === 'new') {
         const entry = newPreviewFiles[index];
         if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
-        newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index);
+        newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index); // 불변 업데이트 (filter는 새 배열 반환)
       }
       renderImagePreviews();
       if (fileText) {
@@ -208,15 +216,16 @@ function attachEditPostEvents(postId) {
     });
   }
 
+  // change 시 불변 업데이트. input.value=''로 초기화 (같은 파일 재선택 시 change 재발생).
   if (imageInput && fileText) {
     imageInput.addEventListener('change', (e) => {
       const added = Array.from(e.target.files || []);
       const allowed = maxTotal - (existingPostImageUrls?.length || 0) - (newPreviewFiles?.length || 0);
       const toAdd = added.slice(0, Math.max(0, allowed));
-      for (const file of toAdd) {
-        if (newPreviewFiles.length >= maxTotal - (existingPostImageUrls?.length || 0)) break;
-        newPreviewFiles.push({ file, objectUrl: URL.createObjectURL(file) });
-      }
+      newPreviewFiles = [
+        ...newPreviewFiles,
+        ...toAdd.map((file) => ({ file, objectUrl: URL.createObjectURL(file) })),
+      ];
       imageInput.value = '';
       renderImagePreviews();
       const total = (existingPostImageUrls?.length || 0) + (newPreviewFiles?.length || 0);
@@ -226,14 +235,17 @@ function attachEditPostEvents(postId) {
 }
 
 // 게시글 수정 처리
-async function handleEditPost(e, postId) {
-  e.preventDefault();
+async function handleEditPost(postId) {
+  if (isSubmittingEdit) return;
 
-  const form = e.target;
-  const submitBtn = form?.querySelector('.btn-primary');
+  // [원인] change가 클릭보다 늦게 오면 newPreviewFiles=[]가 되어 imageFiles=0. input.files는 선택 직후 채워지므로 fallback으로 사용.
+  const fromPreview = (newPreviewFiles || []).map((item) => item.file).filter(Boolean);
+  const fromInput = Array.from(document.getElementById('image')?.files || []);
+  const imageFiles = (fromPreview.length > 0 ? fromPreview : fromInput).slice(0, 5);
+
+  const submitBtn = document.getElementById('edit-submit-btn');
   const originalText = submitBtn?.textContent ?? '수정하기';
 
-  if (isSubmittingEdit) return;
   if (submitBtn) {
     submitBtn.disabled = true;
     submitBtn.textContent = '수정 중...';
@@ -251,7 +263,6 @@ async function handleEditPost(e, postId) {
 
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
-  const imageFiles = (newPreviewFiles || []).map((item) => item.file).filter(Boolean);
 
   const titleCheck = validatePostTitle(title);
   if (!titleCheck.ok) {
@@ -278,8 +289,7 @@ async function handleEditPost(e, postId) {
       if (id != null) newImageIds.push(id);
     }
     const imageIds = [...existingPostImageIds, ...newImageIds].slice(0, 5).map((id) => Number(id));
-    const payload = { title, content };
-    if (imageIds.length > 0) payload.imageIds = imageIds;
+    const payload = { title, content, imageIds };
 
     await api.patch(`/posts/${postId}`, payload);
 
@@ -287,6 +297,7 @@ async function handleEditPost(e, postId) {
 
     sessionStorage.setItem('post_detail_skip_view', String(postId));
     navigateTo(`/posts/${postId}`);
+    await route();
   } catch (error) {
     const msg = getApiErrorMessage(error?.code || error?.message, '게시글 수정에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');
     showFieldError('form-error', msg);

@@ -45,8 +45,7 @@ export function restoreUser() {
       state.user = userData;
       state.isLoggedIn = true;
       return userData;
-    } catch (e) {
-      console.error('사용자 정보 복원 실패:', e);
+    } catch (_) {
       clearUser();
     }
   }

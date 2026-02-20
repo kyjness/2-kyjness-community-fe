@@ -72,8 +72,7 @@ async function loadPostList() {
     const postsData = response.data || response;
     posts = Array.isArray(postsData) ? postsData : [];
     hasMoreFromApi = typeof response.hasMore === 'boolean' ? response.hasMore : posts.length === PAGE_SIZE;
-  } catch (e) {
-    console.error('게시글 조회 실패:', e);
+  } catch (_) {
     fetchFailed = true;
   }
 

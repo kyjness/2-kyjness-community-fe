@@ -10,12 +10,8 @@ const SPLASH_SHOWN_KEY = 'splashShown';
 function initApp() {
   restoreUser();
   initRouter();
-  window.addEventListener('error', (event) => {
-    console.error('전역 에러:', event.error);
-  });
-  window.addEventListener('unhandledrejection', (event) => {
-    console.error('처리되지 않은 Promise 에러:', event.reason);
-  });
+  window.addEventListener('error', () => {});
+  window.addEventListener('unhandledrejection', () => {});
 }
 
 // 스플래시 제거 후 앱 시작 (최초 1회만 스플래시 재생했음을 기록)
@@ -57,9 +53,7 @@ function showSplashFrame(stage, item) {
       autoplay: true,
       path: item.path,
     });
-  } catch (e) {
-    console.warn('Lottie 로드 실패:', e);
-  }
+  } catch (_) {}
 }
 
 // SPLASH_ITEMS 순서대로 재생 후 앱 전환

@@ -60,16 +60,6 @@ export function showFieldError(elementId, message) {
   }
 }
 
-// 한 필드의 에러만 제거 (해당 input의 validation state를 valid로)
-export function clearFieldError(elementId) {
-  const errorElement = document.getElementById(elementId);
-  if (errorElement) {
-    errorElement.textContent = '';
-    errorElement.classList.remove('has-error');
-    errorElement.style.removeProperty('visibility');
-  }
-}
-
 // API 에러 코드 → 한글 메시지 (code, fallback)
 export function getApiErrorMessage(code, fallback = '처리에 실패했습니다.') {
   const messages = {
@@ -87,6 +77,7 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
     // 인증
     UNAUTHORIZED: '로그인이 필요합니다.',
     INVALID_CREDENTIALS: '이메일 또는 비밀번호가 일치하지 않습니다.',
+    EMAIL_NOT_FOUND: '존재하지 않는 이메일입니다.',
     FORBIDDEN: '권한이 없습니다.',
     // 중복
     EMAIL_ALREADY_EXISTS: '이미 사용 중인 이메일입니다.',

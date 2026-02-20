@@ -122,7 +122,10 @@ async function handleLogin(e) {
     submitBtn.disabled = true;
 
     // 로그인 API 호출 (백엔드: { code, data }. 세션은 Set-Cookie(session_id)로 설정됨)
-    const result = await api.post('/auth/login', { email, password });
+    const result = await api.post('/auth/login', {
+      email: String(email).trim(),
+      password: String(password ?? ''),
+    });
 
     // 사용자 정보만 저장 (authToken은 사용하지 않음. 인증은 쿠키로만)
     const data = result?.data;

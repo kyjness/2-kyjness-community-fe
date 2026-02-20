@@ -90,8 +90,7 @@ export async function route() {
       } else {
         render404();
       }
-    } catch (err) {
-      console.error('페이지 로드 실패:', err);
+    } catch (_) {
       render404();
     }
   } else {

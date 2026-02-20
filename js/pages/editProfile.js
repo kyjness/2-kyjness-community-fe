@@ -298,7 +298,6 @@ async function handleProfileUpdate(e) {
     // 화면을 갱신된 사용자 정보로 다시 그려서 프로필 사진·닉네임 등이 확실히 반영되도록 함
     renderEditProfile();
   } catch (error) {
-    console.error('회원정보 수정 실패:', error?.status, error?.code, error?.message);
     const msg = getApiErrorMessage(error?.code || error?.message, '회원정보 수정에 실패했습니다. 닉네임·프로필 사진을 확인한 뒤 다시 시도해주세요.');
     showFieldError('form-error', msg);
   } finally {

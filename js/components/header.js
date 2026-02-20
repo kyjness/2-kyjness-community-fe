@@ -1,6 +1,6 @@
 // 헤더 컴포넌트 (모든 페이지 공통)
 
-import { getUser, clearUser } from '../state.js';
+import { getUser, clearUser, isLoggedIn } from '../state.js';
 import { navigateTo } from '../router.js';
 import { api } from '../api.js';
 import { safeImageUrl } from '../utils.js';
@@ -30,8 +30,8 @@ export function renderHeader(options = {}) {
         <span id="header-title-link">${HEADER_TITLE}</span>
       </h1>
 
-      ${showProfile ? `
-      <!-- 오른쪽 상단 프로필 -->
+      ${showProfile && isLoggedIn() ? `
+      <!-- 오른쪽 상단 프로필 (로그인 시에만 표시) -->
       <div class="header-profile-wrapper" id="header-profile-btn">
         <div class="profile-avatar">
           <img
