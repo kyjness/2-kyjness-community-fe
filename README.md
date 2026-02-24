@@ -53,7 +53,7 @@
 | 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id` 쿠키로 사용자 식별 |
 | API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
 | 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
-| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data, hasMore }` |
+| 게시글 목록 | 스크롤 시 `page` 증가, `response.data.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: { list, hasMore } }` |
 | 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
 
 ---

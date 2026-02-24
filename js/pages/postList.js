@@ -69,9 +69,10 @@ async function loadPostList() {
   let hasMoreFromApi = false;
   try {
     const response = await api.get(`/posts?page=${currentPage}&size=${PAGE_SIZE}`);
-    const postsData = response.data || response;
+    const data = response.data;
+    const postsData = data?.list ?? (Array.isArray(data) ? data : []);
     posts = Array.isArray(postsData) ? postsData : [];
-    hasMoreFromApi = typeof response.hasMore === 'boolean' ? response.hasMore : posts.length === PAGE_SIZE;
+    hasMoreFromApi = typeof (data?.hasMore ?? response.hasMore) === 'boolean' ? (data?.hasMore ?? response.hasMore) : posts.length === PAGE_SIZE;
   } catch (_) {
     fetchFailed = true;
   }

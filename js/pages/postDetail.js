@@ -101,10 +101,11 @@ async function loadCommentsPage(postId, page) {
 
   try {
     const response = await api.get(`/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}`);
-    const commentsData = response.data || response;
-    const comments = Array.isArray(commentsData) ? commentsData : [];
+    const payload = response.data || response;
+    const commentsList = payload?.list ?? payload?.comments ?? (Array.isArray(payload) ? payload : []);
+    const comments = Array.isArray(commentsList) ? commentsList : [];
     const currentUser = getUser();
-    const totalPages = response.totalPages ?? 1;
+    const totalPages = payload?.totalPages ?? response.totalPages ?? 1;
 
     const commentsHTML = comments
       .map(
@@ -295,8 +296,8 @@ async function loadPostDetail(postId, options = {}) {
     try {
       const commentsResponse = await api.get(`/posts/${postId}/comments?page=1&size=${COMMENT_PAGE_SIZE}`);
       const commentsPayload = commentsResponse.data || commentsResponse;
-      const commentsList = Array.isArray(commentsPayload) ? commentsPayload : (commentsPayload?.comments ?? []);
-      comments = commentsList.map(
+      const list = commentsPayload?.list ?? commentsPayload?.comments ?? (Array.isArray(commentsPayload) ? commentsPayload : []);
+      comments = (Array.isArray(list) ? list : []).map(
         (c) => {
           const commentIsMine = !!(currentUser && c.author?.userId === currentUser.userId);
           return {
@@ -311,9 +312,8 @@ async function loadPostDetail(postId, options = {}) {
           };
         },
       );
-      const payload = commentsResponse.data || commentsResponse;
-      commentTotalPages = payload?.totalPages ?? commentsResponse.totalPages ?? 1;
-      commentTotalCount = payload?.totalCount ?? commentsResponse.totalCount ?? comments.length;
+      commentTotalPages = commentsPayload?.totalPages ?? commentsResponse.totalPages ?? 1;
+      commentTotalCount = commentsPayload?.totalCount ?? commentsResponse.totalCount ?? comments.length;
     } catch (_) {}
 
     renderPostDetailCard(normalizedPost, comments, postId, 1, commentTotalPages, commentTotalCount);

@@ -1,0 +1,11 @@
+.git
+.gitignore
+README.md
+.env
+.env*
+node_modules
+.DS_Store
+*.md
+.vscode
+.idea
+.cursor
