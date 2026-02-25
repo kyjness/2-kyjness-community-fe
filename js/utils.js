@@ -93,6 +93,7 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
     // 파일
     INVALID_FILE_TYPE: '지원하지 않는 파일 형식입니다.',
     INVALID_IMAGE_FILE: '유효하지 않은 이미지 파일입니다.',
+    IMAGE_NOT_FOUND: '해당 이미지를 찾을 수 없습니다.',
     FILE_SIZE_EXCEEDED: '파일 크기가 너무 큽니다.',
     // 서버
     CONSTRAINT_ERROR: '데이터 제약 조건을 위반했습니다.',

@@ -1,5 +1,5 @@
 // 게시글 작성 페이지
-/** 새로 선택한 파일 목록 (미리보기 objectUrl + 제출 시 업로드) */
+/** 새로 선택한 파일 목록 (미리보기 objectUrl + 선택 시 업로드된 imageId, 제거 시 DELETE /media/images 호출) */
 let newPreviewFiles = [];
 
 import { api } from '../api.js';
@@ -113,7 +113,7 @@ function attachNewPostEvents() {
   const maxTotal = 5;
 
   if (previewContainer) {
-    previewContainer.addEventListener('click', (e) => {
+    previewContainer.addEventListener('click', async (e) => {
       const removeBtn = e.target.closest('.post-image-remove');
       if (!removeBtn) return;
       const item = removeBtn.closest('.post-image-preview-item');
@@ -121,6 +121,11 @@ function attachNewPostEvents() {
       e.preventDefault();
       const index = parseInt(item.dataset.index, 10);
       const entry = newPreviewFiles[index];
+      if (entry?.imageId != null) {
+        try {
+          await api.delete(`/media/images/${entry.imageId}`);
+        } catch (_) {}
+      }
       if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
       newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index);
       renderImagePreviews();
@@ -131,11 +136,22 @@ function attachNewPostEvents() {
   }
 
   if (imageInput && fileText) {
-    imageInput.addEventListener('change', (e) => {
+    imageInput.addEventListener('change', async (e) => {
       const added = Array.from(e.target.files || []).slice(0, maxTotal - newPreviewFiles.length);
       for (const file of added) {
         if (newPreviewFiles.length >= maxTotal) break;
-        newPreviewFiles.push({ file, objectUrl: URL.createObjectURL(file) });
+        const objectUrl = URL.createObjectURL(file);
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          const uploadRes = await api.postFormData('/media/images?type=post', formData);
+          const imageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
+          newPreviewFiles.push({ file, objectUrl, imageId });
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          showFieldError('content-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
+          break;
+        }
       }
       imageInput.value = '';
       renderImagePreviews();
@@ -153,7 +169,7 @@ async function handleNewPost(e) {
   const form = e.target;
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
-  const imageFiles = (newPreviewFiles || []).map((item) => item.file).filter(Boolean);
+  const imageIds = (newPreviewFiles || []).map((item) => item.imageId).filter((id) => id != null);
 
   const titleCheck = validatePostTitle(title);
   if (!titleCheck.ok) {
@@ -172,15 +188,6 @@ async function handleNewPost(e) {
   try {
     submitBtn.textContent = '작성 중...';
     submitBtn.disabled = true;
-
-    const imageIds = [];
-    for (const file of imageFiles.slice(0, 5)) {
-      const formData = new FormData();
-      formData.append('image', file);
-      const uploadRes = await api.postFormData('/media/images?type=post', formData);
-      const id = uploadRes?.data?.imageId ?? uploadRes?.imageId;
-      if (id != null) imageIds.push(id);
-    }
 
     const result = await api.post('/posts', { title, content, imageIds: imageIds.length ? imageIds : undefined });
     const postId = result?.data?.postId ?? result?.postId ?? null;

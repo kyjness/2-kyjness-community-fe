@@ -1,7 +1,6 @@
 # PuppyTalk - 커뮤니티 프론트엔드
 
-강아지 커뮤니티 서비스를 위한 웹 프론트엔드입니다.  
-바닐라 JavaScript 기반 SPA로, 회원가입·게시글·댓글·좋아요·프로필 수정 등 기능을 제공하며 백엔드 API(`2-kyjness-community-be`)와 통신합니다.
+**PuppyTalk** 커뮤니티의 웹 프론트엔드입니다. 바닐라 JavaScript 기반 SPA로, 회원가입·게시글·댓글·좋아요·프로필 수정 등 기능을 제공하며 백엔드 API(`2-kyjness-community-be`)와 통신합니다.
 
 ---
 
@@ -13,6 +12,7 @@
 |------|------|
 | **인증 (Auth)** | 회원가입(프로필 사진 선택 가능), 로그인, 로그아웃. 로그인 상태는 `localStorage`(표시용)와 쿠키(실제 인증)로 유지 |
 | **사용자 (Users)** | 프로필 조회·수정, 비밀번호 변경, 프로필 사진 업로드. `/users/me` 경로에 대응 |
+| **미디어 (Media)** | 회원가입·프로필·게시글용 이미지 업로드. `POST /v1/media/images`(쿼리 `type=profile`\|`post`) 후 반환된 `imageId` 사용 |
 | **게시글 (Posts)** | 목록(무한 스크롤), 상세(조회수 반영), 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
 | **댓글 (Comments)** | 게시글별 댓글 보기(10개 단위 페이지 번호), 작성, 수정, 삭제 |
 
@@ -32,7 +32,7 @@
 - **상태 표시**: `state.js`·`localStorage`에 사용자 정보를 저장해 헤더 등 UI에 표시. 실제 인증 판단은 서버(쿠키) 기준.
 - **401 처리**: API가 401을 반환하면 `clearUser()` 후 로그인 페이지로 이동.
 
-### 설계 배경
+### 설계 포인트
 
 | 선택 | 이유 |
 |------|------|
@@ -41,18 +41,20 @@
 | **인증은 라우터에서** | 인증 필요 경로를 라우터에서 일괄 검사해 접근 제어를 일관되게 하고, 수정 시 한 곳만 보면 됨. |
 | **페이지별 Lazy Loading** | 경로 진입 시 해당 페이지만 동적 import하여 초기 로딩 시간과 번들 크기 절감. |
 | **무한 스크롤 vs 페이지네이션** | 게시글 목록은 피드 형태로 스크롤하며 읽는 UX가 자연스럽고, 댓글은 "몇 페이지인지", "총 몇 개인지"가 중요해 페이지 번호 버튼 선택. (백엔드와 동일한 설계) |
+| **이미지 미리 업로드** | 회원가입·프로필·게시글에서 이미지는 먼저 `/v1/media/images`로 업로드한 뒤 반환된 `imageId`만 본문에 넣음. (백엔드와 동일) |
 
 ---
 
 ## API 연동
 
-프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.**
+프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.** 엔드포인트·요청/응답 형식·에러 코드 상세는 **백엔드 저장소 README** 또는 서버 실행 후 **http://localhost:8000/docs**, **http://localhost:8000/redoc** 을 참고하면 됩니다.
 
 | 항목 | 프론트 | 백엔드 |
 |------|--------|--------|
 | 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id` 쿠키로 사용자 식별 |
 | API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
 | 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
+| 미디어 | 이미지 업로드 후 `imageId`를 회원가입·프로필·게시글 요청에 사용 | `POST /v1/media/images?type=profile\|post` → `imageId`, `url` 반환 |
 | 게시글 목록 | 스크롤 시 `page` 증가, `response.data.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: { list, hasMore } }` |
 | 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
 
@@ -73,27 +75,30 @@
 │   ├── anim1.json, anim2.json, anim3.json   # 스플래시 애니메이션 (Lottie)
 │   └── imt.png             # 기본 프로필 이미지
 │
-└── js/
-    ├── main.js             # 앱 진입점 (스플래시 → 라우터 초기화)
-    ├── config.js           # API 주소 등 설정
-    ├── router.js           # 해시 라우팅, 인증 검사, 페이지 로드
-    ├── api.js              # API 호출 (fetch 래퍼, 401 시 로그인 이동)
-    ├── state.js            # 로그인 상태 관리
-    ├── utils.js            # 날짜 포맷, 에러 메시지, 입력 검증(제목/내용/비밀번호/닉네임) 등
-    │
-    ├── pages/              # 화면별 페이지
-    │   ├── login.js        # 로그인
-    │   ├── signup.js       # 회원가입
-    │   ├── postList.js     # 게시글 목록 (무한 스크롤)
-    │   ├── postDetail.js   # 게시글 상세 (댓글, 좋아요, 수정·삭제)
-    │   ├── newPost.js      # 게시글 작성
-    │   ├── editPost.js     # 게시글 수정
-    │   ├── editProfile.js  # 회원정보 수정
-    │   └── changePassword.js   # 비밀번호 변경
-    │
-    └── components/         # 재사용 컴포넌트
-        ├── header.js       # 공통 헤더
-        └── postCard.js     # 게시글 카드
+├── js/
+│   ├── main.js             # 앱 진입점 (스플래시 → 라우터 초기화)
+│   ├── config.js           # API 주소 등 설정 (BASE_URL에 /v1 포함)
+│   ├── router.js           # 해시 라우팅, 인증 검사, 페이지 로드
+│   ├── api.js              # API 호출 (fetch 래퍼, 401 시 로그인 이동)
+│   ├── state.js            # 로그인 상태 관리
+│   ├── utils.js            # 날짜 포맷, 에러 메시지, 입력 검증(제목/내용/비밀번호/닉네임) 등
+│   │
+│   ├── pages/              # 화면별 페이지
+│   │   ├── login.js        # 로그인
+│   │   ├── signup.js       # 회원가입
+│   │   ├── postList.js     # 게시글 목록 (무한 스크롤)
+│   │   ├── postDetail.js   # 게시글 상세 (댓글, 좋아요, 수정·삭제)
+│   │   ├── newPost.js      # 게시글 작성
+│   │   ├── editPost.js     # 게시글 수정
+│   │   ├── editProfile.js  # 회원정보 수정
+│   │   └── changePassword.js   # 비밀번호 변경
+│   │
+│   └── components/         # 재사용 컴포넌트
+│       ├── header.js       # 공통 헤더
+│       └── postCard.js     # 게시글 카드
+│
+├── Dockerfile              # 정적 파일 nginx 서빙 (빌드 시 API_BASE_URL 인자로 config 치환)
+└── README.md
 ```
 
 ---
@@ -123,7 +128,7 @@
 │     → api.get/post 등으로 데이터 요청 후 DOM 갱신                     │
 │                                                                      │
 │  ④ API (api.js)                                                       │
-│     → fetch(BASE_URL + endpoint, { credentials: 'include' })          │
+│     → fetch(BASE_URL + endpoint, { credentials: 'include' }). BASE_URL에 /v1 포함. │
 │     → 401 시 clearUser() 후 navigateTo('/login')                      │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
@@ -138,7 +143,7 @@
 
 ### 1. 사전 준비
 
-- **백엔드 API**가 실행 중이어야 합니다. (`2-kyjness-community-be` 참고)
+- **백엔드 API**가 실행 중이어야 합니다. 백엔드 실행·설정은 **`2-kyjness-community-be` 저장소 README**를 참고합니다.
 - **웹 서버**로 프론트 정적 파일을 서빙해야 합니다. (파일 직접 열기 `file://`은 CORS·ES Modules 이슈로 동작하지 않을 수 있음)
 
 ### 2. 백엔드 실행
@@ -147,8 +152,10 @@
 
 ```bash
 cd ../2-kyjness-community-be
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+또는 프로젝트 루트에서 Docker Compose로 백엔드·DB·프론트를 한 번에 띄울 수 있습니다. (백엔드 README 및 루트의 `docker-compose*.yml` 참고.)
 
 `http://localhost:8000`에서 백엔드가 떠 있으면 다음 단계로 진행합니다.
 
@@ -171,7 +178,7 @@ python -m http.server 8080
 
 ### 4. 설정
 
-배포 시 **`js/config.js`**에서 `BASE_URL`만 실제 API 서버 주소로 수정하면 됩니다. 설명은 config.js 주석을 참고합니다.
+배포 시 **`js/config.js`**에서 `BASE_URL`만 실제 API 서버 주소로 수정하면 됩니다. (예: `http://api.example.com/v1`.) Docker 이미지 빌드 시에는 `API_BASE_URL` 빌드 인자로 넣어 config.js가 치환되도록 할 수 있습니다. 자세한 내용은 `config.js` 주석 및 Dockerfile을 참고합니다.
 
 ---
 

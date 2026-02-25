@@ -3,7 +3,7 @@
 let existingPostImageIds = [];
 /** 기존 이미지 URL 목록 (미리보기 + X로 제거 시 사용) */
 let existingPostImageUrls = [];
-/** 새로 선택한 파일 목록 (미리보기용 objectUrl + 제출 시 업로드) */
+/** 새로 선택한 파일 목록 (미리보기용 objectUrl + 선택 시 업로드된 imageId, 제거 시 DELETE /media/images 호출) */
 let newPreviewFiles = [];
 /** 수정 제출 중복 방지 (한 번만 요청 가도록) */
 let isSubmittingEdit = false;
@@ -164,7 +164,7 @@ function renderImagePreviews() {
   );
   const news = (newPreviewFiles || []).map(
     (item, i) =>
-      `<div class="post-image-preview-item" data-type="new" data-index="${i}">
+      `<div class="post-image-preview-item" data-type="new" data-index="${i}" data-image-id="${item.imageId != null ? String(item.imageId) : ''}">
         <img src="${item.objectUrl}" alt="새 이미지" />
         <button type="button" class="post-image-remove" aria-label="이미지 제거">×</button>
       </div>`
@@ -191,7 +191,7 @@ function attachEditPostEvents(postId) {
   const maxTotal = 5;
 
   if (previewContainer) {
-    previewContainer.addEventListener('click', (e) => {
+    previewContainer.addEventListener('click', async (e) => {
       const removeBtn = e.target.closest('.post-image-remove');
       if (!removeBtn) return;
       const item = removeBtn.closest('.post-image-preview-item');
@@ -205,8 +205,13 @@ function attachEditPostEvents(postId) {
         existingPostImageUrls = existingPostImageUrls.filter((_, i) => i !== index);
       } else if (type === 'new') {
         const entry = newPreviewFiles[index];
+        if (entry?.imageId != null) {
+          try {
+            await api.delete(`/media/images/${entry.imageId}`);
+          } catch (_) {}
+        }
         if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
-        newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index); // 불변 업데이트 (filter는 새 배열 반환)
+        newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index);
       }
       renderImagePreviews();
       if (fileText) {
@@ -216,16 +221,25 @@ function attachEditPostEvents(postId) {
     });
   }
 
-  // change 시 불변 업데이트. input.value=''로 초기화 (같은 파일 재선택 시 change 재발생).
   if (imageInput && fileText) {
-    imageInput.addEventListener('change', (e) => {
+    imageInput.addEventListener('change', async (e) => {
       const added = Array.from(e.target.files || []);
       const allowed = maxTotal - (existingPostImageUrls?.length || 0) - (newPreviewFiles?.length || 0);
       const toAdd = added.slice(0, Math.max(0, allowed));
-      newPreviewFiles = [
-        ...newPreviewFiles,
-        ...toAdd.map((file) => ({ file, objectUrl: URL.createObjectURL(file) })),
-      ];
+      for (const file of toAdd) {
+        const objectUrl = URL.createObjectURL(file);
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          const uploadRes = await api.postFormData('/media/images?type=post', formData);
+          const imageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
+          newPreviewFiles = [...newPreviewFiles, { file, objectUrl, imageId }];
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
+          break;
+        }
+      }
       imageInput.value = '';
       renderImagePreviews();
       const total = (existingPostImageUrls?.length || 0) + (newPreviewFiles?.length || 0);
@@ -237,11 +251,6 @@ function attachEditPostEvents(postId) {
 // 게시글 수정 처리
 async function handleEditPost(postId) {
   if (isSubmittingEdit) return;
-
-  // [원인] change가 클릭보다 늦게 오면 newPreviewFiles=[]가 되어 imageFiles=0. input.files는 선택 직후 채워지므로 fallback으로 사용.
-  const fromPreview = (newPreviewFiles || []).map((item) => item.file).filter(Boolean);
-  const fromInput = Array.from(document.getElementById('image')?.files || []);
-  const imageFiles = (fromPreview.length > 0 ? fromPreview : fromInput).slice(0, 5);
 
   const submitBtn = document.getElementById('edit-submit-btn');
   const originalText = submitBtn?.textContent ?? '수정하기';
@@ -280,14 +289,7 @@ async function handleEditPost(postId) {
   }
 
   try {
-    const newImageIds = [];
-    for (const file of imageFiles.slice(0, 5)) {
-      const formData = new FormData();
-      formData.append('image', file);
-      const uploadRes = await api.postFormData('/media/images?type=post', formData);
-      const id = uploadRes?.data?.imageId ?? uploadRes?.imageId;
-      if (id != null) newImageIds.push(id);
-    }
+    const newImageIds = (newPreviewFiles || []).map((item) => item.imageId).filter((id) => id != null);
     const imageIds = [...existingPostImageIds, ...newImageIds].slice(0, 5).map((id) => Number(id));
     const payload = { title, content, imageIds };
 
