@@ -23,7 +23,6 @@
 | **렌더링** | CSR (Client-Side Rendering) – 브라우저에서 JS로 DOM 생성 |
 | **아키텍처** | SPA (Single Page Application) – 단일 HTML, 해시 라우팅으로 화면 전환 |
 | **프론트** | HTML5, CSS3, JavaScript (ES6+, ES Modules, `async/await`, `fetch`) |
-| **백엔드** | FastAPI (PuppyTalk API) |
 | **브라우저** | ES Modules 지원 브라우저 (Chrome, Firefox, Safari, Edge 최신 버전) |
 
 ### 인증·API 연동
@@ -47,7 +46,7 @@
 
 ## API 연동
 
-프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.** 엔드포인트·요청/응답 형식·에러 코드 상세는 **백엔드 저장소 README** 또는 서버 실행 후 **http://localhost:8000/docs**, **http://localhost:8000/redoc** 을 참고하면 됩니다.
+프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.** 엔드포인트·요청/응답 형식·에러 코드 상세는 **백엔드 저장소 README** 또는 서버 실행 후 **Swagger UI** (`http://localhost:8000/docs`), **ReDoc** (`http://localhost:8000/redoc`)를 참고하면 됩니다.
 
 | 항목 | 프론트 | 백엔드 |
 |------|--------|--------|
@@ -55,8 +54,8 @@
 | API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
 | 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
 | 미디어 | 이미지 업로드 후 `imageId`를 회원가입·프로필·게시글 요청에 사용 | `POST /v1/media/images?type=profile\|post` → `imageId`, `url` 반환 |
-| 게시글 목록 | 스크롤 시 `page` 증가, `response.data.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: { list, hasMore } }` |
-| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `{ data, totalCount, totalPages, currentPage }` |
+| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: 목록 배열, hasMore }` |
+| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `response.data`: `{ list, totalCount, totalPages, currentPage }` |
 
 ---
 
@@ -143,31 +142,22 @@
 
 ### 1. 사전 준비
 
-- **백엔드 API**가 실행 중이어야 합니다. 백엔드 실행·설정은 **`2-kyjness-community-be` 저장소 README**를 참고합니다.
-- **웹 서버**로 프론트 정적 파일을 서빙해야 합니다. (파일 직접 열기 `file://`은 CORS·ES Modules 이슈로 동작하지 않을 수 있음)
+- **백엔드 API** 실행 중이어야 함. 실행·설정은 **`2-kyjness-community-be` README** 참고.
+- **웹 서버**로 정적 파일 서빙 필요. (`file://` 직접 열기는 CORS·ES Modules 이슈로 동작 안 할 수 있음)
 
 ### 2. 백엔드 실행
 
-프론트엔드는 백엔드 API에 의존하므로 **백엔드를 먼저 실행**합니다.
-
-```bash
-cd ../2-kyjness-community-be
-poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-또는 프로젝트 루트에서 Docker Compose로 백엔드·DB·프론트를 한 번에 띄울 수 있습니다. (백엔드 README 및 루트의 `docker-compose*.yml` 참고.)
-
-`http://localhost:8000`에서 백엔드가 떠 있으면 다음 단계로 진행합니다.
+백엔드를 먼저 실행. 실행·환경 변수·DB 설정은 **백엔드 저장소(2-kyjness-community-be) README** 참고. `http://localhost:8000` 에서 떠 있으면 다음 단계로 진행.
 
 ### 3. 프론트엔드 실행
 
-정적 파일을 웹 서버로 서빙합니다. **Node.js는 필요 없습니다.** Live Server 또는 Python 중 하나만 있으면 됩니다.
+정적 파일을 웹 서버로 서빙. **Node.js 불필요.** Live Server 또는 Python 중 하나만 있으면 됨.
 
 **VS Code Live Server (권장)**
 
 1. 프로젝트 폴더 열기
 2. `index.html` 우클릭 → **Open with Live Server**
-3. `http://127.0.0.1:5500` 등 표시된 주소로 접속
+3. 표시된 주소(예: `http://127.0.0.1:5500`)로 접속
 
 **Python**
 
@@ -178,7 +168,7 @@ python -m http.server 8080
 
 ### 4. 설정
 
-배포 시 **`js/config.js`**에서 `BASE_URL`만 실제 API 서버 주소로 수정하면 됩니다. (예: `http://api.example.com/v1`.) Docker 이미지 빌드 시에는 `API_BASE_URL` 빌드 인자로 넣어 config.js가 치환되도록 할 수 있습니다. 자세한 내용은 `config.js` 주석 및 Dockerfile을 참고합니다.
+배포 시 **`js/config.js`** 에서 `BASE_URL` 만 실제 API 주소로 수정. (예: `http://api.example.com/v1`.) Docker 빌드 시 `API_BASE_URL` 인자로 config 치환 가능. 상세는 `config.js` 주석·Dockerfile 참고.
 
 ---
 

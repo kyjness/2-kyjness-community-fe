@@ -9,7 +9,7 @@ let newPreviewFiles = [];
 let isSubmittingEdit = false;
 
 import { api } from '../api.js';
-import { navigateTo, route } from '../router.js';
+import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, initAutoResizeTextarea, autoResizeTextarea, resolvePostId, getApiErrorMessage, safeImageUrl, validatePostTitle, validatePostContent } from '../utils.js';
 
@@ -68,7 +68,7 @@ export async function renderEditPost(param) {
                   type="file" 
                   id="image" 
                   name="image"
-                  accept="image/jpeg,image/jpg,image/png"
+                  accept="image/jpeg,image/png"
                   multiple
                   class="file-input-hidden"
                 />
@@ -80,7 +80,7 @@ export async function renderEditPost(param) {
                 <span class="file-input-text" id="file-input-text"></span>
               </div>
             </div>
-            
+            <span class="helper-text form-error-common" id="form-error"></span>
             <button type="button" class="btn btn-primary" id="edit-submit-btn" disabled>수정하기</button>
           </form>
         </div>
@@ -188,7 +188,15 @@ function attachEditPostEvents(postId) {
   const imageInput = document.getElementById('image');
   const fileText = document.getElementById('file-input-text');
   const previewContainer = document.getElementById('post-image-preview');
+  const fileInputBtn = form?.querySelector('.file-input-button');
   const maxTotal = 5;
+
+  if (fileInputBtn && imageInput) {
+    fileInputBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      imageInput.click();
+    });
+  }
 
   if (previewContainer) {
     previewContainer.addEventListener('click', async (e) => {
@@ -299,7 +307,6 @@ async function handleEditPost(postId) {
 
     sessionStorage.setItem('post_detail_skip_view', String(postId));
     navigateTo(`/posts/${postId}`);
-    await route();
   } catch (error) {
     const msg = getApiErrorMessage(error?.code || error?.message, '게시글 수정에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');
     showFieldError('form-error', msg);

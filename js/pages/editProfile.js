@@ -76,7 +76,7 @@ export function renderEditProfile() {
             />
             <span class="helper-text" id="nickname-error"></span>
           </div>
-
+          <span class="helper-text form-error-common" id="form-error"></span>
           <!-- 4) 수정하기 버튼 -->
           <button type="submit" class="btn btn-primary">
             수정하기

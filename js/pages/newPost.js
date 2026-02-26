@@ -3,7 +3,7 @@
 let newPreviewFiles = [];
 
 import { api } from '../api.js';
-import { navigateTo, route } from '../router.js';
+import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage, validatePostTitle, validatePostContent } from '../utils.js';
 
@@ -60,7 +60,7 @@ export function renderNewPost() {
                   type="file" 
                   id="image" 
                   name="image"
-                  accept="image/jpeg,image/jpg,image/png"
+                  accept="image/jpeg,image/png"
                   multiple
                   class="file-input-hidden"
                 />
@@ -74,7 +74,7 @@ export function renderNewPost() {
                 </span>
               </div>
             </div>
-            
+            <span class="helper-text form-error-common" id="form-error"></span>
             <button type="submit" class="btn btn-primary">완료</button>
           </form>
         </div>
@@ -105,12 +105,21 @@ function renderImagePreviews() {
 // 게시글 작성 페이지 이벤트 리스너
 function attachNewPostEvents() {
   const form = document.getElementById('form');
+  if (!form) return;
   form.addEventListener('submit', handleNewPost);
 
   const imageInput = document.getElementById('image');
   const fileText = document.getElementById('file-input-text');
   const previewContainer = document.getElementById('post-image-preview');
+  const fileInputBtn = form.querySelector('.file-input-button');
   const maxTotal = 5;
+
+  if (fileInputBtn && imageInput) {
+    fileInputBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      imageInput.click();
+    });
+  }
 
   if (previewContainer) {
     previewContainer.addEventListener('click', async (e) => {
@@ -196,10 +205,8 @@ async function handleNewPost(e) {
     alert('게시글이 작성되었습니다!');
     if (id) {
       navigateTo(`/posts/${id}`);
-      await route();
     } else {
       navigateTo('/posts');
-      await route();
     }
   } catch (error) {
     const msg = getApiErrorMessage(error?.code || error?.message, '게시글 작성에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');

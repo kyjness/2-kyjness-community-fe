@@ -244,8 +244,9 @@ body {
   visibility: hidden;
 }
 
-/* form-error: 비어 있을 때 공간 제거 (닉네임-회원가입 버튼 간격 축소) */
-#form-error:empty {
+/* form-error, form-error-common: 비어 있을 때 공간 제거 */
+#form-error:empty,
+#form-error-common:empty {
   display: none;
   min-height: 0;
   margin: 0;

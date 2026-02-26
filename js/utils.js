@@ -95,6 +95,8 @@ export function getApiErrorMessage(code, fallback = '처리에 실패했습니�
     INVALID_IMAGE_FILE: '유효하지 않은 이미지 파일입니다.',
     IMAGE_NOT_FOUND: '해당 이미지를 찾을 수 없습니다.',
     FILE_SIZE_EXCEEDED: '파일 크기가 너무 큽니다.',
+    SIGNUP_IMAGE_TOKEN_INVALID: '프로필 이미지 토큰이 만료되었거나 유효하지 않습니다. 사진을 다시 선택한 뒤 회원가입을 시도해주세요.',
+    SIGNUP_IMAGE_TOKEN_ALREADY_USED: '이미 사용된 프로필 이미지입니다. 사진을 다시 선택해주세요.',
     // 서버
     CONSTRAINT_ERROR: '데이터 제약 조건을 위반했습니다.',
     DB_ERROR: '데이터베이스 오류가 발생했습니다.',

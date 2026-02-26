@@ -58,7 +58,7 @@ export function renderChangePassword() {
             />
             <span class="helper-text" id="new-password-confirm-error"></span>
           </div>
-          
+          <span class="helper-text form-error-common" id="form-error"></span>
           <button type="submit" class="btn btn-primary">수정하기</button>
         </form>
       </div>
@@ -102,7 +102,10 @@ async function handleChangePassword(e) {
     hasError = true;
   }
 
-  if (newPassword !== newPasswordConfirm) {
+  if (!newPasswordConfirm || String(newPasswordConfirm).trim() === '') {
+    showFieldError('new-password-confirm-error', '새 비밀번호 확인을 입력해주세요.');
+    hasError = true;
+  } else if (newPassword !== newPasswordConfirm) {
     showFieldError(
       'new-password-confirm-error',
       '새 비밀번호 확인이 위 새 비밀번호와 일치하지 않습니다.',
