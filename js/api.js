@@ -9,6 +9,7 @@ function getDefaultHeaders(isFormData, extra = {}) {
   return { 'Content-Type': 'application/json', ...extra };
 }
 
+/** API 응답 계약: 항상 { code, data }. payload는 body.data 로 통일. */
 async function handleResponse(response, options = {}) {
   const { skip401Redirect = false } = options;
   const isNoContent = response.status === 204;

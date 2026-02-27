@@ -508,11 +508,10 @@ async function onLikeClick(postId) {
   try {
     const response = await api.post(`/posts/${postId}/likes`, undefined);
     if (response.code === 'ALREADY_LIKED') {
-      // 이미 좋아요한 상태에서 클릭 → 취소(토글)
-      const delResponse = await api.delete(`/posts/${postId}/likes`);
-      if (delResponse.data && delResponse.data.likeCount !== undefined) {
-        likeCountEl.textContent = delResponse.data.likeCount;
-      }
+      // 이미 좋아요한 상태에서 클릭 → 취소(토글). DELETE는 204(본문 없음)이므로 화면만 1 감소.
+      await api.delete(`/posts/${postId}/likes`);
+      const current = parseInt(likeCountEl.textContent, 10) || 0;
+      likeCountEl.textContent = Math.max(0, current - 1);
       return;
     }
     if (response.data && response.data.likeCount !== undefined) {

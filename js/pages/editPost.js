@@ -24,7 +24,6 @@ export async function renderEditPost(param) {
     })}
     
     <main class="main">
-      <!-- newPost랑 동일한 폭 사용 -->
       <div class="post-list-container post-new-container">
         <div class="form-container">
           <h2 class="form-title">게시글 수정</h2>
@@ -88,7 +87,6 @@ export async function renderEditPost(param) {
     </main>
   `;
 
-  // 이벤트 리스너 등록 (수정 화면 뒤로가기 시 조회수 미증가를 위해 플래그 설정)
   initHeaderEvents({
     backButtonHref: postId ? `/posts/${postId}` : '/posts',
     backButtonOnClick: postId
@@ -282,15 +280,11 @@ async function handleEditPost(postId) {
   const content = document.getElementById('content').value.trim();
 
   const titleCheck = validatePostTitle(title);
-  if (!titleCheck.ok) {
-    showFieldError('title-error', titleCheck.message);
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
-    isSubmittingEdit = false;
-    return;
-  }
   const contentCheck = validatePostContent(content);
-  if (!contentCheck.ok) {
-    showFieldError('content-error', contentCheck.message);
+
+  if (!titleCheck.ok) showFieldError('title-error', titleCheck.message);
+  if (!contentCheck.ok) showFieldError('content-error', contentCheck.message);
+  if (!titleCheck.ok || !contentCheck.ok) {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
     isSubmittingEdit = false;
     return;

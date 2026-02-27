@@ -15,12 +15,10 @@ export function renderNewPost() {
     ${renderHeader({ showBackButton: true })}
     
     <main class="main">
-      <!-- 게시글 목록과 같은 폭을 쓰되, 새 게시글 전용 클래스 추가 -->
       <div class="post-list-container post-new-container">
         <div class="form-container">
           <h2 class="form-title">게시글 작성</h2>
-          
-          <!-- 🔥 새 게시글 전용 클래스 추가 -->
+
           <form id="form" class="form new-post-form" novalidate>
             <!-- 제목 -->
             <div class="form-group">
@@ -181,15 +179,11 @@ async function handleNewPost(e) {
   const imageIds = (newPreviewFiles || []).map((item) => item.imageId).filter((id) => id != null);
 
   const titleCheck = validatePostTitle(title);
-  if (!titleCheck.ok) {
-    showFieldError('title-error', titleCheck.message);
-    return;
-  }
   const contentCheck = validatePostContent(content);
-  if (!contentCheck.ok) {
-    showFieldError('content-error', contentCheck.message);
-    return;
-  }
+
+  if (!titleCheck.ok) showFieldError('title-error', titleCheck.message);
+  if (!contentCheck.ok) showFieldError('content-error', contentCheck.message);
+  if (!titleCheck.ok || !contentCheck.ok) return;
 
   const submitBtn = form.querySelector('.btn-primary');
   const originalText = submitBtn.textContent;

@@ -234,13 +234,15 @@ async function handleSignup(e) {
       const uploadForm = new FormData();
       uploadForm.append('image', profileFile);
       const uploadRes = await api.postFormData('/media/images/signup', uploadForm);
-      const data = uploadRes?.data;
-      if (!(data?.imageId != null && data?.signupToken)) {
+      const payload = uploadRes?.data;
+      const hasImageId = payload != null && payload.imageId != null;
+      const hasToken = payload != null && typeof payload.signupToken === 'string' && payload.signupToken.trim() !== '';
+      if (!hasImageId || !hasToken) {
         showFieldError('profile-error', '프로필 이미지 업로드에 실패했습니다. 다시 시도해주세요.');
         return;
       }
-      profileImageId = data.imageId;
-      signupToken = data.signupToken;
+      profileImageId = payload.imageId;
+      signupToken = payload.signupToken;
     }
 
     const signupData = {
@@ -252,6 +254,7 @@ async function handleSignup(e) {
       signupData.profileImageId = profileImageId;
       signupData.signupToken = signupToken;
     }
+
     await api.post('/auth/signup', signupData);
 
     alert('회원가입이 완료되었습니다! 로그인해주세요.');
