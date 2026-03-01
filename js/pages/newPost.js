@@ -1,75 +1,69 @@
-// 게시글 작성 페이지
-/** 새로 선택한 파일 목록 (미리보기 objectUrl + 선택 시 업로드된 imageId, 제거 시 DELETE /media/images 호출) */
-let newPreviewFiles = [];
+// 게시글 작성 페이지 — 처음부터 단순하게 작성
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage, validatePostTitle, validatePostContent } from '../utils.js';
 
-// 게시글 작성 페이지 렌더링
-export function renderNewPost() {
-  const root = document.getElementById('app-root');
+const MAX_IMAGES = 5;
+let selectedImages = [];
 
+function getPreviewContainer() {
+  return document.getElementById('post-image-preview');
+}
+
+function getFileTextEl() {
+  return document.getElementById('file-input-text');
+}
+
+const NEW_POST_HASH = '#/posts/new';
+
+function renderPreviews(skipHashCheck = false) {
+  if (!skipHashCheck && (window.location.hash || '').replace(/^#?/, '#') !== NEW_POST_HASH) return;
+  const container = getPreviewContainer();
+  if (!container || !document.body.contains(container)) return;
+  const html = selectedImages
+    .map(
+      (item, i) =>
+        `<div class="post-image-preview-item" data-index="${i}">
+          <img src="${item.objectUrl}" alt="미리보기" />
+          <button type="button" class="post-image-remove" aria-label="제거">×</button>
+        </div>`
+    )
+    .join('');
+  container.innerHTML = html;
+  container.classList.toggle('has-images', selectedImages.length > 0);
+  const ft = getFileTextEl();
+  if (ft) ft.textContent = selectedImages.length > 0 ? `총 ${selectedImages.length}장` : '파일을 선택해주세요.';
+}
+
+export function renderNewPost() {
+  selectedImages = [];
+  const root = document.getElementById('app-root');
   root.innerHTML = `
     ${renderHeader({ showBackButton: true })}
-    
     <main class="main">
       <div class="post-list-container post-new-container">
         <div class="form-container">
           <h2 class="form-title">게시글 작성</h2>
-
-          <form id="form" class="form new-post-form" novalidate>
-            <!-- 제목 -->
+          <form id="new-post-form" class="form new-post-form" novalidate>
             <div class="form-group">
               <label for="title" class="form-label">제목*</label>
-              <input 
-                type="text" 
-                id="title" 
-                name="title" 
-                class="form-input" 
-                placeholder="제목을 입력해주세요. (최대 26글자)"
-                maxlength="26"
-                required 
-              />
+              <input type="text" id="title" name="title" class="form-input" placeholder="제목을 입력하세요. (최대 26글자)" maxlength="26" required />
               <span class="helper-text" id="title-error"></span>
             </div>
-            
-            <!-- 내용 -->
             <div class="form-group">
               <label for="content" class="form-label">내용*</label>
-              <textarea 
-                id="content" 
-                name="content" 
-                class="form-input form-textarea"
-                placeholder="내용을 입력해주세요."
-                required
-              ></textarea>
+              <textarea id="content" name="content" class="form-input form-textarea" placeholder="내용을 입력하세요." required></textarea>
               <div id="post-image-preview" class="post-image-preview" aria-label="첨부 이미지 미리보기"></div>
               <span class="helper-text" id="content-error"></span>
             </div>
-
-            <!-- 이미지 (최대 5장) -->
             <div class="form-group">
-              <label for="image" class="form-label">이미지 (최대 5장)</label>
-
+              <span class="form-label">이미지 (최대 ${MAX_IMAGES}장)</span>
               <div class="file-input-wrapper">
-                <input 
-                  type="file" 
-                  id="image" 
-                  name="image"
-                  accept="image/jpeg,image/png"
-                  multiple
-                  class="file-input-hidden"
-                />
-
-                <label for="image" class="file-input-button">
-                  파일 선택
-                </label>
-
-                <span class="file-input-text" id="file-input-text">
-                  파일을 선택해주세요.
-                </span>
+                <input type="file" id="post-file-input" accept="image/jpeg,image/png" multiple class="file-input-hidden" aria-hidden="true" />
+                <button type="button" class="file-input-button" id="post-file-trigger">파일 선택</button>
+                <span class="file-input-text" id="file-input-text">파일을 선택해주세요.</span>
               </div>
             </div>
             <span class="helper-text form-error-common" id="form-error"></span>
@@ -81,132 +75,110 @@ export function renderNewPost() {
   `;
 
   initHeaderEvents();
-  attachNewPostEvents();
   initAutoResizeTextarea('content');
-}
+  renderPreviews(true);
 
-// 내용 영역 이미지 미리보기 (새로 선택한 파일만, 오른쪽 위 X로 제거)
-function renderImagePreviews() {
-  const container = document.getElementById('post-image-preview');
-  if (!container) return;
-  const items = (newPreviewFiles || []).map(
-    (item, i) =>
-      `<div class="post-image-preview-item" data-type="new" data-index="${i}">
-        <img src="${item.objectUrl}" alt="새 이미지" />
-        <button type="button" class="post-image-remove" aria-label="이미지 제거">×</button>
-      </div>`
-  );
-  container.innerHTML = items.join('');
-  container.classList.toggle('has-images', items.length > 0);
-}
+  const form = document.getElementById('new-post-form');
+  const fileInput = document.getElementById('post-file-input');
+  const trigger = document.getElementById('post-file-trigger');
+  const previewContainer = getPreviewContainer();
 
-// 게시글 작성 페이지 이벤트 리스너
-function attachNewPostEvents() {
-  const form = document.getElementById('form');
-  if (!form) return;
-  form.addEventListener('submit', handleNewPost);
+  form.addEventListener('submit', onSubmit);
 
-  const imageInput = document.getElementById('image');
-  const fileText = document.getElementById('file-input-text');
-  const previewContainer = document.getElementById('post-image-preview');
-  const fileInputBtn = form.querySelector('.file-input-button');
-  const maxTotal = 5;
-
-  if (fileInputBtn && imageInput) {
-    fileInputBtn.addEventListener('click', (e) => {
+  if (trigger && fileInput) {
+    trigger.addEventListener('click', (e) => {
       e.preventDefault();
-      imageInput.click();
+      e.stopPropagation();
+      fileInput.click();
+    });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';
+      const left = MAX_IMAGES - selectedImages.length;
+      const toAdd = files.slice(0, left);
+      for (const file of toAdd) {
+        if (selectedImages.length >= MAX_IMAGES) break;
+        const objectUrl = URL.createObjectURL(file);
+        const entry = { file, objectUrl, imageId: null };
+        selectedImages.push(entry);
+        renderPreviews();
+        try {
+          const fd = new FormData();
+          fd.append('image', file);
+          const res = await api.postFormData('/media/images?purpose=post', fd);
+          if ((window.location.hash || '').replace(/^#?/, '#') !== NEW_POST_HASH) return;
+          entry.imageId = res?.data?.imageId ?? res?.imageId ?? null;
+        } catch (err) {
+          if ((window.location.hash || '').replace(/^#?/, '#') === NEW_POST_HASH) {
+            URL.revokeObjectURL(objectUrl);
+            selectedImages = selectedImages.filter((x) => x !== entry);
+            renderPreviews();
+            showFieldError('content-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
+          }
+        }
+      }
+      renderPreviews();
     });
   }
 
   if (previewContainer) {
     previewContainer.addEventListener('click', async (e) => {
-      const removeBtn = e.target.closest('.post-image-remove');
-      if (!removeBtn) return;
-      const item = removeBtn.closest('.post-image-preview-item');
+      const remove = e.target.closest('.post-image-remove');
+      if (!remove) return;
+      const item = remove.closest('.post-image-preview-item');
       if (!item) return;
       e.preventDefault();
-      const index = parseInt(item.dataset.index, 10);
-      const entry = newPreviewFiles[index];
+      e.stopPropagation();
+      const i = parseInt(item.dataset.index, 10);
+      const entry = selectedImages[i];
       if (entry?.imageId != null) {
         try {
           await api.delete(`/media/images/${entry.imageId}`);
         } catch (_) {}
       }
       if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
-      newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index);
-      renderImagePreviews();
-      if (fileText) {
-        fileText.textContent = newPreviewFiles.length > 0 ? `총 ${newPreviewFiles.length}장` : '파일을 선택해주세요.';
-      }
-    });
-  }
-
-  if (imageInput && fileText) {
-    imageInput.addEventListener('change', async (e) => {
-      const added = Array.from(e.target.files || []).slice(0, maxTotal - newPreviewFiles.length);
-      for (const file of added) {
-        if (newPreviewFiles.length >= maxTotal) break;
-        const objectUrl = URL.createObjectURL(file);
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
-          const uploadRes = await api.postFormData('/media/images?type=post', formData);
-          const imageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
-          newPreviewFiles.push({ file, objectUrl, imageId });
-        } catch (err) {
-          URL.revokeObjectURL(objectUrl);
-          showFieldError('content-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
-          break;
-        }
-      }
-      imageInput.value = '';
-      renderImagePreviews();
-      fileText.textContent = newPreviewFiles.length > 0 ? `총 ${newPreviewFiles.length}장` : '파일을 선택해주세요.';
+      selectedImages = selectedImages.filter((_, idx) => idx !== i);
+      renderPreviews();
     });
   }
 }
 
-// 게시글 작성 처리
-async function handleNewPost(e) {
+async function onSubmit(e) {
   e.preventDefault();
-
   clearErrors();
 
-  const form = e.target;
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
-  const imageIds = (newPreviewFiles || []).map((item) => item.imageId).filter((id) => id != null);
+  const imageIds = selectedImages.map((x) => x.imageId).filter((id) => id != null);
 
-  const titleCheck = validatePostTitle(title);
-  const contentCheck = validatePostContent(content);
+  const tCheck = validatePostTitle(title);
+  if (!tCheck.ok) {
+    showFieldError('title-error', tCheck.message);
+    return;
+  }
+  const cCheck = validatePostContent(content);
+  if (!cCheck.ok) {
+    showFieldError('content-error', cCheck.message);
+    return;
+  }
 
-  if (!titleCheck.ok) showFieldError('title-error', titleCheck.message);
-  if (!contentCheck.ok) showFieldError('content-error', contentCheck.message);
-  if (!titleCheck.ok || !contentCheck.ok) return;
-
-  const submitBtn = form.querySelector('.btn-primary');
-  const originalText = submitBtn.textContent;
+  const form = e.target;
+  const btn = form.querySelector('.btn-primary');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '작성 중...';
 
   try {
-    submitBtn.textContent = '작성 중...';
-    submitBtn.disabled = true;
-
-    const result = await api.post('/posts', { title, content, imageIds: imageIds.length ? imageIds : undefined });
-    const postId = result?.data?.postId ?? result?.postId ?? null;
-    const id = postId != null && postId !== '' ? String(postId) : null;
-
+    const res = await api.post('/posts', { title, content, imageIds: imageIds.length ? imageIds : undefined });
+    const postId = res?.data?.postId ?? res?.postId;
     alert('게시글이 작성되었습니다!');
-    if (id) {
-      navigateTo(`/posts/${id}`);
-    } else {
-      navigateTo('/posts');
-    }
-  } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 작성에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');
-    showFieldError('form-error', msg);
-  } finally {
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
+    navigateTo(postId != null ? `/posts/${postId}` : '/posts');
+  } catch (err) {
+    showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '게시글 작성에 실패했습니다.'));
+    btn.disabled = false;
+    btn.textContent = orig;
   }
 }

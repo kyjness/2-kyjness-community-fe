@@ -1,17 +1,11 @@
-# Git
 .git
 .gitignore
-
-# 시크릿/환경 (이미지에 넣지 않음, 빌드 시 --build-arg 로 주입)
+README.md
 .env
-.env.*
-
-# 불필요 파일
+.env*
 node_modules
 .DS_Store
 *.md
-!README.md
 .vscode
 .idea
 .cursor
-*.log

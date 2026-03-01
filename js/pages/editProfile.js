@@ -20,6 +20,7 @@ export function renderEditProfile() {
         <h2 class="form-title">회원정보수정</h2>
 
         <form id="form" class="form" novalidate>
+          <!-- 1) 프로필 사진 -->
           <div class="form-group signup-profile-group">
             <label class="form-label">프로필 사진*</label>
 
@@ -28,6 +29,7 @@ export function renderEditProfile() {
                 class="btn avatar profile-edit-avatar"
                 id="avatar-area"
               >
+                <!-- ✅ 이미지를 래퍼로 한 번 감쌈 -->
                 <div class="avatar-img-wrapper">
                   <img
                     id="avatar-img"
@@ -54,7 +56,7 @@ export function renderEditProfile() {
             </div>
           </div>
 
-          <!-- 이메일 -->
+          <!-- 2) 이메일 (저장된 이메일 표시) -->
           <div class="form-group">
             <label class="form-label">이메일</label>
             <p class="profile-edit-email">
@@ -62,7 +64,7 @@ export function renderEditProfile() {
             </p>
           </div>
 
-          <!-- 닉네임 -->
+          <!-- 3) 닉네임 -->
           <div class="form-group">
             <label for="nickname" class="form-label">닉네임</label>
             <input
@@ -75,11 +77,12 @@ export function renderEditProfile() {
             <span class="helper-text" id="nickname-error"></span>
           </div>
           <span class="helper-text form-error-common" id="form-error"></span>
+          <!-- 4) 수정하기 버튼 -->
           <button type="submit" class="btn btn-primary">
             수정하기
           </button>
 
-          <!-- 회원 탈퇴 -->
+          <!-- 5) 회원 탈퇴 -->
           <button
             type="button"
             id="delete-account-btn"
@@ -89,6 +92,7 @@ export function renderEditProfile() {
           </button>
         </form>
 
+        <!-- 6) 하단 큰 "수정완료" 버튼 (.btn-submit 공통 사용) -->
         <button
           type="button"
           id="edit-complete-btn"
@@ -138,6 +142,7 @@ function attachEditProfileEvents() {
   const avatarArea = document.getElementById('avatar-area');
   const profileInput = document.getElementById('profile-image');
   const avatarImg = document.getElementById('avatar-img');
+  const avatarChangeBtn = document.getElementById('avatar-change-btn');
   const deleteBtn = document.getElementById('delete-account-btn');
   const editCompleteBtn = document.getElementById('edit-complete-btn');
 
@@ -163,10 +168,21 @@ function attachEditProfileEvents() {
     });
   }
 
-  // 원 범위 내 클릭 시 파일 선택
-  if (avatarArea && profileInput) {
-    avatarArea.addEventListener('click', () => {
+  // "변경" 버튼 클릭 → 파일 선택 (변경 버튼만 클릭 가능)
+  if (avatarChangeBtn && profileInput) {
+    avatarChangeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       profileInput.click();
+    });
+  }
+
+  // 원의 다른 영역 클릭 시 아무 동작 안 함 (변경 버튼만 클릭 가능)
+  if (avatarArea && avatarChangeBtn) {
+    avatarArea.addEventListener('click', (e) => {
+      // 변경 버튼이 아닌 영역을 클릭한 경우에만 이벤트 전파 중단
+      if (e.target !== avatarChangeBtn && !avatarChangeBtn.contains(e.target)) {
+        e.stopPropagation();
+      }
     });
   }
 
@@ -254,7 +270,7 @@ async function handleProfileUpdate(e) {
     if (file) {
       const formData = new FormData();
       formData.append('image', file);
-      const uploadRes = await api.postFormData('/media/images?type=profile', formData);
+      const uploadRes = await api.postFormData('/media/images?purpose=profile', formData);
       profileImageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
     }
 

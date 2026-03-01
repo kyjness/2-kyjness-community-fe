@@ -1,11 +1,20 @@
-# PuppyTalk Frontend
+# PuppyTalk - 커뮤니티 프론트엔드
 
-**PuppyTalk**는 반려견을 키우는 사람들을 위한 커뮤니티 서비스의 웹 프론트엔드로, 백엔드 **RESTful API**(`2-kyjness-community-be`)와 연동하는 클라이언트입니다.
-회원가입·로그인, 게시글 작성·댓글·좋아요, 이미지 업로드 등 커뮤니티 이용에 필요한 기능을 제공합니다.
+**PuppyTalk** 커뮤니티의 웹 프론트엔드입니다. 바닐라 JavaScript 기반 SPA로, 회원가입·게시글·댓글·좋아요·프로필 수정 등 기능을 제공하며 백엔드 API(`2-kyjness-community-be`)와 통신합니다.
 
 ---
 
 ## 개요
+
+### 기능
+
+| 기능 | 설명 |
+|------|------|
+| **인증 (Auth)** | 회원가입(프로필 사진 선택 가능), 로그인, 로그아웃. 로그인 상태는 `localStorage`(표시용)와 쿠키(실제 인증)로 유지 |
+| **사용자 (Users)** | 프로필 조회·수정, 비밀번호 변경, 프로필 사진 업로드. `/users/me` 경로에 대응 |
+| **미디어 (Media)** | 회원가입·프로필·게시글용 이미지 업로드. `POST /v1/media/images`(쿼리 `type=profile`\|`post`) 후 반환된 `imageId` 사용 |
+| **게시글 (Posts)** | 목록(무한 스크롤), 상세(조회수 반영), 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
+| **댓글 (Comments)** | 게시글별 댓글 보기(10개 단위 페이지 번호), 작성, 수정, 삭제 |
 
 ### 기술 스택
 
@@ -15,16 +24,6 @@
 | **아키텍처** | SPA (Single Page Application) – 단일 HTML, 해시 라우팅으로 화면 전환 |
 | **프론트** | HTML5, CSS3, JavaScript (ES6+, ES Modules, `async/await`, `fetch`) |
 | **브라우저** | ES Modules 지원 브라우저 (Chrome, Firefox, Safari, Edge 최신 버전) |
-
-### 기능
-
-| 기능 | 설명 |
-|------|------|
-| **인증 (Auth)** | 회원가입(프로필 사진 선택 가능), 로그인, 로그아웃. 로그인 상태는 `localStorage`(표시용)와 쿠키(실제 인증)로 유지 |
-| **사용자 (Users)** | 프로필 조회·수정, 비밀번호 변경, 프로필 사진 업로드. 회원정보 수정에서 프로필 원 전체 클릭 시 파일 선택(회원가입과 동일). `/users/me` 경로에 대응 |
-| **미디어 (Media)** | 회원가입·프로필·게시글용 이미지 업로드. `POST /v1/media/images`(쿼리 `type=profile`\|`post`) 후 반환된 `imageId` 사용 |
-| **게시글 (Posts)** | 목록(무한 스크롤), 상세(조회수 반영), 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소. 작성/수정 시 제목·내용 검증 에러는 각 필드 아래에 동시 표시. 수정 시 기존 데이터 로드 후 이미지 추가 가능. |
-| **댓글 (Comments)** | 게시글별 댓글 보기(10개 단위 페이지 번호), 작성, 수정, 삭제 |
 
 ### 인증·API 연동
 
@@ -47,7 +46,7 @@
 
 ## API 연동
 
-프론트엔드는 백엔드 **RESTful API**를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix**를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.
+프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.** 엔드포인트·요청/응답 형식·에러 코드 상세는 **백엔드 저장소 README** 또는 서버 실행 후 **Swagger UI** (`http://localhost:8000/docs`), **ReDoc** (`http://localhost:8000/redoc`)를 참고하면 됩니다.
 
 | 항목 | 프론트 | 백엔드 |
 |------|--------|--------|
@@ -57,15 +56,6 @@
 | 미디어 | 이미지 업로드 후 `imageId`를 회원가입·프로필·게시글 요청에 사용 | `POST /v1/media/images?type=profile\|post` → `imageId`, `url` 반환 |
 | 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: 목록 배열, hasMore }` |
 | 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `response.data`: `{ list, totalCount, totalPages, currentPage }` |
-
-엔드포인트·요청/응답 형식·에러 코드 상세는 **백엔드 저장소 README** 또는 서버 실행 후 아래 문서를 참고하면 됩니다.
-
-| 문서 | 주소 |
-|------|------|
-| **Swagger UI** | http://localhost:8000/docs |
-| **ReDoc** | http://localhost:8000/redoc |
-
-API 베이스 URL: `http://localhost:8000/v1` (백엔드 기본 포트 8000)
 
 ---
 
@@ -152,17 +142,12 @@ API 베이스 URL: `http://localhost:8000/v1` (백엔드 기본 포트 8000)
 
 ### 1. 사전 준비
 
-- **백엔드 API** 실행 중이어야 함. 실행·환경 변수·DB 설정은 **`2-kyjness-community-be` README** 참고.
+- **백엔드 API** 실행 중이어야 함. 실행·설정은 **`2-kyjness-community-be` README** 참고.
 - **웹 서버**로 정적 파일 서빙 필요. (`file://` 직접 열기는 CORS·ES Modules 이슈로 동작 안 할 수 있음)
 
 ### 2. 백엔드 실행
 
-백엔드를 먼저 실행. `http://localhost:8000` 에서 떠 있으면 다음 단계로 진행.
-
-```bash
-cd 2-kyjness-community-be
-poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+백엔드를 먼저 실행. 실행·환경 변수·DB 설정은 **백엔드 저장소(2-kyjness-community-be) README** 참고. `http://localhost:8000` 에서 떠 있으면 다음 단계로 진행.
 
 ### 3. 프론트엔드 실행
 
@@ -183,11 +168,7 @@ python -m http.server 8080
 
 ### 4. 설정
 
-배포 시 **`js/config.js`** 에서 `BASE_URL` 만 실제 API 주소로 수정. (예: `http://api.example.com/v1`.) Docker 빌드 시 `--build-arg API_BASE_URL=...` 로 config 치환. 이미지는 비루트(nginx)·멀티스테이지·8080 노출이므로 실행 시 `-p 8080:8080` 사용.
-
-### 5. Docker Compose로 실행
-
-compose 파일을 이 프로젝트 **한 단계 위 폴더**에 두고 백엔드·프론트를 함께 띄울 수 있음. 백엔드·프론트 각 저장소 README 및 상위 `docker-compose.yml` 참고.
+배포 시 **`js/config.js`** 에서 `BASE_URL` 만 실제 API 주소로 수정. (예: `http://api.example.com/v1`.) Docker 빌드 시 `API_BASE_URL` 인자로 config 치환 가능. 상세는 `config.js` 주석·Dockerfile 참고.
 
 ---
 

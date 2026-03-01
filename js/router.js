@@ -90,7 +90,8 @@ export async function route() {
       } else {
         render404();
       }
-    } catch (_) {
+    } catch (err) {
+      console.error('[router] render error', path, err);
       render404();
     }
   } else {

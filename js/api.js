@@ -9,13 +9,25 @@ function getDefaultHeaders(isFormData, extra = {}) {
   return { 'Content-Type': 'application/json', ...extra };
 }
 
-/** API 응답 계약: 항상 { code, data }. payload는 body.data 로 통일. */
 async function handleResponse(response, options = {}) {
   const { skip401Redirect = false } = options;
   const isNoContent = response.status === 204;
-  const body = isNoContent
-    ? { code: 'OK', data: null }
-    : await response.json().catch(() => ({ code: 'UNKNOWN', data: null }));
+  const is2xx = response.ok;
+  let body;
+  if (isNoContent) {
+    body = { code: 'OK', data: null };
+  } else {
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      body = is2xx ? { code: 'OK', data: null } : { code: 'UNKNOWN', data: null };
+    } else {
+      try {
+        body = JSON.parse(text);
+      } catch (_) {
+        body = is2xx ? { code: 'OK', data: null } : { code: 'UNKNOWN', data: null };
+      }
+    }
+  }
 
   if (!response.ok) {
     if (response.status === 401 && !skip401Redirect) {
@@ -23,9 +35,9 @@ async function handleResponse(response, options = {}) {
       clearUser();
       navigateTo('/login');
     }
-    const msg = body?.code || (typeof body?.detail === 'string' ? body.detail : null) || (body?.detail?.code) || `HTTP ${response.status}`;
+    const msg = body?.code || (typeof body?.detail === 'string' ? body.detail : null) || body?.detail?.code || `HTTP ${response.status}`;
     const err = new Error(msg);
-    err.code = body?.code ?? null;
+    err.code = body?.code ?? body?.detail?.code ?? null;
     err.status = response.status;
     throw err;
   }

@@ -10,8 +10,8 @@ const SPLASH_SHOWN_KEY = 'splashShown';
 function initApp() {
   restoreUser();
   initRouter();
-  window.addEventListener('error', () => {});
-  window.addEventListener('unhandledrejection', () => {});
+  window.addEventListener('error', (e) => { console.error('[app] error', e.message, e.filename, e.lineno, e.error); });
+  window.addEventListener('unhandledrejection', (e) => { console.error('[app] unhandledrejection', e.reason); });
 }
 
 // 스플래시 제거 후 앱 시작 (최초 1회만 스플래시 재생했음을 기록)

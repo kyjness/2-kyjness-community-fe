@@ -1,81 +1,85 @@
-// 게시글 수정 페이지
-/** 수정 폼 로드 시 채워지는 기존 이미지 ID 목록. 제출 시 새 이미지와 합쳐서 전송 */
-let existingPostImageIds = [];
-/** 기존 이미지 URL 목록 (미리보기 + X로 제거 시 사용) */
-let existingPostImageUrls = [];
-/** 새로 선택한 파일 목록 (미리보기용 objectUrl + 선택 시 업로드된 imageId, 제거 시 DELETE /media/images 호출) */
-let newPreviewFiles = [];
-/** 수정 제출 중복 방지 (한 번만 요청 가도록) */
-let isSubmittingEdit = false;
+// 게시글 수정 페이지 — 처음부터 단순하게 작성
 
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
 import { showFieldError, clearErrors, initAutoResizeTextarea, autoResizeTextarea, resolvePostId, getApiErrorMessage, safeImageUrl, validatePostTitle, validatePostContent } from '../utils.js';
 
+const MAX_IMAGES = 5;
+
+let existingIds = [];
+let existingUrls = [];
+let newImages = [];
+let editSubmitting = false;
+let expectedEditHash = '';
+
+function getPreviewContainer() {
+  return document.getElementById('post-image-preview');
+}
+function getFileTextEl() {
+  return document.getElementById('file-input-text');
+}
+
+function renderPreviews(skipHashCheck = false) {
+  if (!skipHashCheck && expectedEditHash) {
+    const hash = (window.location.hash || '').replace(/^#?/, '#');
+    if (hash !== expectedEditHash) return;
+  }
+  const container = getPreviewContainer();
+  if (!container || !document.body.contains(container)) return;
+  const existingHtml = (existingUrls || []).map(
+    (item, i) => {
+      const src = (safeImageUrl(item.fileUrl, '') || '').replace(/"/g, '&quot;');
+      return `<div class="post-image-preview-item" data-type="existing" data-index="${i}" data-image-id="${item.imageId}">
+        <img src="${src}" alt="이미지" />
+        <button type="button" class="post-image-remove" aria-label="제거">×</button>
+      </div>`;
+    }
+  );
+  const newHtml = (newImages || []).map(
+    (item, i) =>
+      `<div class="post-image-preview-item" data-type="new" data-index="${i}">
+        <img src="${item.objectUrl}" alt="새 이미지" />
+        <button type="button" class="post-image-remove" aria-label="제거">×</button>
+      </div>`
+  );
+  container.innerHTML = [...existingHtml, ...newHtml].join('');
+  container.classList.toggle('has-images', existingUrls.length + newImages.length > 0);
+  const ft = getFileTextEl();
+  if (ft) ft.textContent = existingUrls.length + newImages.length > 0 ? `총 ${existingUrls.length + newImages.length}장` : '';
+}
+
 export async function renderEditPost(param) {
-  const root = document.getElementById('app-root');
   const postId = resolvePostId(param, { requireEdit: true });
+  const root = document.getElementById('app-root');
 
   root.innerHTML = `
     ${renderHeader({
       showBackButton: true,
       backButtonHref: postId ? `/posts/${postId}` : '/posts',
+      backButtonOnClick: postId ? () => { sessionStorage.setItem('post_detail_skip_view', String(postId)); navigateTo(`/posts/${postId}`); } : undefined,
     })}
-    
     <main class="main">
       <div class="post-list-container post-new-container">
         <div class="form-container">
           <h2 class="form-title">게시글 수정</h2>
-          
           <form id="edit-post-form" class="form new-post-form" novalidate>
-            <!-- 제목 -->
             <div class="form-group">
               <label for="title" class="form-label">제목*</label>
-              <input 
-                type="text" 
-                id="title" 
-                name="title" 
-                class="form-input" 
-                placeholder="제목을 입력해주세요. (최대 26글자)"
-                maxlength="26"
-                required 
-              />
+              <input type="text" id="title" name="title" class="form-input" placeholder="제목을 입력하세요. (최대 26글자)" maxlength="26" required />
               <span class="helper-text" id="title-error"></span>
             </div>
-            
-            <!-- 내용 -->
             <div class="form-group">
               <label for="content" class="form-label">내용*</label>
-              <textarea 
-                id="content" 
-                name="content" 
-                class="form-input form-textarea"
-                placeholder="내용을 입력해주세요."
-                required
-              ></textarea>
+              <textarea id="content" name="content" class="form-input form-textarea" placeholder="내용을 입력하세요." required></textarea>
               <div id="post-image-preview" class="post-image-preview" aria-label="첨부 이미지 미리보기"></div>
               <span class="helper-text" id="content-error"></span>
             </div>
-
-            <!-- 이미지 (최대 5장) -->
             <div class="form-group">
-              <label for="image" class="form-label">이미지 추가 (최대 5장)</label>
-
+              <span class="form-label">이미지 추가 (최대 ${MAX_IMAGES}장)</span>
               <div class="file-input-wrapper">
-                <input 
-                  type="file" 
-                  id="image" 
-                  name="image"
-                  accept="image/jpeg,image/png"
-                  multiple
-                  class="file-input-hidden"
-                />
-
-                <label for="image" class="file-input-button">
-                  파일 선택
-                </label>
-
+                <input type="file" id="edit-file-input" accept="image/jpeg,image/png" multiple class="file-input-hidden" aria-hidden="true" />
+                <button type="button" class="file-input-button" id="edit-file-trigger">파일 선택</button>
                 <span class="file-input-text" id="file-input-text"></span>
               </div>
             </div>
@@ -89,226 +93,152 @@ export async function renderEditPost(param) {
 
   initHeaderEvents({
     backButtonHref: postId ? `/posts/${postId}` : '/posts',
-    backButtonOnClick: postId
-      ? () => {
-          sessionStorage.setItem('post_detail_skip_view', String(postId));
-          navigateTo(`/posts/${postId}`);
-        }
-      : undefined,
+    backButtonOnClick: postId ? () => { sessionStorage.setItem('post_detail_skip_view', String(postId)); navigateTo(`/posts/${postId}`); } : undefined,
   });
-  attachEditPostEvents(postId);
   initAutoResizeTextarea('content');
 
-  // 기존 게시글 데이터 채우기
-  if (postId) {
-    await fillEditPostForm(postId);
-  } else {
+  if (!postId) {
     showFieldError('form-error', '유효하지 않은 게시글입니다.');
     navigateTo('/posts');
+    return;
   }
-}
 
-// 기존 게시글 데이터 API로 불러와서 폼에 채움
-async function fillEditPostForm(postId) {
-  const id = String(postId);
-  const titleInput = document.getElementById('title');
-  const contentInput = document.getElementById('content');
-  const fileText = document.getElementById('file-input-text');
+  expectedEditHash = `#/posts/${postId}/edit`;
+  existingIds = [];
+  existingUrls = [];
+  newImages = [];
 
-  function applyToForm(postData) {
-    if (titleInput) titleInput.value = postData.title ?? '';
-    if (contentInput) {
-      contentInput.value = postData.content ?? '';
-      autoResizeTextarea(contentInput);
-    }
-    const files = postData.files || (postData.file ? [postData.file] : []);
-    existingPostImageIds = files.map((f) => f.imageId).filter((id) => id != null);
-    existingPostImageUrls = files
-      .filter((f) => f.imageId != null)
-      .map((f) => ({ imageId: f.imageId, fileUrl: f.fileUrl || f.url || '' }));
-    newPreviewFiles = [];
-    if (fileText) {
-      fileText.textContent = files.length > 0 ? `총 ${files.length}장` : '';
-    }
-    renderImagePreviews();
-    const submitBtn = document.getElementById('edit-submit-btn');
-    if (submitBtn) submitBtn.disabled = false;
-  }
+  const form = document.getElementById('edit-post-form');
+  const fileInput = document.getElementById('edit-file-input');
+  const trigger = document.getElementById('edit-file-trigger');
+  const previewContainer = getPreviewContainer();
+  const submitBtn = document.getElementById('edit-submit-btn');
 
   try {
-    const response = await api.get(`/posts/${id}`);
-    const postData = response.data || response;
-    applyToForm(postData);
-  } catch (error) {
-    showFieldError('form-error', getApiErrorMessage(error?.code || error?.message, '게시글을 불러오지 못했습니다. 삭제되었거나 주소가 잘못되었을 수 있습니다.'));
-    const submitBtn = document.getElementById('edit-submit-btn');
+    const res = await api.get(`/posts/${postId}`);
+    const data = res?.data ?? res;
+    document.getElementById('title').value = data.title ?? '';
+    const contentEl = document.getElementById('content');
+    contentEl.value = data.content ?? '';
+    autoResizeTextarea(contentEl);
+    const files = data.files || (data.file ? [data.file] : []);
+    existingIds = files.map((f) => f.imageId).filter((id) => id != null);
+    existingUrls = files.filter((f) => f.imageId != null).map((f) => ({ imageId: f.imageId, fileUrl: f.fileUrl || f.url || '' }));
+    renderPreviews(true);
+    if (submitBtn) submitBtn.disabled = false;
+  } catch (err) {
+    showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '게시글을 불러오지 못했습니다.'));
     if (submitBtn) submitBtn.disabled = false;
   }
-}
 
-// 내용 영역 이미지 미리보기 렌더 (기존 + 새로 선택한 파일, 각각 오른쪽 위 X로 제거 가능)
-function renderImagePreviews() {
-  const container = document.getElementById('post-image-preview');
-  if (!container) return;
-  const maxTotal = 5;
-  const existing = (existingPostImageUrls || []).map(
-    (item, i) => {
-      const src = safeImageUrl(item.fileUrl, '') || '';
-      return `<div class="post-image-preview-item" data-type="existing" data-index="${i}" data-image-id="${String(item.imageId)}">
-        <img src="${src.replace(/"/g, '&quot;')}" alt="첨부 이미지" />
-        <button type="button" class="post-image-remove" aria-label="이미지 제거">×</button>
-      </div>`;
-    }
-  );
-  const news = (newPreviewFiles || []).map(
-    (item, i) =>
-      `<div class="post-image-preview-item" data-type="new" data-index="${i}" data-image-id="${item.imageId != null ? String(item.imageId) : ''}">
-        <img src="${item.objectUrl}" alt="새 이미지" />
-        <button type="button" class="post-image-remove" aria-label="이미지 제거">×</button>
-      </div>`
-  );
-  container.innerHTML = [...existing, ...news].join('');
-  container.classList.toggle('has-images', existing.length + news.length > 0);
-}
+  submitBtn?.addEventListener('click', () => onSubmit(postId));
+  form?.addEventListener('submit', (e) => { e.preventDefault(); onSubmit(postId); });
 
-// 게시글 수정 페이지 이벤트 리스너
-function attachEditPostEvents(postId) {
-  const form = document.getElementById('edit-post-form');
-  const submitBtn = document.getElementById('edit-submit-btn');
-  if (form && submitBtn) {
-    submitBtn.addEventListener('click', () => handleEditPost(postId));
-    form.addEventListener('submit', (e) => {
+  if (trigger && fileInput) {
+    trigger.addEventListener('click', (e) => {
       e.preventDefault();
-      handleEditPost(postId);
+      e.stopPropagation();
+      fileInput.click();
     });
   }
 
-  const imageInput = document.getElementById('image');
-  const fileText = document.getElementById('file-input-text');
-  const previewContainer = document.getElementById('post-image-preview');
-  const fileInputBtn = form?.querySelector('.file-input-button');
-  const maxTotal = 5;
-
-  if (fileInputBtn && imageInput) {
-    fileInputBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      imageInput.click();
+  if (fileInput) {
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';
+      const left = MAX_IMAGES - existingUrls.length - newImages.length;
+      const toAdd = files.slice(0, Math.max(0, left));
+      for (const file of toAdd) {
+        if (existingUrls.length + newImages.length >= MAX_IMAGES) break;
+        const objectUrl = URL.createObjectURL(file);
+        const entry = { file, objectUrl, imageId: null };
+        newImages.push(entry);
+        renderPreviews();
+        try {
+          const fd = new FormData();
+          fd.append('image', file);
+          const res = await api.postFormData('/media/images?purpose=post', fd);
+          if ((window.location.hash || '').replace(/^#?/, '#') !== expectedEditHash) return;
+          entry.imageId = res?.data?.imageId ?? res?.imageId ?? null;
+        } catch (err) {
+          if ((window.location.hash || '').replace(/^#?/, '#') === expectedEditHash) {
+            URL.revokeObjectURL(objectUrl);
+            newImages = newImages.filter((x) => x !== entry);
+            renderPreviews();
+            showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
+          }
+        }
+      }
+      renderPreviews();
     });
   }
 
   if (previewContainer) {
     previewContainer.addEventListener('click', async (e) => {
-      const removeBtn = e.target.closest('.post-image-remove');
-      if (!removeBtn) return;
-      const item = removeBtn.closest('.post-image-preview-item');
+      const remove = e.target.closest('.post-image-remove');
+      if (!remove) return;
+      const item = remove.closest('.post-image-preview-item');
       if (!item) return;
       e.preventDefault();
+      e.stopPropagation();
       const type = item.dataset.type;
-      const index = parseInt(item.dataset.index, 10);
+      const i = parseInt(item.dataset.index, 10);
       if (type === 'existing') {
         const imageId = item.dataset.imageId;
-        existingPostImageIds = existingPostImageIds.filter((id) => String(id) !== String(imageId));
-        existingPostImageUrls = existingPostImageUrls.filter((_, i) => i !== index);
-      } else if (type === 'new') {
-        const entry = newPreviewFiles[index];
+        existingIds = existingIds.filter((id) => String(id) !== String(imageId));
+        existingUrls = existingUrls.filter((_, idx) => idx !== i);
+      } else {
+        const entry = newImages[i];
         if (entry?.imageId != null) {
-          try {
-            await api.delete(`/media/images/${entry.imageId}`);
-          } catch (_) {}
+          try { await api.delete(`/media/images/${entry.imageId}`); } catch (_) {}
         }
         if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
-        newPreviewFiles = newPreviewFiles.filter((_, i) => i !== index);
+        newImages = newImages.filter((_, idx) => idx !== i);
       }
-      renderImagePreviews();
-      if (fileText) {
-        const total = (existingPostImageUrls?.length || 0) + (newPreviewFiles?.length || 0);
-        fileText.textContent = total > 0 ? `총 ${total}장` : '';
-      }
-    });
-  }
-
-  if (imageInput && fileText) {
-    imageInput.addEventListener('change', async (e) => {
-      const added = Array.from(e.target.files || []);
-      const allowed = maxTotal - (existingPostImageUrls?.length || 0) - (newPreviewFiles?.length || 0);
-      const toAdd = added.slice(0, Math.max(0, allowed));
-      for (const file of toAdd) {
-        const objectUrl = URL.createObjectURL(file);
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
-          const uploadRes = await api.postFormData('/media/images?type=post', formData);
-          const imageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
-          newPreviewFiles = [...newPreviewFiles, { file, objectUrl, imageId }];
-        } catch (err) {
-          URL.revokeObjectURL(objectUrl);
-          showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
-          break;
-        }
-      }
-      imageInput.value = '';
-      renderImagePreviews();
-      const total = (existingPostImageUrls?.length || 0) + (newPreviewFiles?.length || 0);
-      fileText.textContent = total > 0 ? `총 ${total}장` : '파일 선택';
+      renderPreviews();
     });
   }
 }
 
-// 게시글 수정 처리
-async function handleEditPost(postId) {
-  if (isSubmittingEdit) return;
-
-  const submitBtn = document.getElementById('edit-submit-btn');
-  const originalText = submitBtn?.textContent ?? '수정하기';
-
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = '수정 중...';
-  }
-  isSubmittingEdit = true;
-
-  if (!postId) {
-    showFieldError('form-error', '유효하지 않은 게시글입니다.');
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
-    isSubmittingEdit = false;
-    return;
-  }
-
+async function onSubmit(postId) {
+  if (editSubmitting || !postId) return;
   clearErrors();
 
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
-
-  const titleCheck = validatePostTitle(title);
-  const contentCheck = validatePostContent(content);
-
-  if (!titleCheck.ok) showFieldError('title-error', titleCheck.message);
-  if (!contentCheck.ok) showFieldError('content-error', contentCheck.message);
-  if (!titleCheck.ok || !contentCheck.ok) {
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
-    isSubmittingEdit = false;
+  const tCheck = validatePostTitle(title);
+  if (!tCheck.ok) {
+    showFieldError('title-error', tCheck.message);
+    return;
+  }
+  const cCheck = validatePostContent(content);
+  if (!cCheck.ok) {
+    showFieldError('content-error', cCheck.message);
     return;
   }
 
+  const newIds = newImages.map((x) => x.imageId).filter((id) => id != null);
+  const imageIds = [...existingIds, ...newIds].slice(0, MAX_IMAGES).map(Number);
+  const submitBtn = document.getElementById('edit-submit-btn');
+  const orig = submitBtn?.textContent ?? '수정하기';
+  editSubmitting = true;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '수정 중...';
+  }
+
   try {
-    const newImageIds = (newPreviewFiles || []).map((item) => item.imageId).filter((id) => id != null);
-    const imageIds = [...existingPostImageIds, ...newImageIds].slice(0, 5).map((id) => Number(id));
-    const payload = { title, content, imageIds };
-
-    await api.patch(`/posts/${postId}`, payload);
-
+    await api.patch(`/posts/${postId}`, { title, content, imageIds });
     alert('게시글이 수정되었습니다!');
-
     sessionStorage.setItem('post_detail_skip_view', String(postId));
     navigateTo(`/posts/${postId}`);
-  } catch (error) {
-    const msg = getApiErrorMessage(error?.code || error?.message, '게시글 수정에 실패했습니다. 제목·내용·이미지를 확인한 뒤 다시 시도해주세요.');
-    showFieldError('form-error', msg);
-  } finally {
+  } catch (err) {
+    showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '게시글 수정에 실패했습니다.'));
     if (submitBtn) {
-      submitBtn.textContent = originalText;
       submitBtn.disabled = false;
+      submitBtn.textContent = orig;
     }
-    isSubmittingEdit = false;
+  } finally {
+    editSubmitting = false;
   }
 }

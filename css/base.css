@@ -10,6 +10,14 @@
   box-sizing: border-box;
 }
 
+/* 폰트 - 제목용 (헤더 '퍼피톡') */
+@font-face {
+  font-family: 'NanumSquareRound';
+  font-weight: 400;
+  src: url('https://cdn.jsdelivr.net/gh/noonnu/noonfonts_two@1.0/NanumSquareRound.woff') format('woff');
+  font-style: normal;
+}
+
 /* CSS 변수 - 색상/테마 변경 시 여기만 수정 */
 :root {
   --app-bg: #F4F5F7;      /* 배경색 */
@@ -100,7 +108,7 @@ body {
 
 .header-title {
   text-align: center;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'NanumSquareRound';
   font-size: 24px;
   font-weight: 400;
   line-height: 100%;
