@@ -1,20 +1,13 @@
-# PuppyTalk - 커뮤니티 프론트엔드
+# PuppyTalk Frontend
 
-**PuppyTalk** 커뮤니티의 웹 프론트엔드입니다. 바닐라 JavaScript 기반 SPA로, 회원가입·게시글·댓글·좋아요·프로필 수정 등 기능을 제공하며 백엔드 API(`2-kyjness-community-be`)와 통신합니다.
+**PuppyTalk** 커뮤니티의 웹 프론트엔드입니다. 바닐라 JavaScript 기반 SPA로, 회원가입·게시글·댓글·좋아요·프로필 수정 등 기능을 제공하며 백엔드 API [**PuppyTalk Backend**](https://github.com/kyjness/2-kyjness-community-be)와 통신합니다.
+
+- **백엔드**: [2-kyjness-community-be](https://github.com/kyjness/2-kyjness-community-be)
+- **인프라·배포**: Docker Compose, EC2 등 배포 정의는 [**PuppyTalk Infra**](https://github.com/kyjness/2-kyjness-community-infra) 레포에서 관리합니다. Docker로 전체 스택 실행 시 해당 레포 README를 참고하세요.
 
 ---
 
 ## 개요
-
-### 기능
-
-| 기능 | 설명 |
-|------|------|
-| **인증 (Auth)** | 회원가입(프로필 사진 선택 가능), 로그인, 로그아웃. 로그인 상태는 `localStorage`(표시용)와 쿠키(실제 인증)로 유지 |
-| **사용자 (Users)** | 프로필 조회·수정, 비밀번호 변경, 프로필 사진 업로드. `/users/me` 경로에 대응 |
-| **미디어 (Media)** | 회원가입·프로필·게시글용 이미지 업로드. `POST /v1/media/images`(쿼리 `type=profile`\|`post`) 후 반환된 `imageId` 사용 |
-| **게시글 (Posts)** | 목록(무한 스크롤), 상세(조회수 반영), 작성(이미지 최대 5장), 수정, 삭제, 좋아요 추가/취소 |
-| **댓글 (Comments)** | 게시글별 댓글 보기(10개 단위 페이지 번호), 작성, 수정, 삭제 |
 
 ### 기술 스택
 
@@ -24,40 +17,6 @@
 | **아키텍처** | SPA (Single Page Application) – 단일 HTML, 해시 라우팅으로 화면 전환 |
 | **프론트** | HTML5, CSS3, JavaScript (ES6+, ES Modules, `async/await`, `fetch`) |
 | **브라우저** | ES Modules 지원 브라우저 (Chrome, Firefox, Safari, Edge 최신 버전) |
-
-### 인증·API 연동
-
-- **인증**: 로그인 시 백엔드가 세션 ID를 쿠키로 설정. 이후 요청 시 `credentials: 'include'`로 쿠키 자동 전송.
-- **상태 표시**: `state.js`·`localStorage`에 사용자 정보를 저장해 헤더 등 UI에 표시. 실제 인증 판단은 서버(쿠키) 기준.
-- **401 처리**: API가 401을 반환하면 `clearUser()` 후 로그인 페이지로 이동.
-
-### 설계 포인트
-
-| 선택 | 이유 |
-|------|------|
-| **SPA + CSR** | 커뮤니티는 글·댓글·좋아요 등 상호작용이 빈번하므로 새로고침 없이 화면 전환이 가능한 SPA가 적합. CSR은 빌드 결과만 정적 호스팅하면 되어 서버 런타임이 필요 없음. |
-| **main.js / router.js 분리** | 진입점과 라우팅을 분리해 단일 책임 유지, 라우트 추가·변경 시 수정 범위를 router로 한정. |
-| **인증은 라우터에서** | 인증 필요 경로를 라우터에서 일괄 검사해 접근 제어를 일관되게 하고, 수정 시 한 곳만 보면 됨. |
-| **페이지별 Lazy Loading** | 경로 진입 시 해당 페이지만 동적 import하여 초기 로딩 시간과 번들 크기 절감. |
-| **무한 스크롤 vs 페이지네이션** | 게시글 목록은 피드 형태로 스크롤하며 읽는 UX가 자연스럽고, 댓글은 "몇 페이지인지", "총 몇 개인지"가 중요해 페이지 번호 버튼 선택. (백엔드와 동일한 설계) |
-| **이미지 미리 업로드** | 회원가입·프로필·게시글에서 이미지는 먼저 `/v1/media/images`로 업로드한 뒤 반환된 `imageId`만 본문에 넣음. (백엔드와 동일) |
-
----
-
-## API 연동
-
-프론트엔드는 백엔드 API를 아래 규칙으로 호출합니다. **모든 API는 `/v1` prefix를 사용하며, `config.js`의 `BASE_URL`에 `/v1`이 포함되어 있습니다.** 엔드포인트·요청/응답 형식·에러 코드 상세는 **백엔드 저장소 README** 또는 서버 실행 후 **Swagger UI** (`http://localhost:8000/docs`), **ReDoc** (`http://localhost:8000/redoc`)를 참고하면 됩니다.
-
-| 항목 | 프론트 | 백엔드 |
-|------|--------|--------|
-| 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id` 쿠키로 사용자 식별 |
-| API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
-| 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
-| 미디어 | 이미지 업로드 후 `imageId`를 회원가입·프로필·게시글 요청에 사용 | `POST /v1/media/images?type=profile\|post` → `imageId`, `url` 반환 |
-| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: 목록 배열, hasMore }` |
-| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `response.data`: `{ list, totalCount, totalPages, currentPage }` |
-
----
 
 ## 폴더 구조
 
@@ -102,6 +61,34 @@
 
 ---
 
+## 설계 포인트
+
+| 선택 | 이유 |
+|------|------|
+| **SPA + CSR** | 빈번한 상태 변화(글·댓글·좋아요)가 발생하는 커뮤니티 특성상, 사용자 경험(UX) 극대화를 위해 무정전 화면 전환이 가능한 SPA 구조를 채택했습니다. 또한 빌드 결과물을 정적 자산(Static Assets)으로 관리하여 서버 런타임 의존성을 제거하고 배포 효율을 높였습니다. |
+| **main.js / router.js 분리** | 애플리케이션의 진입점(Entry Point)과 네비게이션 로직을 분리하는 **관심사 분리(SoC)**를 실천했습니다. 이를 통해 라우팅 규칙 변경 시 영향 범위를 최소화하고 코드의 가독성과 유지보수성을 확보했습니다. |
+| **인증은 라우터에서** | 보안이 필요한 경로에 대해 중앙 집중형 접근 제어(Navigation Guard)를 구현했습니다. 개별 페이지가 아닌 라우터 레벨에서 인증 상태를 일괄 검증함으로써 보안 누락을 방지하고 일관된 권한 관리 정책을 유지합니다. |
+| **페이지별 Lazy Loading** |초기 번들 크기를 최소화하여 **첫 페이지 로딩 속도(LCP)**를 개선했습니다. 사용자가 요청하는 시점에 필요한 모듈만 동적으로 로드(Dynamic Import)함으로써 불필요한 리소스 낭비를 줄이고 초기 구동 성능을 최적화했습니다. |
+| **쿠키-세션 연동** | J클라이언트 측의 보안 취약점(XSS)을 고려하여, 민감한 인증 정보를 브라우저 저장소가 아닌 HttpOnly 쿠키 기반의 세션 시스템으로 연동했습니다. 프론트엔드는 자격 증명(Credentials) 전달에만 집중하여 보안과 편의성을 동시에 충족했습니다. |
+
+---
+
+## API 연동
+
+- **Prefix**: 모든 API는 `/v1` 사용. `config.js`의 `BASE_URL`에 `/v1` 포함.
+- **상세 문서**: 백엔드 저장소 README 또는 서버 실행 후 **Swagger UI** (`http://localhost:8000/docs`), **ReDoc** (`http://localhost:8000/redoc`) 참고.
+
+| 항목 | 프론트 | 백엔드 |
+|------|--------|--------|
+| 인증 | 상태는 표시용, 실제 인증은 쿠키 기준 | `session_id` 쿠키로 사용자 식별 |
+| API | `credentials: 'include'`로 쿠키 전송 | CORS credentials 허용 |
+| 응답 | `{ code, data }` 파싱 | `{ code, data }` 형식 |
+| 미디어 | 이미지 업로드 후 `imageId`를 회원가입·프로필·게시글 요청에 사용 | `POST /v1/media/images?type=profile\|post` → `imageId`, `url` 반환 |
+| 게시글 목록 | 스크롤 시 `page` 증가, `response.hasMore`로 추가 로드 여부 판단 | `GET /v1/posts?page=&size=` → `{ data: 목록 배열, hasMore }` |
+| 댓글 목록 | `GET /v1/posts/{id}/comments?page=&size=10`, 페이지 번호 버튼으로 전환 | `response.data`: `{ list, totalCount, totalPages, currentPage }` |
+
+---
+
 ## 전체 흐름
 
 ```
@@ -143,15 +130,17 @@
 ### 1. 사전 준비
 
 - **백엔드 API** 실행 중이어야 함. 실행·설정은 **`2-kyjness-community-be` README** 참고.
+- **Docker로 전체 스택(백엔드+프론트) 실행** 시 [**인프라 레포(2-kyjness-community-infra)**](https://github.com/kyjness/2-kyjness-community-infra) README를 참고하세요.
 - **웹 서버**로 정적 파일 서빙 필요. (`file://` 직접 열기는 CORS·ES Modules 이슈로 동작 안 할 수 있음)
 
 ### 2. 백엔드 실행
 
-백엔드를 먼저 실행. 실행·환경 변수·DB 설정은 **백엔드 저장소(2-kyjness-community-be) README** 참고. `http://localhost:8000` 에서 떠 있으면 다음 단계로 진행.
+- **참고**: [2-kyjness-community-be README](https://github.com/kyjness/2-kyjness-community-be) (실행·환경 변수·DB)
+- **확인**: `http://localhost:8000`에서 서버 떠 있으면 다음 단계 진행
 
 ### 3. 프론트엔드 실행
 
-정적 파일을 웹 서버로 서빙. **Node.js 불필요.** Live Server 또는 Python 중 하나만 있으면 됨.
+Node.js 불필요. 아래 중 하나로 정적 파일 서빙.
 
 **VS Code Live Server (권장)**
 
@@ -168,20 +157,7 @@ python -m http.server 8080
 
 ### 4. 설정
 
-배포 시 **`js/config.js`** 에서 `BASE_URL` 만 실제 API 주소로 수정. (예: `http://api.example.com/v1`.) Docker 빌드 시 `API_BASE_URL` 인자로 config 치환 가능. 상세는 `config.js` 주석·Dockerfile 참고.
+- **배포**: `js/config.js`에서 `BASE_URL`을 실제 API 주소로 수정 (예: `http://api.example.com/v1`)
+- **Docker 빌드**: `API_BASE_URL` 인자로 config 치환 가능. `config.js` 주석·Dockerfile 참고
 
 ---
-
-## 확장 전략
-
-### 기능
-
-- **검색/필터**: 견종·지역·태그로 게시글 검색
-- **신고/차단**: 게시글 신고, 사용자 차단 (차단한 사람 글 숨김)
-- **알림**: 내 글에 댓글 달리면 알림 리스트
-- **관리자**: 신고 누적 글 숨김, 유저 제재 (ROLE 기반)
-
-### 인프라 (규모 확대 시)
-
-- **캐시 (Redis)**: 인기 게시글·댓글 캐싱
-- **메시지 큐**: 알림·이미지 처리 등 비동기 작업

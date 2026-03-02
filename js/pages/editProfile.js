@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { getUser, setUser, clearUser } from '../state.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents, updateHeaderProfileImage } from '../components/header.js';
-import { escapeHtml, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors, validateNickname } from '../utils.js';
+import { escapeHtml, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors, validateNickname, getImageUploadData } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 // 회원정보 수정 페이지 렌더링
@@ -50,7 +50,7 @@ export function renderEditProfile() {
               <input
                 type="file"
                 id="profile-image"
-                accept="image/*"
+                accept="image/jpeg,image/png"
                 style="display:none;"
               />
             </div>
@@ -168,7 +168,7 @@ function attachEditProfileEvents() {
     });
   }
 
-  // "변경" 버튼 클릭 → 파일 선택 (변경 버튼만 클릭 가능)
+  // "변경" 버튼 클릭 → 파일 선택
   if (avatarChangeBtn && profileInput) {
     avatarChangeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -176,12 +176,11 @@ function attachEditProfileEvents() {
     });
   }
 
-  // 원의 다른 영역 클릭 시 아무 동작 안 함 (변경 버튼만 클릭 가능)
-  if (avatarArea && avatarChangeBtn) {
+  // 회원가입과 동일: 프로필 이미지(동그란 영역) 전체 클릭 시에도 파일 선택창 트리거
+  if (avatarArea && profileInput) {
     avatarArea.addEventListener('click', (e) => {
-      // 변경 버튼이 아닌 영역을 클릭한 경우에만 이벤트 전파 중단
-      if (e.target !== avatarChangeBtn && !avatarChangeBtn.contains(e.target)) {
-        e.stopPropagation();
+      if (e.target !== avatarChangeBtn && !avatarChangeBtn?.contains(e.target)) {
+        profileInput.click();
       }
     });
   }
@@ -271,7 +270,7 @@ async function handleProfileUpdate(e) {
       const formData = new FormData();
       formData.append('image', file);
       const uploadRes = await api.postFormData('/media/images?purpose=profile', formData);
-      profileImageId = uploadRes?.data?.imageId ?? uploadRes?.imageId ?? null;
+      profileImageId = getImageUploadData(uploadRes).imageId;
     }
 
     const payload = { nickname };
@@ -315,7 +314,7 @@ async function handleDeleteAccount() {
     clearUser();
     closeModal(deleteModal);
     alert('회원 탈퇴가 완료되었습니다.');
-    navigateTo('/signup');
+    navigateTo('/posts');
   } catch (error) {
     closeModal(deleteModal);
     showFieldError('form-error', getApiErrorMessage(error?.code || error?.message, '회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.'));

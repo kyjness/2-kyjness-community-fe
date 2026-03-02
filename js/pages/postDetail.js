@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { getUser } from '../state.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors } from '../utils.js';
+import { escapeHtml, escapeAttr, resolvePostId, getApiErrorMessage, safeImageUrl, openModal, closeModal, showFieldError, clearErrors, formatDateTime } from '../utils.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 
 const LOADING_MSG = '<div style="text-align:center;padding:40px;">게시글을 불러오는 중...</div>';
@@ -101,7 +101,7 @@ async function loadCommentsPage(postId, page) {
 
   try {
     const response = await api.get(`/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}`);
-    const payload = response.data || response;
+    const payload = response.data;
     const commentsList = payload?.list ?? payload?.comments ?? (Array.isArray(payload) ? payload : []);
     const comments = Array.isArray(commentsList) ? commentsList : [];
     const currentUser = getUser();
@@ -123,7 +123,7 @@ async function loadCommentsPage(postId, page) {
           <div class="comment-header">
             <div class="comment-header-left">
               <span class="comment-author-name">${escapeHtml(c.author?.nickname ?? '')}</span>
-              <span class="comment-date">${escapeHtml(String(c.createdAt ?? ''))}</span>
+              <span class="comment-date">${escapeHtml(formatDateTime(c.createdAt))}</span>
             </div>
             ${isMine
                 ? `
@@ -267,8 +267,7 @@ async function loadPostDetail(postId, options = {}) {
     // 게시글 상세 조회
     const response = await api.get(`/posts/${postId}`);
 
-    // API 응답 구조: { code: "POST_RETRIEVED", data: {...} }
-    const postData = response.data || response;
+    const postData = response.data;
 
     // 백엔드 필드명을 프론트엔드 필드명으로 변환. isMine은 백엔드에서 안 내려오므로 로그인 사용자와 작성자 비교
     const currentUser = getUser();
@@ -295,7 +294,7 @@ async function loadPostDetail(postId, options = {}) {
     let commentTotalCount = 0;
     try {
       const commentsResponse = await api.get(`/posts/${postId}/comments?page=1&size=${COMMENT_PAGE_SIZE}`);
-      const commentsPayload = commentsResponse.data || commentsResponse;
+      const commentsPayload = commentsResponse.data;
       const list = commentsPayload?.list ?? commentsPayload?.comments ?? (Array.isArray(commentsPayload) ? commentsPayload : []);
       comments = (Array.isArray(list) ? list : []).map(
         (c) => {
@@ -335,7 +334,16 @@ function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, co
   const card = document.getElementById('post-detail-card');
   if (!card) return;
 
-  const files = post.files || [];
+  // 같은 URL이 배열에 두 번 들어오면 이미지 요청이 두 번 발생하므로 URL 기준 중복 제거
+  const rawFiles = post.files || [];
+  const seenUrls = new Set();
+  const files = rawFiles.filter((f) => {
+    const url = safeImageUrl(f.fileUrl || f.url, '') || '';
+    if (!url || seenUrls.has(url)) return false;
+    seenUrls.add(url);
+    return true;
+  });
+
   const fileBlock = files.length > 0
     ? `
       <div class="post-detail-images-wrapper">
@@ -361,7 +369,7 @@ function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, co
               ${escapeHtml(post.author_nickname ?? '작성자')}
             </span>
             <span class="post-detail-date">
-              ${escapeHtml(String(post.created_at ?? ''))}
+              ${escapeHtml(formatDateTime(post.created_at))}
             </span>
           </div>
         </div>
@@ -431,7 +439,7 @@ function renderPostDetailCard(post, comments, postId, commentCurrentPage = 1, co
               <div class="comment-header">
                 <div class="comment-header-left">
                   <span class="comment-author-name">${escapeHtml(c.author_nickname ?? '')}</span>
-                  <span class="comment-date">${escapeHtml(String(c.created_at ?? ''))}</span>
+                  <span class="comment-date">${escapeHtml(formatDateTime(c.created_at))}</span>
                 </div>
                 ${
                   c.isMine
@@ -499,7 +507,10 @@ async function onCommentPageClick(e, postId) {
 async function onLikeClick(postId) {
   clearErrors();
   if (!getUser()) {
-    alert('로그인이 필요합니다.');
+    if (!confirm('로그인이 필요한 서비스입니다. 로그인하시겠습니까?')) return;
+    try {
+      sessionStorage.setItem('login_return_path', `/posts/${postId}`);
+    } catch (_) {}
     navigateTo('/login');
     return;
   }
@@ -509,10 +520,9 @@ async function onLikeClick(postId) {
     const response = await api.post(`/posts/${postId}/likes`, undefined);
     if (response.code === 'ALREADY_LIKED') {
       // 이미 좋아요한 상태에서 클릭 → 취소(토글)
-      const delResponse = await api.delete(`/posts/${postId}/likes`);
-      if (delResponse.data && delResponse.data.likeCount !== undefined) {
-        likeCountEl.textContent = delResponse.data.likeCount;
-      }
+      await api.delete(`/posts/${postId}/likes`);
+      const cur = parseInt(likeCountEl.textContent, 10) || 0;
+      likeCountEl.textContent = Math.max(0, cur - 1);
       return;
     }
     if (response.data && response.data.likeCount !== undefined) {
@@ -527,7 +537,10 @@ async function onCommentFormSubmit(e, postId) {
   e.preventDefault();
   clearErrors();
   if (!getUser()) {
-    alert('로그인이 필요합니다.');
+    if (!confirm('로그인이 필요한 서비스입니다. 로그인하시겠습니까?')) return;
+    try {
+      sessionStorage.setItem('login_return_path', `/posts/${postId}`);
+    } catch (_) {}
     navigateTo('/login');
     return;
   }

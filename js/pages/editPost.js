@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, initAutoResizeTextarea, autoResizeTextarea, resolvePostId, getApiErrorMessage, safeImageUrl, validatePostTitle, validatePostContent } from '../utils.js';
+import { showFieldError, clearErrors, initAutoResizeTextarea, autoResizeTextarea, resolvePostId, getApiErrorMessage, safeImageUrl, validatePostTitle, validatePostContent, getImageUploadData, revokeObjectUrlSafely } from '../utils.js';
 
 const MAX_IMAGES = 5;
 
@@ -116,7 +116,7 @@ export async function renderEditPost(param) {
 
   try {
     const res = await api.get(`/posts/${postId}`);
-    const data = res?.data ?? res;
+    const data = res?.data;
     document.getElementById('title').value = data.title ?? '';
     const contentEl = document.getElementById('content');
     contentEl.value = data.content ?? '';
@@ -143,7 +143,7 @@ export async function renderEditPost(param) {
   }
 
   if (fileInput) {
-    fileInput.addEventListener('change', async (e) => {
+    fileInput.addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
       e.target.value = '';
       const left = MAX_IMAGES - existingUrls.length - newImages.length;
@@ -151,23 +151,7 @@ export async function renderEditPost(param) {
       for (const file of toAdd) {
         if (existingUrls.length + newImages.length >= MAX_IMAGES) break;
         const objectUrl = URL.createObjectURL(file);
-        const entry = { file, objectUrl, imageId: null };
-        newImages.push(entry);
-        renderPreviews();
-        try {
-          const fd = new FormData();
-          fd.append('image', file);
-          const res = await api.postFormData('/media/images?purpose=post', fd);
-          if ((window.location.hash || '').replace(/^#?/, '#') !== expectedEditHash) return;
-          entry.imageId = res?.data?.imageId ?? res?.imageId ?? null;
-        } catch (err) {
-          if ((window.location.hash || '').replace(/^#?/, '#') === expectedEditHash) {
-            URL.revokeObjectURL(objectUrl);
-            newImages = newImages.filter((x) => x !== entry);
-            renderPreviews();
-            showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
-          }
-        }
+        newImages.push({ file, objectUrl, imageId: null });
       }
       renderPreviews();
     });
@@ -190,14 +174,28 @@ export async function renderEditPost(param) {
       } else {
         const entry = newImages[i];
         if (entry?.imageId != null) {
-          try { await api.delete(`/media/images/${entry.imageId}`); } catch (_) {}
+          try {
+            await api.delete(`/media/images/${entry.imageId}`);
+          } catch (_) {}
         }
-        if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+        revokeObjectUrlSafely(entry?.objectUrl);
         newImages = newImages.filter((_, idx) => idx !== i);
       }
       renderPreviews();
     });
   }
+}
+
+async function uploadPendingNewImages() {
+  for (const entry of newImages) {
+    if (entry.imageId != null) continue;
+    const fd = new FormData();
+    fd.append('image', entry.file);
+    const res = await api.postFormData('/media/images?purpose=post', fd);
+    if ((window.location.hash || '').replace(/^#?/, '#') !== expectedEditHash) return false;
+    entry.imageId = getImageUploadData(res).imageId;
+  }
+  return true;
 }
 
 async function onSubmit(postId) {
@@ -217,8 +215,6 @@ async function onSubmit(postId) {
     return;
   }
 
-  const newIds = newImages.map((x) => x.imageId).filter((id) => id != null);
-  const imageIds = [...existingIds, ...newIds].slice(0, MAX_IMAGES).map(Number);
   const submitBtn = document.getElementById('edit-submit-btn');
   const orig = submitBtn?.textContent ?? '수정하기';
   editSubmitting = true;
@@ -228,17 +224,21 @@ async function onSubmit(postId) {
   }
 
   try {
+    const uploaded = await uploadPendingNewImages();
+    if (!uploaded) return;
+    const newIds = newImages.map((x) => x.imageId).filter((id) => id != null);
+    const imageIds = [...existingIds, ...newIds].slice(0, MAX_IMAGES).map(Number);
     await api.patch(`/posts/${postId}`, { title, content, imageIds });
     alert('게시글이 수정되었습니다!');
     sessionStorage.setItem('post_detail_skip_view', String(postId));
     navigateTo(`/posts/${postId}`);
   } catch (err) {
     showFieldError('form-error', getApiErrorMessage(err?.code ?? err?.message, '게시글 수정에 실패했습니다.'));
+  } finally {
+    editSubmitting = false;
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.textContent = orig;
     }
-  } finally {
-    editSubmitting = false;
   }
 }

@@ -9,6 +9,11 @@ function getDefaultHeaders(isFormData, extra = {}) {
   return { 'Content-Type': 'application/json', ...extra };
 }
 
+/** 로그인/회원가입/비로그인 이미지 업로드 등 401 시 리다이렉트 생략 */
+function shouldSkip401Redirect(endpoint) {
+  return /^\/(auth\/login|auth\/signup|media\/images)/.test(String(endpoint || ''));
+}
+
 async function handleResponse(response, options = {}) {
   const { skip401Redirect = false } = options;
   const isNoContent = response.status === 204;
@@ -31,6 +36,12 @@ async function handleResponse(response, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401 && !skip401Redirect) {
+      try {
+        const currentPath = window.location.hash.slice(1) || '/posts';
+        if (currentPath && currentPath !== '/login' && currentPath !== '/signup') {
+          sessionStorage.setItem('login_return_path', currentPath);
+        }
+      } catch (_) {}
       alert('로그인이 필요합니다.');
       clearUser();
       navigateTo('/login');
@@ -62,8 +73,7 @@ export const api = {
       headers: getDefaultHeaders(false, options.headers),
       body: data != null ? JSON.stringify(data) : undefined,
     });
-    // 로그인/회원가입은 401 시 "로그인이 필요합니다" 알림·리다이렉트 생략 (각 페이지에서 에러 처리)
-    const skip401Redirect = String(endpoint || '').includes('/auth/login') || String(endpoint || '').includes('/auth/signup');
+    const skip401Redirect = shouldSkip401Redirect(endpoint);
     return handleResponse(response, { skip401Redirect });
   },
 
@@ -74,7 +84,7 @@ export const api = {
       headers: getDefaultHeaders(true),
       body: formData,
     });
-    const skip401Redirect = String(endpoint || '').includes('/media/images') || String(endpoint || '').includes('/auth/signup');
+    const skip401Redirect = shouldSkip401Redirect(endpoint);
     return handleResponse(response, { skip401Redirect });
   },
 

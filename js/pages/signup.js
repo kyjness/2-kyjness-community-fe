@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail, validatePassword, validateNickname } from '../utils.js';
+import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail, validatePassword, validateNickname, getImageUploadData } from '../utils.js';
 
 export function renderSignup() {
   const root = document.getElementById('app-root');
@@ -45,13 +45,13 @@ export function renderSignup() {
             <span class="helper-text" id="nickname-error"></span>
           </div>
           <span class="helper-text form-error-common" id="form-error-common"></span>
-          <button type="submit" class="btn btn-primary" id="signup-submit">회원가입</button>
+          <button type="button" class="btn btn-primary" id="signup-submit">회원가입</button>
           <button type="button" id="login-link" class="btn btn-secondary">로그인하러 가기</button>
         </form>
       </div>
     </main>
   `;
-
+  
   initHeaderEvents({ backButtonHref: '/login' });
 
   const form = document.getElementById('signup-form');
@@ -59,7 +59,7 @@ export function renderSignup() {
   const avatarImg = document.getElementById('avatar-img');
   const avatarPreview = document.getElementById('signup-avatar-preview');
 
-  form.addEventListener('submit', onSignupSubmit);
+  document.getElementById('signup-submit').addEventListener('click', onSignupSubmit);
   document.getElementById('login-link').addEventListener('click', () => navigateTo('/login'));
 
   if (avatarPreview && profileInput) {
@@ -91,11 +91,15 @@ export function renderSignup() {
 let signupSubmitting = false;
 
 async function onSignupSubmit(e) {
-  e.preventDefault();
-  if (signupSubmitting) return;
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  if (signupSubmitting) return false;
 
   clearErrors();
-  const form = e.target;
+  const form = e?.target?.closest?.('form') || document.getElementById('signup-form');
   const email = String(form.email?.value ?? '').trim();
   const password = form.password?.value ?? '';
   const passwordConfirm = form['password-confirm']?.value ?? '';
@@ -144,12 +148,10 @@ async function onSignupSubmit(e) {
       const fd = new FormData();
       fd.append('image', profileFile);
       const res = await api.postFormData('/media/images/signup', fd);
-      const data = res?.data ?? {};
-      const id = data.imageId ?? data.image_id ?? data.id;
-      const token = data.signupToken ?? data.signup_token;
+      const uploadData = getImageUploadData(res);
+      const { imageId: id, signupToken: token } = uploadData;
       if (id == null || token == null || String(token).trim() === '') {
-        showFieldError('profile-error', '프로필 이미지 업로드에 실패했습니다.');
-        return;
+        throw new Error('SIGNUP_IMAGE_TOKEN_INVALID');
       }
       profileImageId = Number(id);
       signupToken = String(token).trim();
@@ -186,4 +188,6 @@ async function onSignupSubmit(e) {
       submitBtn.textContent = originalText;
     }
   }
+
+  return false;
 }

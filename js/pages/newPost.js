@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage, validatePostTitle, validatePostContent } from '../utils.js';
+import { showFieldError, clearErrors, initAutoResizeTextarea, getApiErrorMessage, validatePostTitle, validatePostContent, getImageUploadData, revokeObjectUrlSafely } from '../utils.js';
 
 const MAX_IMAGES = 5;
 let selectedImages = [];
@@ -94,7 +94,7 @@ export function renderNewPost() {
   }
 
   if (fileInput) {
-    fileInput.addEventListener('change', async (e) => {
+    fileInput.addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
       e.target.value = '';
       const left = MAX_IMAGES - selectedImages.length;
@@ -102,23 +102,7 @@ export function renderNewPost() {
       for (const file of toAdd) {
         if (selectedImages.length >= MAX_IMAGES) break;
         const objectUrl = URL.createObjectURL(file);
-        const entry = { file, objectUrl, imageId: null };
-        selectedImages.push(entry);
-        renderPreviews();
-        try {
-          const fd = new FormData();
-          fd.append('image', file);
-          const res = await api.postFormData('/media/images?purpose=post', fd);
-          if ((window.location.hash || '').replace(/^#?/, '#') !== NEW_POST_HASH) return;
-          entry.imageId = res?.data?.imageId ?? res?.imageId ?? null;
-        } catch (err) {
-          if ((window.location.hash || '').replace(/^#?/, '#') === NEW_POST_HASH) {
-            URL.revokeObjectURL(objectUrl);
-            selectedImages = selectedImages.filter((x) => x !== entry);
-            renderPreviews();
-            showFieldError('content-error', getApiErrorMessage(err?.code ?? err?.message, '이미지 업로드에 실패했습니다.'));
-          }
-        }
+        selectedImages.push({ file, objectUrl, imageId: null });
       }
       renderPreviews();
     });
@@ -139,11 +123,23 @@ export function renderNewPost() {
           await api.delete(`/media/images/${entry.imageId}`);
         } catch (_) {}
       }
-      if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+      revokeObjectUrlSafely(entry?.objectUrl);
       selectedImages = selectedImages.filter((_, idx) => idx !== i);
       renderPreviews();
     });
   }
+}
+
+async function uploadPendingImages() {
+  for (const entry of selectedImages) {
+    if (entry.imageId != null) continue;
+    const fd = new FormData();
+    fd.append('image', entry.file);
+    const res = await api.postFormData('/media/images?purpose=post', fd);
+    if ((window.location.hash || '').replace(/^#?/, '#') !== NEW_POST_HASH) return false;
+    entry.imageId = getImageUploadData(res).imageId;
+  }
+  return true;
 }
 
 async function onSubmit(e) {
@@ -152,7 +148,6 @@ async function onSubmit(e) {
 
   const title = document.getElementById('title').value.trim();
   const content = document.getElementById('content').value.trim();
-  const imageIds = selectedImages.map((x) => x.imageId).filter((id) => id != null);
 
   const tCheck = validatePostTitle(title);
   if (!tCheck.ok) {
@@ -172,8 +167,15 @@ async function onSubmit(e) {
   btn.textContent = '작성 중...';
 
   try {
-    const res = await api.post('/posts', { title, content, imageIds: imageIds.length ? imageIds : undefined });
-    const postId = res?.data?.postId ?? res?.postId;
+    const uploaded = await uploadPendingImages();
+    if (!uploaded) {
+      btn.disabled = false;
+      btn.textContent = orig;
+      return;
+    }
+    const ids = selectedImages.map((x) => x.imageId).filter((id) => id != null);
+    const res = await api.post('/posts', { title, content, imageIds: ids.length ? ids : undefined });
+    const postId = res?.data?.postId;
     alert('게시글이 작성되었습니다!');
     navigateTo(postId != null ? `/posts/${postId}` : '/posts');
   } catch (err) {

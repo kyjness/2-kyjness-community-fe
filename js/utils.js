@@ -21,11 +21,22 @@ export function escapeAttr(value) {
     .replace(/>/g, '&gt;');
 }
 
+// API에서 오는 ISO 문자열을 로컬 시간으로 파싱 (UTC인데 Z 없이 오면 Z 붙여서 파싱)
+function parseApiDate(dateString) {
+  if (!dateString || typeof dateString !== 'string') return null;
+  const s = dateString.trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) && !/[Z+-]\d{2}:?\d{2}$/.test(s)) {
+    return new Date(s + (s.endsWith('Z') ? '' : 'Z'));
+  }
+  return new Date(s);
+}
+
 // 날짜 포맷팅 (상대 시간)
 export function formatDate(dateString) {
   if (!dateString) return '';
-
-  const date = new Date(dateString);
+  const date = parseApiDate(dateString);
+  if (!date || Number.isNaN(date.getTime())) return '';
   const now = new Date();
   const diff = now - date;
 
@@ -48,6 +59,19 @@ export function formatDate(dateString) {
 
   // 그 외 - YYYY.MM.DD 형식
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// 날짜+시간 표시 (ISO → YYYY-MM-DD HH:mm, 초 없음)
+export function formatDateTime(dateString) {
+  if (!dateString) return '';
+  const date = parseApiDate(dateString);
+  if (!date || Number.isNaN(date.getTime())) return '';
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d} ${h}:${min}`;
 }
 
 // 필드별 에러 메시지 표시 (elementId, message)
@@ -192,6 +216,26 @@ export function initAutoResizeTextarea(selector = '#content') {
   const resize = () => autoResizeTextarea(el);
   el.addEventListener('input', resize);
   el.addEventListener('keyup', resize);
+}
+
+// 이미지 업로드 API 응답에서 imageId, url, signupToken 추출 (이중 래핑까지 대응)
+export function getImageUploadData(res) {
+  const step1 = res?.data ?? res;
+  const data = step1?.data ?? step1;
+
+  return {
+    imageId: data?.imageId || data?.image_id || data?.id || null,
+    url: data?.url || data?.fileUrl || data?.file_url || null,
+    signupToken: data?.signupToken || data?.signup_token || data?.token || null,
+  };
+}
+
+// Object URL 안전 해제 (이중 revoke 방지)
+export function revokeObjectUrlSafely(url) {
+  if (!url || typeof url !== 'string') return;
+  try {
+    URL.revokeObjectURL(url);
+  } catch (_) {}
 }
 
 // 해시/라우터 인자에서 postId 추출 (options.requireEdit)

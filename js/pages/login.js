@@ -138,7 +138,17 @@ async function handleLogin(e) {
       });
     }
 
-    navigateTo('/posts');
+    const returnPath = (() => {
+      try {
+        const saved = sessionStorage.getItem('login_return_path');
+        if (saved) {
+          sessionStorage.removeItem('login_return_path');
+          return saved.startsWith('/') ? saved : `/${saved}`;
+        }
+      } catch (_) {}
+      return null;
+    })();
+    navigateTo(returnPath || '/posts');
   } catch (error) {
     const code = (error?.code || error?.message || '').toString().toUpperCase();
     // 로그인 요청 body 검증 실패(짧은 비밀번호·형식 등)는 INVALID_REQUEST_BODY로 올 수 있음 → 비밀번호 형식 안내로 통일
