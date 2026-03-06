@@ -1,0 +1,189 @@
+/**
+ * EditPost 전용 스타일 (CSS Modules — 클래스명 충돌 방지)
+ * 레거시 app.css .post-new-container, .new-post-form, .post-image-preview* 대응
+ */
+
+.wrapper {
+  width: 100%;
+  max-width: 590px;
+  margin: 0 auto;
+  padding-top: 12px;
+  padding-bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.formContainer {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  width: 100%;
+}
+
+.formTitle {
+  text-align: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #000;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formLabel {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+}
+
+.formInput {
+  border: none;
+  border-top: 1px solid #d9d9d9;
+  border-bottom: 1px solid #d9d9d9;
+  border-radius: 0;
+  background-color: #f4f5f7;
+  padding: 10px 0;
+  height: auto;
+  font-size: 14px;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.formInput::placeholder {
+  color: #838486;
+}
+
+.formInput:focus {
+  outline: none;
+}
+
+.formTextarea {
+  composes: formInput;
+  min-height: 260px;
+  resize: none;
+  overflow: hidden;
+}
+
+.previewWrapper {
+  display: none;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+
+.previewWrapper.hasImages {
+  display: flex;
+}
+
+.previewItem {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eee;
+  flex-shrink: 0;
+}
+
+.previewItemImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.removeBtn:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.fileWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.fileInputButton {
+  width: 68px;
+  height: 29px;
+  border-radius: 4px;
+  border: 1px solid #000;
+  background-color: #d9d9d9;
+  font-size: 12px;
+  font-family: 'Pretendard', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.fileInputButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fileInputText {
+  font-size: 12px;
+  font-family: 'Pretendard', sans-serif;
+  color: #000;
+}
+
+.helperText {
+  font-size: 12px;
+  color: #ff0000;
+  margin-top: 2px;
+}
+
+.formError {
+  composes: helperText;
+  margin-bottom: 8px;
+}
+
+.submitWrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .formTitle {
+    font-size: 24px;
+  }
+}
