@@ -102,7 +102,7 @@ async function loadCommentsPage(postId, page) {
   try {
     const response = await api.get(`/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}`);
     const payload = response.data;
-    const commentsList = payload?.list ?? payload?.comments ?? (Array.isArray(payload) ? payload : []);
+    const commentsList = payload?.items ?? payload?.comments ?? (Array.isArray(payload) ? payload : []);
     const comments = Array.isArray(commentsList) ? commentsList : [];
     const currentUser = getUser();
     const totalPages = payload?.totalPages ?? response.totalPages ?? 1;
@@ -295,7 +295,7 @@ async function loadPostDetail(postId, options = {}) {
     try {
       const commentsResponse = await api.get(`/posts/${postId}/comments?page=1&size=${COMMENT_PAGE_SIZE}`);
       const commentsPayload = commentsResponse.data;
-      const list = commentsPayload?.list ?? commentsPayload?.comments ?? (Array.isArray(commentsPayload) ? commentsPayload : []);
+      const list = commentsPayload?.items ?? commentsPayload?.comments ?? (Array.isArray(commentsPayload) ? commentsPayload : []);
       comments = (Array.isArray(list) ? list : []).map(
         (c) => {
           const commentIsMine = !!(currentUser && c.author?.userId === currentUser.userId);

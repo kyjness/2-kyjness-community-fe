@@ -10,7 +10,11 @@ const SPLASH_SHOWN_KEY = 'splashShown';
 
 function getInitialSplashDone() {
   try {
-    return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(SPLASH_SHOWN_KEY) === '1';
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(SPLASH_SHOWN_KEY) === '1')
+      return true;
+    if (typeof window !== 'undefined' && window.location.search.includes('from=admin'))
+      return true;
+    return false;
   } catch (_) {
     return false;
   }

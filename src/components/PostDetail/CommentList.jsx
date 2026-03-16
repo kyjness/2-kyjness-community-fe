@@ -1,123 +1,356 @@
-// 댓글 목록·수정/삭제·페이지네이션.
-import { escapeHtml, formatDateTime, calculateDogAge, formatDogGender } from '../../utils/index.js';
+// 댓글 목록·수정/삭제·답글·페이지네이션. 트리(대댓글 1-depth) 렌더링.
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Heart, MoreHorizontal } from 'lucide-react';
+import { escapeHtml, formatDateTime, calculateDogAge, formatDogGenderLabel } from '../../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
-
-export function CommentList({
-  comments,
+function CommentItem({
+  c,
+  currentUserId,
   commentEdit,
   setCommentEdit,
   onEditSave,
+  onCommentLike,
   onDeleteOpen,
+  onBlockUser,
+  onReportOpen,
+  replyToCommentId,
+  setReplyToCommentId,
+  replyForm,
+  setReplyForm,
+  onReplySubmit,
+  depth = 0,
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const replyTextareaRef = useRef(null);
+  const isReply = depth > 0;
+  const isMyComment = c.isMine || (currentUserId != null && c.author_id === currentUserId);
+
+  const adjustReplyHeight = useCallback(() => {
+    const el = replyTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const next = Math.min(Math.max(el.scrollHeight, 44), 300);
+    el.style.height = `${next}px`;
+    el.style.overflowY = 'hidden';
+  }, []);
+
+  useEffect(() => {
+    if (replyToCommentId === c.id) adjustReplyHeight();
+  }, [replyToCommentId, c.id, replyForm.content, adjustReplyHeight]);
+
+  return (
+    <article
+      key={c.id}
+      className={`comment-item ${isReply ? 'is-reply' : ''}`}
+      data-comment-id={c.id}
+    >
+      <div className="comment-item-avatar">
+        <img
+          src={c.author_profile_image || DEFAULT_PROFILE_IMAGE}
+          alt="댓글 작성자 프로필"
+        />
+      </div>
+      <div className="comment-item-body">
+        <div className="comment-item-header">
+          <div className="comment-item-author-wrap">
+            <span className="comment-item-author">{escapeHtml(c.author_nickname ?? '')}</span>
+            {c.author_representative_dog?.name && (
+              <span className="comment-item-dog">
+                {' '}
+                {(() => {
+                  const d = c.author_representative_dog;
+                  const genderLabel = d.gender ? (
+                    <span className={`dog-gender-badge dog-gender--${d.gender}`}>
+                      {formatDogGenderLabel(d.gender)}
+                    </span>
+                  ) : null;
+                  const parts = [
+                    escapeHtml(d.name),
+                    escapeHtml(d.breed || ''),
+                    genderLabel,
+                    calculateDogAge(d.birthDate ?? d.birth_date),
+                  ].filter(Boolean);
+                  return parts.map((p, i) => (
+                    <span key={i}>
+                      {i > 0 && ' / '}
+                      {p}
+                    </span>
+                  ));
+                })()}
+              </span>
+            )}
+          </div>
+          <div className="comment-item-actions">
+            {currentUserId != null ? (
+              isMyComment ? (
+                <div className="comment-item-my-actions">
+                  <button
+                    type="button"
+                    className="comment-item-action-btn"
+                    onClick={() => setCommentEdit({ editingId: c.id, content: c.content ?? '' })}
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    className="comment-item-action-btn"
+                    onClick={() => onDeleteOpen(c.id)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="comment-item-menu-trigger"
+                    onClick={() => setMenuOpen((o) => !o)}
+                    aria-label="메뉴"
+                    aria-expanded={menuOpen}
+                  >
+                    <MoreHorizontal size={18} aria-hidden />
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-[1]"
+                        role="presentation"
+                        onClick={() => setMenuOpen(false)}
+                      />
+                      <ul className="comment-item-menu">
+                        <li>
+                          <button type="button" onClick={() => {
+                              onBlockUser?.(c.author_id);
+                              setMenuOpen(false);
+                            }}>
+                            차단
+                          </button>
+                        </li>
+                        <li>
+                          <button type="button" onClick={() => {
+                              onReportOpen?.('COMMENT', c.id);
+                              setMenuOpen(false);
+                            }}>
+                            신고
+                          </button>
+                        </li>
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )
+            ) : (
+              <div className="comment-item-actions-spacer" aria-hidden />
+            )}
+          </div>
+        </div>
+        {commentEdit.editingId === c.id ? (
+          <form
+            className="comment-edit-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onEditSave(c.id, commentEdit.content);
+            }}
+          >
+            <textarea
+              className="w-full min-h-[60px] p-2 border border-gray-300 rounded text-[13px] font-['Pretendard',sans-serif] resize-none"
+              aria-label="댓글 수정"
+              value={commentEdit.content}
+              onChange={(e) =>
+                setCommentEdit((prev) => ({ ...prev, content: e.target.value }))
+              }
+            />
+            <div className="comment-edit-actions">
+              <button type="submit">
+                저장
+              </button>
+              <button
+                type="button"
+                onClick={() => setCommentEdit({ editingId: null, content: '' })}
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="comment-item-content-block">
+            <div className="comment-item-content-row">
+              <p className="comment-item-content">
+                {c.isDeleted ? '삭제된 댓글입니다.' : escapeHtml(c.content ?? '')}
+              </p>
+              {!isReply && onCommentLike && !c.isDeleted && (
+                <div className="comment-item-like-col">
+                  <div className="comment-item-like-icon">
+                    <button
+                      type="button"
+                      className={c.isLiked ? 'is-liked' : ''}
+                      onClick={() => onCommentLike(c.id)}
+                      aria-label={c.isLiked ? '좋아요 취소' : '좋아요'}
+                    >
+                      <Heart
+                        size={16}
+                        strokeWidth={2}
+                        fill={c.isLiked ? 'currentColor' : 'none'}
+                        aria-hidden
+                      />
+                    </button>
+                  </div>
+                  <div className="comment-item-like-count">
+                    <span>{c.likeCount ?? 0}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="comment-item-meta-row">
+              <div className="comment-item-meta">
+                <span>
+                  {formatDateTime(c.created_at)}
+                  {c.isEdited && <span className="comment-item-edited"> (수정됨)</span>}
+                </span>
+                {currentUserId != null && !c.isDeleted && !c.parentId && (
+                  <button
+                    type="button"
+                    className="comment-reply-btn"
+                    onClick={() => setReplyToCommentId(replyToCommentId === c.id ? null : c.id)}
+                  >
+                    답글 쓰기
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {currentUserId != null && replyToCommentId === c.id && (
+          <form
+            className="comment-reply-box"
+            onSubmit={(e) => onReplySubmit(e, c.id)}
+          >
+            <textarea
+              ref={replyTextareaRef}
+              rows={1}
+              className="comment-reply-textarea"
+              placeholder="댓글을 남겨보세요"
+              value={replyForm.content}
+              onChange={(e) => setReplyForm((prev) => ({ ...prev, content: e.target.value }))}
+            />
+            <div className="comment-reply-box-divider" />
+            <div className="comment-reply-actions">
+              <button
+                type="button"
+                className="comment-reply-cancel"
+                onClick={() => {
+                  setReplyToCommentId(null);
+                  setReplyForm((prev) => ({ ...prev, content: '' }));
+                }}
+              >
+                취소
+              </button>
+              <button type="submit" className="btn btn-submit" disabled={replyForm.submitting}>
+                {replyForm.submitting ? '등록 중...' : '등록'}
+              </button>
+            </div>
+          </form>
+        )}
+        {Array.isArray(c.replies) && c.replies.length > 0 && (
+          <div className="comment-replies">
+            {c.replies.map((r) => (
+              <CommentItem
+                key={r.id}
+                c={r}
+                currentUserId={currentUserId}
+                commentEdit={commentEdit}
+                setCommentEdit={setCommentEdit}
+                onEditSave={onEditSave}
+                onCommentLike={onCommentLike}
+                onDeleteOpen={onDeleteOpen}
+                onBlockUser={onBlockUser}
+                onReportOpen={onReportOpen}
+                replyToCommentId={replyToCommentId}
+                setReplyToCommentId={setReplyToCommentId}
+                replyForm={replyForm}
+                setReplyForm={setReplyForm}
+                onReplySubmit={onReplySubmit}
+                depth={1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+const COMMENT_SORTS = [
+  { value: 'popular', label: '인기순' },
+  { value: 'latest', label: '최신순' },
+  { value: 'oldest', label: '등록순' },
+];
+
+export function CommentList({
+  comments,
+  currentUserId,
+  commentSort,
+  setCommentSort,
+  commentEdit,
+  setCommentEdit,
+  onEditSave,
+  onCommentLike,
+  onDeleteOpen,
+  onBlockUser,
+  onReportOpen,
   commentPage,
   commentTotalPages,
   setCommentPage,
+  replyToCommentId,
+  setReplyToCommentId,
+  replyForm,
+  setReplyForm,
+  onReplySubmit,
 }) {
   return (
     <>
-      <section className="comment-list" id="comment-list">
+      <div className="comment-sort-tabs" role="tablist" aria-label="댓글 정렬">
+        {COMMENT_SORTS.map((s) => (
+          <button
+            key={s.value}
+            type="button"
+            role="tab"
+            aria-selected={commentSort === s.value}
+            onClick={() => setCommentSort(s.value)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      <section id="comment-list">
         {comments.map((c) => (
-          <article key={c.id} className="comment-item" data-comment-id={c.id}>
-            <div className="comment-avatar">
-              <img
-                src={c.author_profile_image || DEFAULT_PROFILE_IMAGE}
-                alt="댓글 작성자 프로필"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                }}
-              />
-            </div>
-            <div className="comment-body">
-              <div className="comment-header">
-                <div className="comment-header-left">
-                  <span className="comment-author-name">
-                    {escapeHtml(c.author_nickname ?? '')}
-                    {c.author_representative_dog?.name && (
-                      <span className="comment-author-dog-badge">
-                        {' '}
-                        {[
-                          escapeHtml(c.author_representative_dog.name),
-                          escapeHtml(c.author_representative_dog.breed || ''),
-                          formatDogGender(c.author_representative_dog.gender),
-                          calculateDogAge(
-                            c.author_representative_dog.birthDate ??
-                              c.author_representative_dog.birth_date
-                          ),
-                        ]
-                          .filter(Boolean)
-                          .join(' / ')}
-                      </span>
-                    )}
-                  </span>
-                  <span className="comment-date">{formatDateTime(c.created_at)}</span>
-                </div>
-                {c.isMine && commentEdit.editingId !== c.id && (
-                  <div className="detail-action-group">
-                    <button
-                      type="button"
-                      className="detail-action-btn comment-edit-btn"
-                      onClick={() =>
-                        setCommentEdit({ editingId: c.id, content: c.content ?? '' })
-                      }
-                    >
-                      수정
-                    </button>
-                    <button
-                      type="button"
-                      className="detail-action-btn comment-delete-btn"
-                      onClick={() => onDeleteOpen(c.id)}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                )}
-              </div>
-              {commentEdit.editingId === c.id ? (
-                <form
-                  className="comment-edit-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    onEditSave(c.id, commentEdit.content);
-                  }}
-                >
-                  <textarea
-                    className="comment-edit-textarea"
-                    aria-label="댓글 수정"
-                    value={commentEdit.content}
-                    onChange={(e) =>
-                      setCommentEdit((prev) => ({ ...prev, content: e.target.value }))
-                    }
-                  />
-                  <div className="detail-action-group">
-                    <button type="submit" className="detail-action-btn">
-                      저장
-                    </button>
-                    <button
-                      type="button"
-                      className="detail-action-btn comment-edit-cancel-btn"
-                      onClick={() => setCommentEdit({ editingId: null, content: '' })}
-                    >
-                      취소
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <p className="comment-content">{escapeHtml(c.content ?? '')}</p>
-              )}
-            </div>
-          </article>
+          <CommentItem
+            key={c.id}
+            c={c}
+            currentUserId={currentUserId}
+            commentEdit={commentEdit}
+            setCommentEdit={setCommentEdit}
+            onEditSave={onEditSave}
+            onCommentLike={onCommentLike}
+            onDeleteOpen={onDeleteOpen}
+            onBlockUser={onBlockUser}
+            onReportOpen={onReportOpen}
+            replyToCommentId={replyToCommentId}
+            setReplyToCommentId={setReplyToCommentId}
+            replyForm={replyForm}
+            setReplyForm={setReplyForm}
+            onReplySubmit={onReplySubmit}
+          />
         ))}
       </section>
       {commentTotalPages > 1 && (
         <nav className="comment-pagination" aria-label="댓글 페이지">
-          <ul className="comment-pagination-list">
+          <ul>
             {Array.from({ length: commentTotalPages }, (_, i) => i + 1).map((p) => (
               <li key={p}>
                 <button
                   type="button"
-                  className={`comment-page-btn ${p === commentPage ? 'active' : ''}`}
+                  className={p === commentPage ? 'active' : ''}
                   data-page={p}
                   onClick={() => setCommentPage(p)}
                 >

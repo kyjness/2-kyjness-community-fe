@@ -18,13 +18,15 @@ function normalizePost(postData, currentUser) {
     title: postData?.title ?? '',
     content: postData?.content ?? '',
     author_nickname: author?.nickname ?? '',
+    author_id: author?.id ?? author?.userId ?? null,
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
     author_representative_dog: author?.representativeDog ?? author?.representative_dog ?? null,
     created_at: postData?.createdAt ?? '',
     files: postData?.files ?? (postData?.file ? [postData.file] : []),
-    likes: postData?.likeCount ?? 0,
+    likes: postData?.likeCount ?? postData?.like_count ?? 0,
     views: postData?.viewCount ?? 0,
     commentCount: postData?.commentCount ?? 0,
+    isLiked: postData?.isLiked ?? postData?.is_liked ?? false,
     isMine,
   };
 }
@@ -32,14 +34,23 @@ function normalizePost(postData, currentUser) {
 function normalizeComment(c, currentUser) {
   const author = c?.author ?? null;
   const isMine = !!(currentUser && (author?.id === currentUser.userId || author?.userId === currentUser.userId));
+  const replies = Array.isArray(c?.replies) ? c.replies.map((r) => normalizeComment(r, currentUser)) : [];
   return {
     id: c?.id,
     author_nickname: author?.nickname ?? '',
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
     author_representative_dog: author?.representativeDog ?? author?.representative_dog ?? null,
-    created_at: c?.createdAt ?? '',
+    author_id: author?.id ?? author?.userId ?? null,
+    created_at: c?.createdAt ?? c?.created_at ?? '',
+    updated_at: c?.updatedAt ?? c?.updated_at ?? '',
     content: c?.content ?? '',
     isMine,
+    likeCount: c?.likeCount ?? c?.like_count ?? 0,
+    isLiked: c?.isLiked ?? c?.is_liked ?? false,
+    parentId: c?.parentId ?? c?.parent_id ?? null,
+    replies,
+    isEdited: c?.isEdited ?? c?.is_edited ?? false,
+    isDeleted: c?.isDeleted ?? c?.is_deleted ?? false,
   };
 }
 
@@ -51,10 +62,20 @@ export function usePostDetail(postId, user, navigate) {
   const [commentPage, setCommentPage] = useState(1);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
   const [commentTotalCount, setCommentTotalCount] = useState(0);
+  const [commentSort, setCommentSort] = useState('latest');
   const [message, setMessage] = useState('');
-  const [modalState, setModalState] = useState({ postDeleteOpen: false, commentDeleteId: null });
+  const [modalState, setModalState] = useState({
+    postDeleteOpen: false,
+    commentDeleteId: null,
+    reportOpen: false,
+    reportTargetType: null,
+    reportTargetId: null,
+  });
+  const [toastMessage, setToastMessage] = useState(null);
   const [commentForm, setCommentForm] = useState({ content: '', submitting: false });
   const [commentEdit, setCommentEdit] = useState({ editingId: null, content: '' });
+  const [replyToCommentId, setReplyToCommentId] = useState(null);
+  const [replyForm, setReplyForm] = useState({ content: '', submitting: false });
 
   const viewRequestedRef = useRef(null);
   const isLikingRef = useRef(false);
@@ -92,24 +113,24 @@ export function usePostDetail(postId, user, navigate) {
       if (!postId) return;
       setMessage('');
       try {
+        const sortParam = commentSort && commentSort !== 'latest' ? `&sort=${encodeURIComponent(commentSort)}` : '';
         const res = await api.get(
-          `/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}`
+          `/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}${sortParam}`
         );
-        const payload = res?.data ?? res;
-        const list =
-          payload?.list ?? payload?.comments ?? (Array.isArray(payload) ? payload : []);
-        const arr = Array.isArray(list) ? list : [];
+        const payload = res?.data?.data ?? res?.data ?? {};
+        const arr = Array.isArray(payload?.items) ? payload.items : [];
+        const totalCount = payload?.total ?? payload?.total_count ?? 0;
         setComments(arr.map((c) => normalizeComment(c, user)));
-        setCommentTotalPages(payload?.totalPages ?? res?.totalPages ?? 1);
-        setCommentTotalCount(payload?.totalCount ?? res?.totalCount ?? arr.length);
-        setCommentPage(page);
+        setCommentTotalCount(totalCount);
+        setCommentTotalPages(Math.max(1, Math.ceil(totalCount / COMMENT_PAGE_SIZE)));
+        setCommentPage(1);
       } catch (err) {
         setMessage(
           getApiErrorMessage(err?.code ?? err?.message, '댓글 목록을 불러오지 못했습니다.')
         );
       }
     },
-    [postId, user]
+    [postId, user, commentSort]
   );
 
   useEffect(() => {
@@ -128,8 +149,8 @@ export function usePostDetail(postId, user, navigate) {
 
   useEffect(() => {
     if (!postId) return;
-    loadComments(commentPage);
-  }, [postId, commentPage, loadComments]);
+    loadComments(1);
+  }, [postId, commentSort, loadComments]);
 
   const handleLike = useCallback(async () => {
     if (!postId) return;
@@ -142,13 +163,24 @@ export function usePostDetail(postId, user, navigate) {
     }
     setMessage('');
     isLikingRef.current = true;
+    const currentlyLiked = post?.isLiked ?? false;
     try {
-      const res = await api.post(`/posts/${postId}/likes`);
-      if (res?.code === 'ALREADY_LIKED') {
-        await api.delete(`/posts/${postId}/likes`);
-        setPost((p) => (p ? { ...p, likes: Math.max(0, (p.likes ?? 0) - 1) } : p));
-      } else {
-        setPost((p) => (p ? { ...p, likes: (p.likes ?? 0) + 1 } : p));
+      const res = currentlyLiked
+        ? await api.delete(`/likes/posts/${postId}`)
+        : await api.post(`/likes/posts/${postId}`);
+      const data = res?.data ?? res;
+      const likeCount = data?.likeCount ?? data?.like_count;
+      const isLiked = data?.isLiked ?? data?.is_liked;
+      if (likeCount !== undefined || isLiked !== undefined) {
+        setPost((p) =>
+          p
+            ? {
+                ...p,
+                likes: typeof likeCount === 'number' ? likeCount : p.likes,
+                isLiked: typeof isLiked === 'boolean' ? isLiked : p.isLiked,
+              }
+            : p
+        );
       }
     } catch (err) {
       setMessage(
@@ -157,7 +189,7 @@ export function usePostDetail(postId, user, navigate) {
     } finally {
       isLikingRef.current = false;
     }
-  }, [postId, user, navigate]);
+  }, [postId, user, navigate, post]);
 
   const handleCommentSubmit = useCallback(
     async (e) => {
@@ -185,6 +217,30 @@ export function usePostDetail(postId, user, navigate) {
       }
     },
     [postId, user, commentForm.content, navigate, loadComments]
+  );
+
+  const handleReplySubmit = useCallback(
+    async (e, parentId) => {
+      e.preventDefault();
+      if (!postId || !user || !parentId) return;
+      const content = replyForm.content.trim();
+      if (!content) return;
+      setMessage('');
+      setReplyForm((prev) => ({ ...prev, submitting: true }));
+      try {
+        await api.post(`/posts/${postId}/comments`, { content, parent_id: parentId });
+        setReplyForm((prev) => ({ ...prev, content: '', submitting: false }));
+        setReplyToCommentId(null);
+        setPost((p) => (p ? { ...p, commentCount: (p.commentCount ?? 0) + 1 } : p));
+        await loadComments(1);
+      } catch (err) {
+        setMessage(
+          getApiErrorMessage(err?.code ?? err?.message, '답글 등록에 실패했습니다.')
+        );
+        setReplyForm((prev) => ({ ...prev, submitting: false }));
+      }
+    },
+    [postId, user, replyForm.content, loadComments]
   );
 
   const handleCommentDelete = useCallback(
@@ -228,6 +284,73 @@ export function usePostDetail(postId, user, navigate) {
     [postId]
   );
 
+  const handleCommentLike = useCallback(
+    async (commentId) => {
+      if (!postId || !commentId) return;
+      if (!user) {
+        if (!window.confirm('로그인이 필요한 서비스입니다. 로그인하시겠습니까?')) return;
+        sessionStorage.setItem('login_return_path', `/posts/${postId}`);
+        navigate('/login');
+        return;
+      }
+      setMessage('');
+      const comment = comments.find((c) => c.id === commentId);
+      const isCurrentlyLiked = comment?.isLiked ?? false;
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id !== commentId) return c;
+          const nextLiked = !c.isLiked;
+          return {
+            ...c,
+            isLiked: nextLiked,
+            likeCount: Math.max(0, (c.likeCount ?? 0) + (nextLiked ? 1 : -1)),
+          };
+        })
+      );
+      try {
+        const req = isCurrentlyLiked
+          ? api.delete(`/likes/comments/${commentId}`)
+          : api.post(`/likes/comments/${commentId}`);
+        const res = await req;
+        const data = res?.data ?? res;
+        if (data?.likeCount !== undefined || data?.isLiked !== undefined) {
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === commentId
+                ? {
+                    ...c,
+                    likeCount: data.likeCount ?? c.likeCount,
+                    isLiked: data.isLiked ?? c.isLiked,
+                  }
+                : c
+            )
+          );
+        }
+      } catch (err) {
+        if (err?.response?.status === 401) {
+          if (!window.confirm('로그인이 필요한 서비스입니다. 로그인하시겠습니까?')) return;
+          sessionStorage.setItem('login_return_path', `/posts/${postId}`);
+          navigate('/login');
+          return;
+        }
+        setComments((prev) =>
+          prev.map((c) => {
+            if (c.id !== commentId) return c;
+            return {
+              ...c,
+              isLiked: c.isLiked ?? false,
+              likeCount: Math.max(0, (c.likeCount ?? 0) + (c.isLiked ? -1 : 1)),
+            };
+          })
+        );
+        setMessage(
+          getApiErrorMessage(err?.code ?? err?.message, '댓글 좋아요 처리에 실패했습니다.')
+        );
+      }
+    },
+    [postId, user, navigate, comments]
+  );
+
   const handlePostDelete = useCallback(async () => {
     if (!postId) return;
     setMessage('');
@@ -241,6 +364,38 @@ export function usePostDetail(postId, user, navigate) {
       );
     }
   }, [postId, navigate]);
+
+  const handleBlockUser = useCallback(
+    async (targetUserId) => {
+      if (!targetUserId || !user?.userId) return;
+      if (
+        !window.confirm(
+          '이 사용자를 차단하시겠습니까? 차단한 사용자의 게시글과 댓글이 보이지 않습니다.'
+        )
+      ) {
+        return;
+      }
+      setMessage('');
+      try {
+        await api.post(`/users/${targetUserId}/block`);
+        window.location.reload();
+      } catch (err) {
+        setMessage(
+          getApiErrorMessage(err?.code ?? err?.message, '차단 처리에 실패했습니다.')
+        );
+      }
+    },
+    [user?.userId]
+  );
+
+  const displayedComments = useMemo(
+    () =>
+      comments.slice(
+        (commentPage - 1) * COMMENT_PAGE_SIZE,
+        commentPage * COMMENT_PAGE_SIZE
+      ),
+    [comments, commentPage]
+  );
 
   const uniqueFiles = useMemo(() => {
     const files = (post?.files ?? []).filter((f) => safeImageUrl(f.fileUrl, ''));
@@ -257,10 +412,12 @@ export function usePostDetail(postId, user, navigate) {
     loading,
     error,
     post,
-    comments,
+    comments: displayedComments,
     commentPage,
     commentTotalPages,
     commentTotalCount,
+    commentSort,
+    setCommentSort,
     message,
     modalState,
     setModalState,
@@ -269,13 +426,22 @@ export function usePostDetail(postId, user, navigate) {
     commentEdit,
     setCommentEdit,
     setCommentPage,
+    replyToCommentId,
+    setReplyToCommentId,
+    replyForm,
+    setReplyForm,
     loadPost,
     loadComments,
     handleLike,
+    handleCommentLike,
     handleCommentSubmit,
+    handleReplySubmit,
     handleCommentDelete,
     handleCommentEdit,
     handlePostDelete,
+    handleBlockUser,
+    toastMessage,
+    setToastMessage,
     uniqueFiles,
   };
 }

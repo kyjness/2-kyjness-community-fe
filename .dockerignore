@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+dist/
+
+# Env files
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Docs / 테스트 (빌드 불필요)
+*.md
+
+# Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

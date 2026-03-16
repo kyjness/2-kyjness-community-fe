@@ -210,13 +210,20 @@ export function calculateDogAge(birthDate) {
 }
 
 /**
- * API 성별 코드 → 이모지만 표시.
+ * API 성별 코드 → 문자로 표시 (이모지 대신 유니코드 기호로 폰트 호환성 확보).
  * @param {string} gender - "male" | "female"
  * @returns {string}
  */
 export function formatDogGender(gender) {
-  if (gender === 'male') return '♂️';
-  if (gender === 'female') return '♀️';
+  if (gender === 'male') return '\u2642';  /* ♂ */
+  if (gender === 'female') return '\u2640'; /* ♀ */
+  return gender ? String(gender) : '';
+}
+
+/** 성별 이모지 (게시글/댓글·반려견관리 공통, 글씨 없이 이모지만) */
+export function formatDogGenderLabel(gender) {
+  if (gender === 'male') return '\u2642\uFE0F';   /* ♂️ */
+  if (gender === 'female') return '\u2640\uFE0F'; /* ♀️ */
   return gender ? String(gender) : '';
 }
 

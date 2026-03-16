@@ -7,7 +7,7 @@ export function PostListWriteSection({ postsLength, onWriteClick }) {
           ? 'post-list-write-wrap post-list-write-right'
           : 'post-list-write-wrap'
       }
-      style={postsLength === 0 ? { textAlign: 'center', marginTop: 16 } : { marginTop: 16 }}
+      style={postsLength === 0 ? { textAlign: 'center' } : {}}
     >
       <button
         type="button"

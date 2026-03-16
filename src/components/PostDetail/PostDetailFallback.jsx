@@ -10,13 +10,8 @@ export function PostDetailFallback({ variant, error, onBack }) {
     error: (
       <>
         <p className="post-list-message">게시글을 불러올 수 없습니다.</p>
-        <p style={{ color: '#777', fontSize: 12, marginTop: 8 }}>{error}</p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          style={{ marginTop: 16 }}
-          onClick={onBack}
-        >
+        <p style={{ color: '#777', fontSize: 12 }}>{error}</p>
+        <button type="button" className="btn btn-primary" onClick={onBack}>
           목록으로 돌아가기
         </button>
       </>
@@ -25,8 +20,8 @@ export function PostDetailFallback({ variant, error, onBack }) {
 
   return (
     <Header showBackButton backHref="/posts">
-      <main className="main post-detail-main">
-        <div className="post-detail-container">{content}</div>
+      <main className="main post-detail-main post-detail-main--fallback">
+        <div className="post-detail-container post-detail-container--fallback">{content}</div>
       </main>
     </Header>
   );

@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api/client.js';
 import { getImageUploadData, revokeObjectUrlSafely } from '../utils/index.js';
 
-/** @typedef {{ imageId: number, fileUrl: string }} ExistingUrlItem */
-/** @typedef {{ file: File, objectUrl: string, imageId: number | null }} NewImageItem */
+/** @typedef {import('../api/api-types.js').ExistingImageItem} ExistingUrlItem */
+/** @typedef {import('../api/api-types.js').NewImageItem} NewImageItem */
 
 /**
  * @param {{ ids: number[], urls: ExistingUrlItem[] } | null} initialExisting - 서버에서 받은 기존 이미지 (한 번만 적용)

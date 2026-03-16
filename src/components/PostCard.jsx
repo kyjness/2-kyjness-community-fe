@@ -1,5 +1,6 @@
 // 게시글 목록 카드: 제목·메타·작성자·강아지·클릭 시 상세 이동.
-import { formatDate, getProfileImageUrl, escapeHtml, calculateDogAge, formatDogGender } from '../utils/index.js';
+import { Image } from 'lucide-react';
+import { formatDate, getProfileImageUrl, escapeHtml, calculateDogAge, formatDogGenderLabel } from '../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -7,25 +8,48 @@ function AuthorBadge({ author }) {
   const dog = author?.representativeDog ?? author?.representative_dog;
   const name = escapeHtml(author?.nickname || '알 수 없음');
   if (!dog?.name) return <>{name}</>;
+  const genderLabel = dog.gender ? (
+    <span className={`dog-gender-badge dog-gender--${dog.gender}`}>
+      {formatDogGenderLabel(dog.gender)}
+    </span>
+  ) : null;
   const parts = [
     escapeHtml(dog.name),
     escapeHtml(dog.breed || ''),
-    formatDogGender(dog.gender),
+    genderLabel,
     calculateDogAge(dog.birthDate ?? dog.birth_date),
   ].filter(Boolean);
-  const badge = parts.join(' / ');
   return (
     <>
       {name}
-      <span className="post-card-author-dog-badge"> {badge}</span>
+      <span className="post-card-author-dog-badge">
+        {' '}
+        {parts.map((p, i) => (
+          <span key={i}>
+            {i > 0 && ' / '}
+            {p}
+          </span>
+        ))}
+      </span>
     </>
   );
+}
+
+/** 목록용 본문 미리보기: 첫 줄만, 길면 말줄임 */
+function getContentExcerpt(content, maxLength = 80) {
+  if (!content || typeof content !== 'string') return '';
+  const firstLine = content.trim().split(/\r?\n/)[0] || '';
+  if (firstLine.length <= maxLength) return firstLine;
+  return firstLine.slice(0, maxLength).trim() + '...';
 }
 
 export function PostCard({ post, onClick }) {
   const { user } = useAuth();
   const postId = post.id;
   const title = post.title || '제목 없음';
+  const contentPreview =
+    post.contentPreview ??
+    getContentExcerpt(post.content ?? '', 80);
   const likeCount = post.likeCount ?? 0;
   const commentCount = post.commentCount ?? 0;
   const viewCount = post.viewCount ?? 0;
@@ -33,9 +57,12 @@ export function PostCard({ post, onClick }) {
   const author = post.author || {};
   const isMine = !!(user && (author.userId === user.userId || author.id === user.userId));
   const authorAvatar = getProfileImageUrl(user, author, isMine, DEFAULT_PROFILE_IMAGE);
-  // author.profileImageUrl이 null이어도 기본 이미지가 나가도록, 빈/undefined 시 DEFAULT_PROFILE_IMAGE 고정
   const imgSrc =
     (authorAvatar && String(authorAvatar).trim()) ? authorAvatar : DEFAULT_PROFILE_IMAGE;
+  const hasImages =
+    (Array.isArray(post.files) && post.files.length > 0) ||
+    (Number(post.fileCount) > 0) ||
+    (Number(post.imageCount) > 0);
 
   return (
     <article
@@ -52,9 +79,21 @@ export function PostCard({ post, onClick }) {
       tabIndex={0}
     >
       <div className="post-card-header">
-        <span className="post-card-title">{title}</span>
+        <div className="post-card-title-row">
+          <span className="post-card-title">{title}</span>
+          {hasImages && (
+            <span className="post-card-title-image-icon" title="사진이 있는 게시글" aria-hidden>
+              <Image size={18} strokeWidth={2} />
+            </span>
+          )}
+        </div>
         <span className="post-card-date">{formatDate(createdAt)}</span>
       </div>
+      {contentPreview ? (
+        <p className="post-card-excerpt" title={contentPreview}>
+          {contentPreview}
+        </p>
+      ) : null}
       <div className="post-card-stats">
         <span>좋아요 {likeCount}</span>
         <span>댓글 {commentCount}</span>

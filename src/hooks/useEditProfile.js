@@ -1,4 +1,4 @@
-// 회원정보 수정 로직: useAuth 연동, 폼·강아지·프로필 이미지, PATCH /users/me·탈퇴.
+// 회원정보 수정 로직(프로필 전용): 닉네임·프로필 이미지, PATCH /users/me·탈퇴. 강아지는 user.dogs 유지.
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
@@ -12,10 +12,6 @@ import {
   revokeObjectUrlSafely,
 } from '../utils/index.js';
 
-function emptyDog() {
-  return { id: null, name: '', breed: '', gender: 'male', birthDate: '', isRepresentative: false };
-}
-
 function toFormDog(d) {
   return {
     id: d?.dogId ?? d?.id ?? null,
@@ -27,24 +23,35 @@ function toFormDog(d) {
   };
 }
 
+function buildDogsPayload(dogsArray) {
+  const list = Array.isArray(dogsArray) ? dogsArray.map(toFormDog) : [];
+  return list
+    .filter((d) => d.name && d.breed && d.birthDate)
+    .map((d, i, arr) => ({
+      id: d.id != null ? Number(d.id) : undefined,
+      name: d.name,
+      breed: d.breed,
+      gender: d.gender,
+      birthDate: d.birthDate.slice(0, 10),
+      isRepresentative:
+        arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
+    }));
+}
+
 export function useEditProfile() {
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
   const fileInputRef = useRef(null);
 
   const initialNickname = (user?.nickname ?? '').trim();
-  const initialDogs = Array.isArray(user?.dogs) ? user.dogs.map(toFormDog) : [];
   const [nickname, setNickname] = useState(initialNickname);
   const [profileFile, setProfileFile] = useState(null);
   const [profilePreviewUrl, setProfilePreviewUrl] = useState(null);
   const [clearProfileImage, setClearProfileImage] = useState(false);
-  const [dogs, setDogs] = useState(initialDogs.length > 0 ? initialDogs : [emptyDog()]);
   const [formError, setFormError] = useState('');
   const [nicknameError, setNicknameError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const dogsRef = useRef(dogs);
-  dogsRef.current = dogs;
   const initializedRef = useRef(false);
   const previousUserIdRef = useRef(undefined);
 
@@ -53,12 +60,9 @@ export function useEditProfile() {
       ? DEFAULT_PROFILE_IMAGE
       : (profilePreviewUrl ?? safeImageUrl(user?.profileImageUrl, DEFAULT_PROFILE_IMAGE) ?? DEFAULT_PROFILE_IMAGE);
   const canClearProfileImage = profileImageDisplay !== DEFAULT_PROFILE_IMAGE;
-  const initialDogsSnapshot =
-    Array.isArray(user?.dogs) && user.dogs.length > 0 ? user.dogs.map(toFormDog) : [emptyDog()];
   const nicknameChanged = nickname.trim() !== initialNickname;
   const profileImageChanged = profileFile != null || clearProfileImage;
-  const dogsChanged = JSON.stringify(dogs) !== JSON.stringify(initialDogsSnapshot);
-  const hasUnsavedChanges = nicknameChanged || profileImageChanged || dogsChanged;
+  const hasUnsavedChanges = nicknameChanged || profileImageChanged;
 
   useEffect(() => {
     const uid = user?.userId ?? user?.id;
@@ -68,9 +72,6 @@ export function useEditProfile() {
     }
     if (initializedRef.current || user == null) return;
     initializedRef.current = true;
-    setDogs(
-      Array.isArray(user.dogs) && user.dogs.length > 0 ? user.dogs.map(toFormDog) : [emptyDog()]
-    );
     setNickname((user.nickname ?? '').trim());
   }, [user]);
 
@@ -79,33 +80,6 @@ export function useEditProfile() {
       if (profilePreviewUrl) revokeObjectUrlSafely(profilePreviewUrl);
     };
   }, [profilePreviewUrl]);
-
-  const setDogAt = useCallback((index, patch) => {
-    setDogs((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
-  }, []);
-
-  const addDog = useCallback(() => {
-    setDogs((prev) => [...prev, emptyDog()]);
-  }, []);
-
-  const removeDog = useCallback((index) => {
-    setDogs((prev) => (prev.length <= 1 ? [emptyDog()] : prev.filter((_, i) => i !== index)));
-  }, []);
-
-  const setRepresentative = useCallback((index) => {
-    const current = dogsRef.current[index]?.isRepresentative;
-    if (current) {
-      if (dogsRef.current.length === 1) {
-        alert('등록된 강아지가 한 마리일 경우, 반드시 대표 강아지로 지정되어야 합니다.');
-      } else {
-        alert(
-          '대표 강아지는 해제할 수 없습니다.\n변경을 원하시면 다른 강아지의 [대표로 설정] 버튼을 눌러주세요.'
-        );
-      }
-      return;
-    }
-    setDogs((prev) => prev.map((d, i) => ({ ...d, isRepresentative: i === index })));
-  }, []);
 
   const handleProfileChange = useCallback(
     (e) => {
@@ -176,44 +150,22 @@ export function useEditProfile() {
         } else if (profileImageId != null) {
           payload.profileImageId = Number(profileImageId);
         }
-
-        const dogsPayload = dogs
-          .filter((d) => d.name.trim() && d.breed.trim() && d.birthDate.trim())
-          .map((d, i, arr) => ({
-            id: d.id != null ? Number(d.id) : undefined,
-            name: d.name.trim(),
-            breed: d.breed.trim(),
-            gender: d.gender,
-            birthDate: d.birthDate.trim().slice(0, 10),
-            isRepresentative:
-              arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
-          }));
-        payload.dogs = dogsPayload;
+        payload.dogs = buildDogsPayload(user?.dogs);
 
         const patchRes = await api.patch('/users/me', payload);
         const updatedFromPatch = patchRes?.data?.data ?? patchRes?.data ?? null;
 
         if (updatedFromPatch) {
-          const mappedDogs =
-            Array.isArray(updatedFromPatch.dogs) && updatedFromPatch.dogs.length > 0
-              ? updatedFromPatch.dogs.map(toFormDog)
-              : [emptyDog()];
           setUser({
             ...user,
             ...updatedFromPatch,
-            dogs: mappedDogs,
           });
           setNickname(updatedFromPatch.nickname ?? nickTrim);
-          setDogs(mappedDogs);
         } else {
           try {
             const meRes = await api.get('/users/me');
             const updated = meRes?.data?.data ?? null;
             if (updated) {
-              const mappedDogs =
-                Array.isArray(updated.dogs) && updated.dogs.length > 0
-                  ? updated.dogs.map(toFormDog)
-                  : [emptyDog()];
               setUser({
                 ...user,
                 userId: updated.id ?? user?.userId,
@@ -221,12 +173,11 @@ export function useEditProfile() {
                 nickname: updated.nickname ?? nickTrim,
                 profileImageId: updated.profileImageId ?? null,
                 profileImageUrl: updated.profileImageUrl ?? null,
-                dogs: mappedDogs,
+                dogs: updated.dogs ?? user?.dogs,
                 representativeDog: updated.representativeDog ?? null,
                 accessToken: user?.accessToken,
               });
               setNickname(updated.nickname ?? nickTrim);
-              setDogs(mappedDogs);
             } else {
               setUser({ ...user, nickname: nickTrim });
               setNickname(nickTrim);
@@ -262,7 +213,6 @@ export function useEditProfile() {
       nickname,
       profileFile,
       clearProfileImage,
-      dogs,
       hasUnsavedChanges,
       profilePreviewUrl,
       setUser,
@@ -300,11 +250,6 @@ export function useEditProfile() {
     setNickname,
     nicknameError,
     setNicknameError,
-    dogs,
-    setDogAt,
-    addDog,
-    removeDog,
-    setRepresentative,
     profileImageDisplay,
     canClearProfileImage,
     formError,

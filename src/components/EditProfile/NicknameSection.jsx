@@ -1,7 +1,6 @@
-// 회원정보 수정 이메일·계정 상태·닉네임 입력.
+// 회원정보 수정 이메일·닉네임 입력. (계정 상태는 백엔드 관리용, 화면에는 노출하지 않음)
 export function NicknameSection({
   email,
-  status,
   nickname,
   nicknameError,
   onNicknameChange,
@@ -10,20 +9,8 @@ export function NicknameSection({
     <>
       <div className="form-group">
         <label className="form-label">이메일</label>
-        <p className="profile-edit-email">{email ?? '\u00A0'}</p>
+        <p className="text-sm text-black py-2">{email ?? '\u00A0'}</p>
       </div>
-      {status != null && (
-        <div className="form-group">
-          <label className="form-label">계정 상태</label>
-          <p className="profile-edit-status" aria-live="polite">
-            {status === 'ACTIVE' && '활성'}
-            {status === 'PENDING' && '대기'}
-            {status === 'BANNED' && '정지'}
-            {status === 'DELETED' && '탈퇴'}
-            {!['ACTIVE', 'PENDING', 'BANNED', 'DELETED'].includes(status) && (status ?? '\u00A0')}
-          </p>
-        </div>
-      )}
       <div className="form-group">
         <label htmlFor="nickname" className="form-label">
           닉네임

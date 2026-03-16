@@ -5,3 +5,4 @@ export { CommentList } from './CommentList.jsx';
 export { PostDeleteModal } from './PostDeleteModal.jsx';
 export { CommentDeleteModal } from './CommentDeleteModal.jsx';
 export { PostDetailFallback } from './PostDetailFallback.jsx';
+export { ReportModal } from './ReportModal.jsx';

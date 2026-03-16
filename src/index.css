@@ -1,0 +1,8 @@
+/* Preflight 제외: base.css와 충돌 방지. theme + utilities만 사용 */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+  --color-primary: #aca0eb;
+  --color-primary-hover: #9b8ee0;
+}

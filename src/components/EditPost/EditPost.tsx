@@ -4,10 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { memo } from 'react';
 import { Header } from '../Header.jsx';
 import { usePostStore } from '../../store/usePostStore';
-import type { ExistingImageItem, NewImageItem } from '../../types/post';
+import type { ExistingImageItem, NewImageItem } from '../../api/api-types.js';
 import { safeImageUrl } from '../../utils/index.js';
-import styles from './EditPost.module.css';
-
 const MAX_IMAGES = 5;
 
 /** 이미지 미리보기 1건 (기존/신규) — 제거 시 onRemove(type, index) */
@@ -34,9 +32,9 @@ const ImagePreviewItem = memo(function ImagePreviewItem({
   };
 
   return (
-    <div className={styles.previewItem} data-type={type} data-index={index}>
-      <img src={src} alt={type === 'existing' ? '이미지' : '새 이미지'} className={styles.previewItemImg} />
-      <button type="button" className={styles.removeBtn} aria-label="제거" onClick={handleRemove}>
+    <div className="post-image-preview-item" data-type={type} data-index={index}>
+      <img src={src} alt={type === 'existing' ? '이미지' : '새 이미지'} />
+      <button type="button" className="post-image-remove" aria-label="제거" onClick={handleRemove}>
         ×
       </button>
     </div>
@@ -133,24 +131,24 @@ export function EditPost() {
   return (
     <Header showBackButton backHref={backHref}>
       <main className="main">
-        <div className={styles.wrapper}>
-          <div className={styles.formContainer}>
-            <h2 className={styles.formTitle}>게시글 수정</h2>
+        <div className="post-list-container post-new-container">
+          <div className="form-container">
+            <h2 className="form-title">게시글 수정</h2>
             <form
               id="edit-post-form"
-              className={styles.form}
+              className="form edit-post-form"
               noValidate
               onSubmit={handleSubmit}
             >
-              <div className={styles.formGroup}>
-                <label htmlFor="edit-post-title" className={styles.formLabel}>
+              <div className="form-group">
+                <label htmlFor="edit-post-title" className="form-label">
                   제목*
                 </label>
                 <input
                   type="text"
                   id="edit-post-title"
                   name="title"
-                  className={styles.formInput}
+                  className="form-input"
                   placeholder="제목을 입력하세요. (최대 26글자)"
                   maxLength={26}
                   value={title}
@@ -160,20 +158,20 @@ export function EditPost() {
                   aria-describedby={titleError ? 'edit-post-title-error' : undefined}
                 />
                 {titleError && (
-                  <span className={styles.helperText} id="edit-post-title-error" role="alert">
+                  <span className="helper-text" id="edit-post-title-error" role="alert">
                     * {titleError}
                   </span>
                 )}
               </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="edit-post-content" className={styles.formLabel}>
+              <div className="form-group">
+                <label htmlFor="edit-post-content" className="form-label">
                   내용*
                 </label>
                 <textarea
                   ref={textareaRef}
                   id="edit-post-content"
                   name="content"
-                  className={`${styles.formInput} ${styles.formTextarea}`}
+                  className="form-input form-textarea"
                   placeholder="내용을 입력하세요."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -181,13 +179,8 @@ export function EditPost() {
                   aria-invalid={!!contentError}
                   aria-describedby={contentError ? 'edit-post-content-error' : undefined}
                 />
-                {contentError && (
-                  <span className={styles.helperText} id="edit-post-content-error" role="alert">
-                    * {contentError}
-                  </span>
-                )}
                 <div
-                  className={`${styles.previewWrapper} ${totalCount > 0 ? styles.hasImages : ''}`}
+                  className={`post-image-preview ${totalCount > 0 ? 'has-images' : ''}`}
                   aria-label="첨부 이미지 미리보기"
                 >
                   {existingUrls.map((item, i) => (
@@ -209,49 +202,52 @@ export function EditPost() {
                     />
                   ))}
                 </div>
+                {contentError && (
+                  <span className="helper-text" id="edit-post-content-error" role="alert">
+                    * {contentError}
+                  </span>
+                )}
               </div>
-              <div className={styles.formGroup}>
-                <span className={styles.formLabel}>이미지 추가 (최대 {MAX_IMAGES}장)</span>
-                <div className={styles.fileWrapper}>
+              <div className="form-group">
+                <span className="form-label">이미지 (최대 {MAX_IMAGES}장)</span>
+                <div className="file-input-wrapper">
                   <input
                     ref={fileInputRef}
                     type="file"
                     id="edit-file-input"
                     accept="image/jpeg,image/png"
                     multiple
-                    className={styles.fileInputHidden}
+                    className="file-input-hidden"
                     aria-hidden
                     onChange={handleFileChange}
                   />
                   <button
                     type="button"
-                    className={styles.fileInputButton}
+                    className="file-input-button"
                     id="edit-file-trigger"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={loading || totalCount >= MAX_IMAGES}
                   >
                     파일 선택
                   </button>
-                  <span className={styles.fileInputText}>
-                    {totalCount > 0 ? `총 ${totalCount}장` : ''}
+                  <span className="file-input-text">
+                    {totalCount > 0 ? `총 ${totalCount}장` : '파일을 선택해주세요.'}
                   </span>
                 </div>
               </div>
               {formError && (
-                <span className={styles.formError} id="form-error" role="alert">
+                <span className="helper-text form-error-common" id="form-error" role="alert">
                   * {formError}
                 </span>
               )}
-              <div className={styles.submitWrap}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  id="edit-submit-btn"
-                  disabled={loading || submitting}
-                >
-                  {submitting ? '수정 중...' : '수정하기'}
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                id="edit-submit-btn"
+                disabled={loading || submitting}
+              >
+                {submitting ? '수정 중...' : '수정하기'}
+              </button>
             </form>
           </div>
         </div>

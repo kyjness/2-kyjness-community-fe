@@ -85,12 +85,14 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
               </div>
             </div>
             <div className={`profile-dropdown ${dropdownOpen ? 'visible' : ''}`} id="profile-dropdown">
-              <button type="button" onClick={() => { setDropdownOpen(false); navigate('/profile/edit'); }}>
-                회원정보수정
+              <button type="button" onClick={() => { setDropdownOpen(false); navigate('/mypage'); }}>
+                마이페이지
               </button>
-              <button type="button" onClick={() => { setDropdownOpen(false); navigate('/profile/password'); }}>
-                비밀번호수정
-              </button>
+              {user?.role === 'ADMIN' && (
+                <button type="button" onClick={() => { setDropdownOpen(false); navigate('/admin/dashboard'); }}>
+                  관리자 페이지
+                </button>
+              )}
               <button type="button" onClick={handleLogout}>
                 로그아웃
               </button>

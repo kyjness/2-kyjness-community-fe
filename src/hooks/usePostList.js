@@ -1,8 +1,17 @@
-// 게시글 목록 로직: 무한 스크롤, loadPage, 목록 정규화·정렬, ref 기반 effect.
+// 게시글 목록 로직: 무한 스크롤, 검색(debounce 500ms), loadPage, 목록 정규화·정렬, ref 기반 effect.
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api/client.js';
 
 const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 500;
+
+/** 게시글 정렬: 최신순, 인기순, 조회순, 등록순 */
+export const POST_SORTS = [
+  { value: 'latest', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+  { value: 'views', label: '조회순' },
+  { value: 'oldest', label: '등록순' },
+];
 
 export function usePostList() {
   const [posts, setPosts] = useState([]);
@@ -11,18 +20,28 @@ export function usePostList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sort, setSort] = useState('latest');
 
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
   const loadingRef = useRef(loading);
   const loadingMoreStateRef = useRef(loadingMore);
   const pageRef = useRef(page);
+  const debouncedSearchRef = useRef(debouncedSearch);
+  const sortRef = useRef(sort);
+  const bottomRef = useRef(null);
   hasMoreRef.current = hasMore;
   loadingRef.current = loading;
   loadingMoreStateRef.current = loadingMore;
   pageRef.current = page;
+  debouncedSearchRef.current = debouncedSearch;
+  sortRef.current = sort;
 
-  const loadPage = useCallback(async (pageNum, append = false) => {
+  const loadPage = useCallback(async (pageNum, append = false, params = null) => {
+    const searchQ = (params?.q ?? debouncedSearchRef.current?.trim()) || null;
+    const srt = params?.sort ?? sortRef.current;
     if (pageNum === 1) {
       setLoading(true);
       setError(null);
@@ -31,29 +50,15 @@ export function usePostList() {
       loadingMoreRef.current = true;
       setLoadingMore(true);
     }
+    const qs = new URLSearchParams();
+    qs.set('page', String(pageNum));
+    qs.set('size', String(PAGE_SIZE));
+    if (searchQ) qs.set('q', searchQ);
+    if (srt && srt !== 'latest') qs.set('sort', srt);
     try {
-      const res = await api.get(`/posts?page=${pageNum}&size=${PAGE_SIZE}`);
-      const raw = res?.data;
-      let list = Array.isArray(res)
-        ? res
-        : Array.isArray(raw)
-          ? raw
-          : Array.isArray(raw?.data)
-            ? raw.data
-            : Array.isArray(raw?.posts)
-              ? raw.posts
-              : Array.isArray(raw?.items)
-                ? raw.items
-                : Array.isArray(raw?.list)
-                  ? raw.list
-                  : Array.isArray(raw?.results)
-                    ? raw.results
-                    : Array.isArray(res?.posts)
-                      ? res.posts
-                      : Array.isArray(res?.results)
-                        ? res.results
-                        : [];
-      if (!Array.isArray(list)) list = [];
+      const res = await api.get(`/posts?${qs.toString()}`);
+      const payload = res?.data?.data ?? res?.data ?? {};
+      const list = Array.isArray(payload?.items) ? payload.items : [];
       const normalized = list.map((p) => {
         const author = p?.author ?? p?.user ?? {};
         const authorNorm = {
@@ -63,15 +68,9 @@ export function usePostList() {
         };
         return { ...p, author: authorNorm };
       });
-      const sorted = [...normalized].sort(
-        (a, b) => new Date(b.createdAt ?? 0) - new Date(a.createdAt ?? 0)
-      );
+      const sorted = normalized;
       const hasMoreFromApi =
-        typeof res?.hasMore === 'boolean'
-          ? res.hasMore
-          : typeof raw?.hasMore === 'boolean'
-            ? raw.hasMore
-            : list.length >= PAGE_SIZE;
+        payload?.hasMore ?? payload?.has_more ?? (list.length >= PAGE_SIZE);
 
       if (append) {
         setPosts((prev) => {
@@ -82,7 +81,7 @@ export function usePostList() {
       } else {
         setPosts(sorted);
       }
-      setPage((p) => p + 1);
+      setPage(pageNum + 1);
       setHasMore(hasMoreFromApi);
     } catch (err) {
       if (pageNum === 1) {
@@ -102,32 +101,41 @@ export function usePostList() {
   }, []);
 
   useEffect(() => {
-    loadPage(1, false);
-  }, [loadPage]);
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   useEffect(() => {
-    let ticking = false;
-    function onScroll() {
-      if (
-        ticking ||
-        !hasMoreRef.current ||
-        loadingRef.current ||
-        loadingMoreStateRef.current
-      )
-        return;
-      const { scrollTop, scrollHeight } = document.documentElement;
-      const { innerHeight } = window;
-      if (scrollTop + innerHeight >= scrollHeight - 200) {
-        ticking = true;
-        loadPage(pageRef.current, true);
-        requestAnimationFrame(() => {
-          ticking = false;
+    setPage(1);
+    setHasMore(true);
+    loadPage(1, false, {
+      q: debouncedSearch.trim() || null,
+      sort,
+    });
+  }, [debouncedSearch, sort, loadPage]);
+
+  useEffect(() => {
+    const el = bottomRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          !entries[0]?.isIntersecting ||
+          !hasMoreRef.current ||
+          loadingRef.current ||
+          loadingMoreStateRef.current
+        )
+          return;
+        loadPage(pageRef.current, true, {
+          q: debouncedSearchRef.current?.trim() || null,
+          sort: sortRef.current,
         });
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [loadPage]);
+      },
+      { root: null, rootMargin: '100px', threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, posts.length, loadPage]);
 
   return {
     posts,
@@ -136,5 +144,10 @@ export function usePostList() {
     hasMore,
     error,
     loadPage,
+    searchTerm,
+    setSearchTerm,
+    sort,
+    setSort,
+    bottomRef,
   };
 }

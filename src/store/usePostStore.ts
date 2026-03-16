@@ -1,6 +1,12 @@
 // 게시글 수정 Zustand 스토어: 이미지·폼 필드·API·Object URL 해제.
 import { create } from 'zustand';
-import type { ExistingImageItem, NewImageItem, Post } from '../types/post';
+import type {
+  ApiResponse,
+  ExistingImageItem,
+  FileInfo,
+  NewImageItem,
+  PostResponse,
+} from '../api/api-types.js';
 import { api } from '../api/client.js';
 import {
   getApiErrorMessage,
@@ -66,15 +72,16 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
   loadPost: async (postId: string) => {
     set({ loading: true, formError: '', titleError: '', contentError: '', postId });
     try {
-      const res = await api.get(`/posts/${postId}`);
-      const data = (res as { data?: Post }).data ?? (res as Post);
-      const files = data.files ?? (data.file ? [data.file] : []);
-      const ids = files.map((f) => f.imageId ?? (f as { image_id?: number }).image_id).filter((id): id is number => id != null);
+      const res = await api.get(`/posts/${postId}`) as ApiResponse<PostResponse>;
+      const data = res.data ?? (res as unknown as PostResponse);
+      const files: FileInfo[] = data.files ?? [];
+      const ids = files.map((f) => f.imageId ?? f.id).filter((id): id is number => id != null);
       const urls: ExistingImageItem[] = files
-        .filter((f) => (f.imageId ?? (f as { image_id?: number }).image_id) != null)
+        .filter((f): f is FileInfo & { imageId: number; fileUrl: string } =>
+          (f.imageId ?? f.id) != null && (f.fileUrl ?? '').length > 0)
         .map((f) => ({
-          imageId: (f.imageId ?? (f as { image_id?: number }).image_id) as number,
-          fileUrl: f.fileUrl ?? f.url ?? '',
+          imageId: (f.imageId ?? f.id) as number,
+          fileUrl: f.fileUrl ?? '',
         }));
       set({
         title: data.title ?? '',

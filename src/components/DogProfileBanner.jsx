@@ -59,18 +59,21 @@ export function DogProfileBanner({ user }) {
       className="dog-profile-banner"
       role="button"
       tabIndex={0}
-      onClick={() => navigate('/profile/edit')}
+      onClick={() => navigate('/mypage?tab=dogs')}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          navigate('/profile/edit');
+          navigate('/mypage?tab=dogs');
         }
       }}
     >
-      <span className="dog-profile-banner-text">아직 우리 아이를 등록하지 않으셨나요? 🐶 등록하러 가기</span>
+      <span className="dog-profile-banner__text">
+        아직 우리 아이를 등록하지 않으셨나요?
+        <span className="dog-profile-banner__cta">🐶 등록하러 가기</span>
+      </span>
       <button
         type="button"
-        className="dog-profile-banner-close"
+        className="dog-profile-banner__close"
         aria-label="배너 닫기"
         onClick={handleDismiss}
       >

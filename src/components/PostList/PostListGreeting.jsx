@@ -1,5 +1,8 @@
-// 게시글 목록 인사 문구.
-export function PostListGreeting() {
+// 게시글 목록 인사 문구. 검색어 입력 시에는 숨김.
+export function PostListGreeting({ searchTerm }) {
+  if (searchTerm != null && String(searchTerm).trim() !== '') {
+    return null;
+  }
   return (
     <p className="post-list-greeting">
       안녕하세요,<br />

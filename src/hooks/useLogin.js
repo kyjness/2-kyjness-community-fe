@@ -60,25 +60,26 @@ export function useLogin() {
           email: emailTrim,
           password: passwordVal,
         });
-        const data = result?.data;
+        const data = result?.data?.data ?? result?.data;
         if (data) {
+          const accessToken = data.accessToken ?? result?.data?.accessToken;
           const baseUser = {
-            userId: data.id,
+            userId: data.id ?? data.userId,
             email: data.email,
             nickname: data.nickname,
             profileImageUrl: data.profileImageUrl,
-            accessToken: data.accessToken,
+            accessToken,
           };
           setUser({ ...baseUser, dogs: data.dogs ?? [] });
           try {
             const meRes = await api.get('/users/me');
-            const me = meRes?.data ?? null;
+            const me = meRes?.data?.data ?? meRes?.data ?? null;
             if (me) {
               setUser({
                 ...baseUser,
                 ...me,
-                userId: me.id,
-                accessToken: data.accessToken,
+                userId: me.id ?? baseUser.userId,
+                accessToken: accessToken ?? baseUser.accessToken,
                 dogs: me.dogs ?? [],
               });
             }

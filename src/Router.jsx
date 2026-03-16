@@ -11,8 +11,8 @@ import { Signup } from './pages/Signup.jsx';
 import { PostDetail } from './pages/PostDetail.jsx';
 import { NewPost } from './pages/NewPost.jsx';
 import { EditPost } from './pages/EditPost.jsx';
-import { EditProfile } from './pages/EditProfile.jsx';
-import { ChangePassword } from './pages/ChangePassword.jsx';
+import { MyPage } from './pages/MyPage.jsx';
+import { AdminDashboard } from './pages/AdminDashboard.jsx';
 import { NotFound } from './pages/NotFound.jsx';
 
 /** API 401 시 로그인으로 보내는 핸들러 (라우터 하위에서 한 번만 등록) */
@@ -47,8 +47,8 @@ export default function Router() {
         <Route path="/posts/new" element={<ProtectedRoute><NewPost /></ProtectedRoute>} />
         <Route path="/posts/:id" element={<PostDetail />} />
         <Route path="/posts/:id/edit" element={<ProtectedRoute><EditPost /></ProtectedRoute>} />
-        <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
-        <Route path="/profile/password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+        <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
+        <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </ApiUnauthorizedSetup>

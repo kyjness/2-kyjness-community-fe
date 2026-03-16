@@ -1,4 +1,6 @@
 // 게시글 상세 카드: 제목·메타·이미지·본문·통계·메시지.
+import { useState } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
 import {
   escapeHtml,
@@ -6,9 +8,8 @@ import {
   safeImageUrl,
   formatDateTime,
   calculateDogAge,
-  formatDogGender,
+  formatDogGenderLabel,
 } from '../../utils/index.js';
-
 export function PostContent({
   post,
   postId,
@@ -18,111 +19,174 @@ export function PostContent({
   onLike,
   onEdit,
   onDeleteOpen,
+  onBlockUser,
+  onReportOpen,
+  currentUserId,
   children,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   if (!post) return null;
 
+  const showBlockMenu =
+    currentUserId != null &&
+    post.author_id != null &&
+    post.author_id !== currentUserId &&
+    !post.isMine;
+
   return (
-    <section className="post-detail-card">
+    <section className="w-full">
       <h2 className="post-detail-title">{escapeHtml(post?.title ?? '')}</h2>
-      <div className="post-detail-meta">
-        <div className="post-detail-meta-left">
-          <div className="post-detail-author-img">
+      <div className="post-detail-author">
+        <div className="post-detail-author-row">
+          <div className="post-detail-author-avatar">
             <img
               src={post?.author_profile_image || DEFAULT_PROFILE_IMAGE}
               alt="작성자 프로필"
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                objectFit: 'cover',
-              }}
+              className="w-full h-full object-cover rounded-full block"
             />
           </div>
-          <div className="post-detail-meta-text">
-            <span className="post-detail-author-name">
+          <div className="post-detail-author-info">
+            <span className="post-detail-author-nickname">
               {escapeHtml(post?.author_nickname ?? '작성자')}
               {post?.author_representative_dog?.name && (
-                <span className="post-detail-author-dog-badge">
+                <span className="post-detail-author-dog-info">
                   {' '}
-                  {[
-                    escapeHtml(post.author_representative_dog.name),
-                    escapeHtml(post.author_representative_dog.breed || ''),
-                    formatDogGender(post.author_representative_dog.gender),
-                    calculateDogAge(
-                      post.author_representative_dog.birthDate ??
-                        post.author_representative_dog.birth_date
-                    ),
-                  ]
-                    .filter(Boolean)
-                    .join(' / ')}
+                  {(() => {
+                    const d = post.author_representative_dog;
+                    const genderLabel = d.gender ? (
+                      <span className={`dog-gender-badge dog-gender--${d.gender}`}>
+                        {formatDogGenderLabel(d.gender)}
+                      </span>
+                    ) : null;
+                    const parts = [
+                      escapeHtml(d.name),
+                      escapeHtml(d.breed || ''),
+                      genderLabel,
+                      calculateDogAge(d.birthDate ?? d.birth_date),
+                    ].filter(Boolean);
+                    return parts.map((p, i) => (
+                      <span key={i}>
+                        {i > 0 && ' / '}
+                        {p}
+                      </span>
+                    ));
+                  })()}
                 </span>
               )}
             </span>
-            <span className="post-detail-date">{formatDateTime(post?.created_at)}</span>
+            <span className="post-detail-author-date">{formatDateTime(post?.created_at)}</span>
           </div>
         </div>
+        {(post?.isMine || showBlockMenu) && (
+          <div className="post-detail-author-actions flex items-center gap-2">
         {post?.isMine && (
-          <div className="detail-action-group">
+            <>
             <button
               type="button"
-              className="detail-action-btn"
+              className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
               onClick={() => onEdit(`/posts/${postId}/edit`)}
             >
               수정
             </button>
             <button
               type="button"
-              className="detail-action-btn"
+              className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
               onClick={onDeleteOpen}
             >
               삭제
             </button>
+            </>
+        )}
+        {showBlockMenu && (
+          <div className="relative">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center p-1 border-none rounded-md bg-transparent text-slate-500 cursor-pointer hover:text-slate-700 hover:bg-slate-100"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="메뉴"
+              aria-expanded={menuOpen}
+            >
+              <MoreHorizontal size={18} aria-hidden />
+            </button>
+            {menuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-[1]"
+                  role="presentation"
+                  onClick={() => setMenuOpen(false)}
+                />
+                <ul className="comment-item-menu">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onBlockUser?.(post.author_id);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      차단
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onReportOpen?.();
+                        setMenuOpen(false);
+                      }}
+                    >
+                      신고
+                    </button>
+                  </li>
+                </ul>
+              </>
+            )}
+          </div>
+        )}
           </div>
         )}
       </div>
-      <div className="divider" />
+      <div className="h-px bg-gray-200 my-1 w-full" />
       {uniqueFiles.length > 0 && (
-        <div className="post-detail-images-wrapper">
+        <div className="post-detail-images flex flex-wrap gap-3 justify-center">
           {uniqueFiles.map((f, i) => {
             const url = safeImageUrl(f.fileUrl, '');
             return url ? (
-              <div key={i} className="post-detail-image-wrapper">
+              <div key={i} className="w-full max-w-[300px] h-[260px] rounded-xl bg-gray-300 overflow-hidden flex items-center justify-center flex-1 min-w-[200px]">
                 <img
                   src={escapeAttr(url)}
                   alt="게시글 이미지"
-                  className="post-detail-image"
+                  className="w-full h-full object-cover object-center"
                 />
               </div>
             ) : null;
           })}
-        </div>
+      </div>
       )}
-      <p className="post-detail-content">
+      <p className="post-detail-body whitespace-pre-line">
         {escapeHtml(String(post?.content || '내용이 없습니다.').trim())}
       </p>
-      <div className="post-detail-stats">
+      <div className="post-detail-stats flex justify-center gap-3">
         <div
-          className="post-detail-stat-box"
+          className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center cursor-pointer"
           id="like-stat-box"
           onClick={onLike}
-          style={{ cursor: 'pointer' }}
         >
-          <span className="post-detail-stat-count">{post?.likes ?? 0}</span>
-          <span className="post-detail-stat-label">좋아요수</span>
+          <span className="text-base font-bold mb-1 text-black">{post?.likes ?? 0}</span>
+          <span className="text-xs font-bold text-black">좋아요수</span>
         </div>
-        <div className="post-detail-stat-box">
-          <span className="post-detail-stat-count">{post?.views ?? 0}</span>
-          <span className="post-detail-stat-label">조회수</span>
+        <div className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center">
+          <span className="text-base font-bold mb-1 text-black">{post?.views ?? 0}</span>
+          <span className="text-xs font-bold text-black">조회수</span>
         </div>
-        <div className="post-detail-stat-box">
-          <span className="post-detail-stat-count">
+        <div className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center">
+          <span className="text-base font-bold mb-1 text-black">
             {post?.commentCount ?? commentTotalCount ?? 0}
           </span>
-          <span className="post-detail-stat-label">댓글</span>
+          <span className="text-xs font-bold text-black">댓글</span>
         </div>
       </div>
-      <div className="divider" />
+      <div className="h-px bg-gray-200 my-1 w-full" />
       {message && (
         <span className="helper-text" id="post-detail-message">
           * {message}
