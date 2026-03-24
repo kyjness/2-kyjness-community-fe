@@ -13,6 +13,7 @@ import {
 } from '../utils/index.js';
 
 function toFormDog(d) {
+  const pid = d?.profileImageId ?? d?.profile_image_id;
   return {
     id: d?.dogId ?? d?.id ?? null,
     name: (d?.name ?? '').trim(),
@@ -20,6 +21,7 @@ function toFormDog(d) {
     gender: d?.gender === 'female' ? 'female' : 'male',
     birthDate: (d?.birthDate ?? d?.birth_date ?? '').trim().slice(0, 10),
     isRepresentative: !!d?.isRepresentative,
+    ...(pid != null ? { profileImageId: Number(pid) } : {}),
   };
 }
 
@@ -27,15 +29,20 @@ function buildDogsPayload(dogsArray) {
   const list = Array.isArray(dogsArray) ? dogsArray.map(toFormDog) : [];
   return list
     .filter((d) => d.name && d.breed && d.birthDate)
-    .map((d, i, arr) => ({
-      id: d.id != null ? Number(d.id) : undefined,
-      name: d.name,
-      breed: d.breed,
-      gender: d.gender,
-      birthDate: d.birthDate.slice(0, 10),
-      isRepresentative:
-        arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
-    }));
+    .map((d, i, arr) => {
+      const row = {
+        id: d.id != null ? Number(d.id) : undefined,
+        name: d.name,
+        breed: d.breed,
+        gender: d.gender,
+        birthDate: d.birthDate.slice(0, 10),
+        isRepresentative:
+          arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
+      };
+      const pid = d.profileImageId ?? d.profile_image_id;
+      if (pid != null) row.profileImageId = Number(pid);
+      return row;
+    });
 }
 
 export function useEditProfile() {

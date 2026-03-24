@@ -5,10 +5,18 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { getApiErrorMessage } from '../utils/index.js';
 
 function emptyDog() {
-  return { id: null, name: '', breed: '', gender: 'male', birthDate: '', isRepresentative: false };
+  return {
+    id: null,
+    name: '',
+    breed: '',
+    gender: 'male',
+    birthDate: '',
+    isRepresentative: false,
+  };
 }
 
 function toFormDog(d) {
+  const pid = d?.profileImageId ?? d?.profile_image_id;
   return {
     id: d?.dogId ?? d?.id ?? null,
     name: (d?.name ?? '').trim(),
@@ -16,6 +24,7 @@ function toFormDog(d) {
     gender: d?.gender === 'female' ? 'female' : 'male',
     birthDate: (d?.birthDate ?? d?.birth_date ?? '').trim().slice(0, 10),
     isRepresentative: !!d?.isRepresentative,
+    ...(pid != null ? { profileImageId: Number(pid) } : {}),
   };
 }
 
@@ -116,15 +125,20 @@ export function useDogManagement() {
 
       const dogsPayload = dogs
         .filter((d) => d.name.trim() && d.breed.trim() && d.birthDate.trim())
-        .map((d, i, arr) => ({
-          id: d.id != null ? Number(d.id) : undefined,
-          name: d.name.trim(),
-          breed: d.breed.trim(),
-          gender: d.gender,
-          birthDate: d.birthDate.trim().slice(0, 10),
-          isRepresentative:
-            arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
-        }));
+        .map((d, i, arr) => {
+          const row = {
+            id: d.id != null ? Number(d.id) : undefined,
+            name: d.name.trim(),
+            breed: d.breed.trim(),
+            gender: d.gender,
+            birthDate: d.birthDate.trim().slice(0, 10),
+            isRepresentative:
+              arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
+          };
+          const pid = d.profileImageId ?? d.profile_image_id;
+          if (pid != null) row.profileImageId = Number(pid);
+          return row;
+        });
 
       if (dogsPayload.length === 0) {
         setFormError('최소 한 마리의 강아지 정보(이름, 품종, 생년월일)를 입력해주세요.');
