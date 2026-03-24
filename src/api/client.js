@@ -72,6 +72,36 @@ function clearUserAndRedirect() {
   }
 }
 
+/** 백엔드 멱등성: 게시글 생성·이미지 업로드 POST에만 사용 */
+function normalizeRequestPath(url) {
+  if (!url || typeof url !== 'string') return '';
+  const pathOnly = url.split('?')[0];
+  const withSlash = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+  return withSlash.replace(/\/+$/, '') || '/';
+}
+
+function postNeedsIdempotencyKey(url) {
+  const p = normalizeRequestPath(url);
+  return p === '/posts' || p === '/media/images' || p === '/media/images/signup';
+}
+
+function readIdempotencyHeader(headers) {
+  if (!headers) return undefined;
+  if (typeof headers.get === 'function') {
+    return headers.get('X-Idempotency-Key') || headers.get('x-idempotency-key');
+  }
+  return headers['X-Idempotency-Key'] ?? headers['x-idempotency-key'];
+}
+
+function newIdempotencyKey() {
+  try {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch (_) {}
+  return `idemp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
 const instance = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
@@ -85,6 +115,23 @@ instance.interceptors.request.use((config) => {
   }
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
+  }
+  const method = (config.method || 'get').toLowerCase();
+  if (
+    method === 'post' &&
+    postNeedsIdempotencyKey(config.url || '') &&
+    !readIdempotencyHeader(config.headers)
+  ) {
+    if (!config.__idempotencyKey) {
+      config.__idempotencyKey = newIdempotencyKey();
+    }
+    const key = config.__idempotencyKey;
+    if (typeof config.headers?.set === 'function') {
+      config.headers.set('X-Idempotency-Key', key);
+    } else {
+      config.headers = config.headers || {};
+      config.headers['X-Idempotency-Key'] = key;
+    }
   }
   return config;
 });
