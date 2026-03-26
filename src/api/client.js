@@ -1,4 +1,6 @@
 // 공통 API 클라이언트: Axios, 401 시 refresh 후 재시도, onUnauthorized 콜백.
+// Refresh Token은 HttpOnly 쿠키로만 전달되며, localStorage에 저장하지 않습니다.
+// `/auth/refresh`, `/auth/logout` 포함 모든 요청에 쿠키를 실으려면 withCredentials가 필요합니다.
 import axios from 'axios';
 import { BASE_URL } from '../config.js';
 
@@ -107,6 +109,9 @@ const instance = axios.create({
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
+
+/** 기본 Axios 인스턴스 (Bearer + credentials + 401 시 쿠키 기반 silent refresh) */
+export const apiClient = instance;
 
 instance.interceptors.request.use((config) => {
   const token = getAccessToken();

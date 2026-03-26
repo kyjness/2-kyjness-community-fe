@@ -41,7 +41,7 @@
 │   │   ├── client.js       # Axios 인스턴스, Silent Refresh, Bearer
 │   │   ├── api-types.ts    # ApiResponse, 스키마 단축 타입, NewImageItem 등
 │   │   └── generated/schema.d.ts   # OpenAPI 기반 자동 생성 타입 (SSOT)
-│   ├── context/AuthContext.jsx
+│   ├── context/AuthContext.jsx     # 인증 상태(Auth) 전역 컨텍스트 (localStorage 복원, setUser/clearUser)
 │   ├── hooks/              # useLogin, useSignup, usePostList, useNewPost, usePostDetail,
 │   │                       # usePostImages, useEditProfile, useDogManagement, useChangePassword
 │   ├── pages/              # Login, Signup, PostList, PostDetail, NewPost, EditPost,
@@ -49,14 +49,13 @@
 │   ├── components/        # Header, SplashScreen, ProtectedRoute, PostCard, DogProfileBanner,
 │   │                       # Login/, Signup/, ChangePassword/, NewPost/, PostDetail/, PostList/,
 │   │                       # EditPost/, EditProfile/, MyPage/(BlockManagement, DogManagement, ProfileEdit, PasswordEdit)
-│   ├── store/usePostStore.ts
-│   ├── scripts/           # fetch-openapi.mjs, transform-and-generate.mjs
-│   └── utils/index.js
+│   ├── store/usePostStore.ts       # 게시글 수정(EditPost) 전용 Zustand 스토어 (로드/검증/이미지/submit)
+│   ├── scripts/                    # OpenAPI → schema.d.ts 생성 스크립트 (fetch-openapi, generate)
+│   └── utils/index.js              # 공통 유틸 (XSS escape, 날짜 포맷, 에러 메시지, 검증 등)
 ├── vite.config.js          # React, Tailwind, proxy: /api → 8000, /upload → 8000
-├── package.json
-└── README.md
+├── package.json            # 프론트 의존성/스크립트 (dev, build, lint, openapi 생성)
+└── README.md               # 사용 방법·구조·API 연동 문서
 ```
-98
 ---
 
 ## 실행 방법
@@ -70,7 +69,7 @@
 
 ```bash
 cd ../2-kyjness-community-be
-poetry run poe run
+uv run poe run
 ```
 
 - `http://localhost:8000` 에서 서버 확인 후 프론트 실행.

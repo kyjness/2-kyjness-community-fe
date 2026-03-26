@@ -23,6 +23,7 @@ export function usePostList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sort, setSort] = useState('latest');
+  const [categoryId, setCategoryId] = useState('all'); // 'all' | number(string)
 
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
@@ -31,6 +32,7 @@ export function usePostList() {
   const pageRef = useRef(page);
   const debouncedSearchRef = useRef(debouncedSearch);
   const sortRef = useRef(sort);
+  const categoryRef = useRef(categoryId);
   const bottomRef = useRef(null);
   hasMoreRef.current = hasMore;
   loadingRef.current = loading;
@@ -38,10 +40,12 @@ export function usePostList() {
   pageRef.current = page;
   debouncedSearchRef.current = debouncedSearch;
   sortRef.current = sort;
+  categoryRef.current = categoryId;
 
   const loadPage = useCallback(async (pageNum, append = false, params = null) => {
     const searchQ = (params?.q ?? debouncedSearchRef.current?.trim()) || null;
     const srt = params?.sort ?? sortRef.current;
+    const cat = params?.categoryId ?? categoryRef.current;
     if (pageNum === 1) {
       setLoading(true);
       setError(null);
@@ -55,22 +59,28 @@ export function usePostList() {
     qs.set('size', String(PAGE_SIZE));
     if (searchQ) qs.set('q', searchQ);
     if (srt && srt !== 'latest') qs.set('sort', srt);
+    // 백엔드 Query 이름은 snake_case `category_id` (camelCase categoryId는 무시됨).
+    if (cat && cat !== 'all') qs.set('category_id', String(cat));
     try {
       const res = await api.get(`/posts?${qs.toString()}`);
-      const payload = res?.data?.data ?? res?.data ?? {};
-      const list = Array.isArray(payload?.items) ? payload.items : [];
+      const payload = res?.data ?? {};
+      const list = Array.isArray(payload.items) ? payload.items : [];
       const normalized = list.map((p) => {
-        const author = p?.author ?? p?.user ?? {};
-        const authorNorm = {
-          ...author,
-          userId: author.id ?? author.userId,
-          nickname: author.nickname ?? '',
-        };
+        // author가 null(탈퇴/파기)일 수 있으므로 null을 보존한다.
+        const rawAuthor = p?.author ?? p?.user ?? null;
+        const authorNorm =
+          rawAuthor && typeof rawAuthor === 'object'
+            ? {
+                ...rawAuthor,
+                userId: rawAuthor.id ?? rawAuthor.userId,
+                nickname: rawAuthor.nickname ?? '',
+              }
+            : null;
         return { ...p, author: authorNorm };
       });
       const sorted = normalized;
       const hasMoreFromApi =
-        payload?.hasMore ?? payload?.has_more ?? (list.length >= PAGE_SIZE);
+        payload.hasMore ?? (list.length >= PAGE_SIZE);
 
       if (append) {
         setPosts((prev) => {
@@ -111,8 +121,9 @@ export function usePostList() {
     loadPage(1, false, {
       q: debouncedSearch.trim() || null,
       sort,
+      categoryId,
     });
-  }, [debouncedSearch, sort, loadPage]);
+  }, [debouncedSearch, sort, categoryId, loadPage]);
 
   useEffect(() => {
     const el = bottomRef.current;
@@ -129,6 +140,7 @@ export function usePostList() {
         loadPage(pageRef.current, true, {
           q: debouncedSearchRef.current?.trim() || null,
           sort: sortRef.current,
+          categoryId: categoryRef.current,
         });
       },
       { root: null, rootMargin: '100px', threshold: 0 }
@@ -148,6 +160,8 @@ export function usePostList() {
     setSearchTerm,
     sort,
     setSort,
+    categoryId,
+    setCategoryId,
     bottomRef,
   };
 }

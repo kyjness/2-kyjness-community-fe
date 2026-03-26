@@ -15,8 +15,8 @@ export function BlockManagement() {
     setError('');
     try {
       const res = await api.get('/users/me/blocks');
-      const payload = res?.data?.data ?? res?.data ?? {};
-      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const payload = res?.data ?? {};
+      const items = Array.isArray(payload.items) ? payload.items : [];
       setList(items);
     } catch (err) {
       const code = err?.response?.data?.code ?? err?.code ?? err?.message;
@@ -44,8 +44,7 @@ export function BlockManagement() {
     }
   };
 
-  const avatarUrl = (item) =>
-    item?.profile_image_url ?? item?.profileImageUrl ?? DEFAULT_PROFILE_IMAGE;
+  const avatarUrl = (item) => item?.profileImageUrl ?? DEFAULT_PROFILE_IMAGE;
 
   return (
     <div className="pb-6 max-w-[600px] w-full mypage-form-center">

@@ -93,7 +93,7 @@ export function usePostImages(initialExisting, maxImages = 5) {
       fd.append('image', current[i].file);
       const res = await api.postFormData('/media/images?purpose=post', fd);
       const data = getImageUploadData(res);
-      const id = data?.imageId ?? data?.image_id ?? data?.id;
+      const id = data?.imageId ?? null;
       if (id == null) {
         console.error('[usePostImages] 이미지 업로드 응답에 imageId 없음:', res);
         throw new Error('이미지 업로드에 실패했습니다. 응답 형식을 확인해 주세요.');

@@ -10,6 +10,7 @@ import {
   calculateDogAge,
   formatDogGenderLabel,
 } from '../../utils/index.js';
+import { getPostCategoryLabel } from '../../utils/postMeta.js';
 export function PostContent({
   post,
   postId,
@@ -27,14 +28,27 @@ export function PostContent({
   const [menuOpen, setMenuOpen] = useState(false);
   if (!post) return null;
 
-  const showBlockMenu =
+  // 타인 글이면(작성자 탈퇴/파기 포함) 신고 노출. 차단은 로그인 + author_id 존재 시에만.
+  const showPostReport = Boolean(!post.isMine);
+  const showBlockInPostMenu =
     currentUserId != null &&
     post.author_id != null &&
     post.author_id !== currentUserId &&
     !post.isMine;
 
+  const categoryLabel = getPostCategoryLabel(post?.category_id);
+  const tagList = Array.isArray(post?.hashtags) ? post.hashtags : [];
+
   return (
     <section className="w-full">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span
+          className="inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs font-semibold text-violet-800 ring-1 ring-inset ring-violet-200"
+          title="카테고리"
+        >
+          {escapeHtml(categoryLabel)}
+        </span>
+      </div>
       <h2 className="post-detail-title">{escapeHtml(post?.title ?? '')}</h2>
       <div className="post-detail-author">
         <div className="post-detail-author-row">
@@ -62,7 +76,7 @@ export function PostContent({
                       escapeHtml(d.name),
                       escapeHtml(d.breed || ''),
                       genderLabel,
-                      calculateDogAge(d.birthDate ?? d.birth_date),
+                      calculateDogAge(d.birthDate),
                     ].filter(Boolean);
                     return parts.map((p, i) => (
                       <span key={i}>
@@ -77,72 +91,74 @@ export function PostContent({
             <span className="post-detail-author-date">{formatDateTime(post?.created_at)}</span>
           </div>
         </div>
-        {(post?.isMine || showBlockMenu) && (
+        {(post?.isMine || showPostReport) && (
           <div className="post-detail-author-actions flex items-center gap-2">
-        {post?.isMine && (
-            <>
-            <button
-              type="button"
-              className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
-              onClick={() => onEdit(`/posts/${postId}/edit`)}
-            >
-              수정
-            </button>
-            <button
-              type="button"
-              className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
-              onClick={onDeleteOpen}
-            >
-              삭제
-            </button>
-            </>
-        )}
-        {showBlockMenu && (
-          <div className="relative">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center p-1 border-none rounded-md bg-transparent text-slate-500 cursor-pointer hover:text-slate-700 hover:bg-slate-100"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-label="메뉴"
-              aria-expanded={menuOpen}
-            >
-              <MoreHorizontal size={18} aria-hidden />
-            </button>
-            {menuOpen && (
+            {post?.isMine && (
               <>
-                <div
-                  className="fixed inset-0 z-[1]"
-                  role="presentation"
-                  onClick={() => setMenuOpen(false)}
-                />
-                <ul className="comment-item-menu">
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onBlockUser?.(post.author_id);
-                        setMenuOpen(false);
-                      }}
-                    >
-                      차단
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onReportOpen?.();
-                        setMenuOpen(false);
-                      }}
-                    >
-                      신고
-                    </button>
-                  </li>
-                </ul>
+                <button
+                  type="button"
+                  className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
+                  onClick={() => onEdit(`/posts/${postId}/edit`)}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
+                  onClick={onDeleteOpen}
+                >
+                  삭제
+                </button>
               </>
             )}
-          </div>
-        )}
+            {showPostReport && (
+              <div className="relative">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center p-1 border-none rounded-md bg-transparent text-slate-500 cursor-pointer hover:text-slate-700 hover:bg-slate-100"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  aria-label="메뉴"
+                  aria-expanded={menuOpen}
+                >
+                  <MoreHorizontal size={18} aria-hidden />
+                </button>
+                {menuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[1]"
+                      role="presentation"
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <ul className="comment-item-menu">
+                      {showBlockInPostMenu ? (
+                        <li>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onBlockUser?.(post.author_id);
+                              setMenuOpen(false);
+                            }}
+                          >
+                            차단
+                          </button>
+                        </li>
+                      ) : null}
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReportOpen?.();
+                            setMenuOpen(false);
+                          }}
+                        >
+                          신고
+                        </button>
+                      </li>
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -166,6 +182,18 @@ export function PostContent({
       <p className="post-detail-body whitespace-pre-line">
         {escapeHtml(String(post?.content || '내용이 없습니다.').trim())}
       </p>
+      {tagList.length > 0 ? (
+        <div className="mt-3 mb-1 flex flex-wrap gap-2" aria-label="해시태그">
+          {tagList.map((t, i) => (
+            <span
+              key={`${t}-${i}`}
+              className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-800 ring-1 ring-sky-100"
+            >
+              #{escapeHtml(String(t))}
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="post-detail-stats flex justify-center gap-3">
         <div
           className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center cursor-pointer"

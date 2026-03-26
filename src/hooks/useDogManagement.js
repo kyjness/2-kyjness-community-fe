@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getApiErrorMessage } from '../utils/index.js';
+import { getApiErrorMessage, unwrapApiData } from '../utils/index.js';
 
 function emptyDog() {
   return {
@@ -15,14 +15,15 @@ function emptyDog() {
   };
 }
 
+/** API(camelCase) → 폼 상태 */
 function toFormDog(d) {
-  const pid = d?.profileImageId ?? d?.profile_image_id;
+  const pid = d?.profileImageId;
   return {
-    id: d?.dogId ?? d?.id ?? null,
+    id: d?.id ?? null,
     name: (d?.name ?? '').trim(),
     breed: (d?.breed ?? '').trim(),
     gender: d?.gender === 'female' ? 'female' : 'male',
-    birthDate: (d?.birthDate ?? d?.birth_date ?? '').trim().slice(0, 10),
+    birthDate: (d?.birthDate ?? '').trim().slice(0, 10),
     isRepresentative: !!d?.isRepresentative,
     ...(pid != null ? { profileImageId: Number(pid) } : {}),
   };
@@ -67,7 +68,7 @@ export function useDogManagement() {
       .get('/users/me')
       .then((res) => {
         if (cancelled) return;
-        const payload = res?.data?.data ?? res?.data ?? null;
+        const payload = unwrapApiData(res);
         if (!payload) return;
         const mappedDogs =
           Array.isArray(payload.dogs) && payload.dogs.length > 0
@@ -77,6 +78,7 @@ export function useDogManagement() {
           ...user,
           ...payload,
           userId: payload.id ?? uid,
+          accessToken: user?.accessToken,
           dogs: mappedDogs,
         });
         setDogs(mappedDogs);
@@ -135,8 +137,7 @@ export function useDogManagement() {
             isRepresentative:
               arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
           };
-          const pid = d.profileImageId ?? d.profile_image_id;
-          if (pid != null) row.profileImageId = Number(pid);
+          if (d.profileImageId != null) row.profileImageId = Number(d.profileImageId);
           return row;
         });
 
@@ -151,31 +152,28 @@ export function useDogManagement() {
           nickname: (user?.nickname ?? '').trim(),
           dogs: dogsPayload,
         };
-        const patchRes = await api.patch('/users/me', payload);
-        const updatedFromPatch = patchRes?.data?.data ?? patchRes?.data ?? null;
-
-        if (updatedFromPatch) {
+        await api.patch('/users/me', payload);
+        let updated = null;
+        try {
+          updated = unwrapApiData(await api.get('/users/me'));
+        } catch (_) {
+          /* ignore */
+        }
+        if (updated) {
           const mappedDogs =
-            Array.isArray(updatedFromPatch.dogs) && updatedFromPatch.dogs.length > 0
-              ? updatedFromPatch.dogs.map(toFormDog)
+            Array.isArray(updated.dogs) && updated.dogs.length > 0
+              ? updated.dogs.map(toFormDog)
               : [emptyDog()];
           setUser({
             ...user,
-            ...updatedFromPatch,
+            ...updated,
+            userId: updated.id ?? user?.userId,
+            accessToken: user?.accessToken,
             dogs: mappedDogs,
           });
           setDogs(mappedDogs);
-          alert('반려견 정보가 저장되었습니다.');
-        } else {
-          const meRes = await api.get('/users/me');
-          const updated = meRes?.data?.data ?? null;
-          if (updated?.dogs) {
-            const mappedDogs = updated.dogs.map(toFormDog);
-            setUser({ ...user, ...updated, dogs: mappedDogs });
-            setDogs(mappedDogs);
-          }
-          alert('반려견 정보가 저장되었습니다.');
         }
+        alert('반려견 정보가 저장되었습니다.');
         setFormError('');
       } catch (err) {
         setFormError(

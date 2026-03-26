@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { api } from '../api/client.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import {
   getApiErrorMessage,
   getProfileImageUrl,
@@ -13,20 +14,29 @@ const COMMENT_PAGE_SIZE = 10;
 function normalizePost(postData, currentUser) {
   const author = postData?.author ?? null;
   const isMine = !!(currentUser && (author?.id === currentUser.userId || author?.userId === currentUser.userId));
+  const hashtagsRaw = postData?.hashtags;
+  const hashtags = Array.isArray(hashtagsRaw)
+    ? hashtagsRaw.map((t) => String(t))
+    : [];
+  const categoryId =
+    postData?.categoryId ?? postData?.categoryid ?? postData?.category_id ?? null;
+
   return {
     id: postData?.id,
     title: postData?.title ?? '',
     content: postData?.content ?? '',
-    author_nickname: author?.nickname ?? '',
+    category_id: categoryId,
+    hashtags,
+    author_nickname: author?.nickname ?? '탈퇴한 사용자',
     author_id: author?.id ?? author?.userId ?? null,
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
-    author_representative_dog: author?.representativeDog ?? author?.representative_dog ?? null,
-    created_at: postData?.createdAt ?? '',
+    author_representative_dog: author?.representativeDog ?? null,
+    created_at: postData?.createdAt ?? postData?.createdat ?? '',
     files: postData?.files ?? (postData?.file ? [postData.file] : []),
-    likes: postData?.likeCount ?? postData?.like_count ?? 0,
-    views: postData?.viewCount ?? 0,
+    likes: postData?.likeCount ?? 0,
+    views: postData?.viewCount ?? postData?.view_count ?? 0,
     commentCount: postData?.commentCount ?? 0,
-    isLiked: postData?.isLiked ?? postData?.is_liked ?? false,
+    isLiked: postData?.isLiked ?? false,
     isMine,
   };
 }
@@ -37,24 +47,25 @@ function normalizeComment(c, currentUser) {
   const replies = Array.isArray(c?.replies) ? c.replies.map((r) => normalizeComment(r, currentUser)) : [];
   return {
     id: c?.id,
-    author_nickname: author?.nickname ?? '',
+    author_nickname: author?.nickname ?? '탈퇴한 사용자',
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
-    author_representative_dog: author?.representativeDog ?? author?.representative_dog ?? null,
+    author_representative_dog: author?.representativeDog ?? null,
     author_id: author?.id ?? author?.userId ?? null,
-    created_at: c?.createdAt ?? c?.created_at ?? '',
-    updated_at: c?.updatedAt ?? c?.updated_at ?? '',
+    created_at: c?.createdAt ?? '',
+    updated_at: c?.updatedAt ?? '',
     content: c?.content ?? '',
     isMine,
-    likeCount: c?.likeCount ?? c?.like_count ?? 0,
-    isLiked: c?.isLiked ?? c?.is_liked ?? false,
-    parentId: c?.parentId ?? c?.parent_id ?? null,
+    likeCount: c?.likeCount ?? 0,
+    isLiked: c?.isLiked ?? false,
+    parentId: c?.parentId ?? null,
     replies,
-    isEdited: c?.isEdited ?? c?.is_edited ?? false,
-    isDeleted: c?.isDeleted ?? c?.is_deleted ?? false,
+    isEdited: c?.isEdited ?? false,
+    isDeleted: c?.isDeleted ?? false,
   };
 }
 
 export function usePostDetail(postId, user, navigate) {
+  const { isRestored } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [post, setPost] = useState(null);
@@ -77,28 +88,20 @@ export function usePostDetail(postId, user, navigate) {
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyForm, setReplyForm] = useState({ content: '', submitting: false });
 
-  const viewRequestedRef = useRef(null);
   const isLikingRef = useRef(false);
 
+  // 조회수는 GET /posts/{id} 한 번으로 처리(백엔드가 Redis NX + 증가 시 응답에 viewCount+1 반영).
+  // POST /view 를 먼저 호출하면 Redis 키만 소비되고 GET 에서는 증가·낙관적 반영이 스킵되어,
+  // slave 읽기 시 화면 조회수가 안 오르는 것처럼 보임.
   const loadPost = useCallback(
-    async (recordView = true) => {
+    async () => {
       if (!postId) return;
       setLoading(true);
       setError('');
       try {
-        if (recordView) {
-          const fromEdit = sessionStorage.getItem('post_detail_skip_view') === String(postId);
-          if (fromEdit) sessionStorage.removeItem('post_detail_skip_view');
-          if (!fromEdit && viewRequestedRef.current !== postId) {
-            viewRequestedRef.current = postId;
-            try {
-              await api.post(`/posts/${postId}/view`);
-            } catch (_) {}
-          }
-        }
         const res = await api.get(`/posts/${postId}`);
-        const data = res?.data ?? res;
-        setPost(normalizePost(data, user));
+        const data = res?.data ?? null;
+        if (data) setPost(normalizePost(data, user));
       } catch (err) {
         setError(getApiErrorMessage(err?.code ?? err?.message, '게시글을 불러오지 못했습니다.'));
       } finally {
@@ -117,9 +120,9 @@ export function usePostDetail(postId, user, navigate) {
         const res = await api.get(
           `/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}${sortParam}`
         );
-        const payload = res?.data?.data ?? res?.data ?? {};
-        const arr = Array.isArray(payload?.items) ? payload.items : [];
-        const totalCount = payload?.total ?? payload?.total_count ?? 0;
+        const payload = res?.data ?? {};
+        const arr = Array.isArray(payload.items) ? payload.items : [];
+        const totalCount = payload.totalCount ?? 0;
         setComments(arr.map((c) => normalizeComment(c, user)));
         setCommentTotalCount(totalCount);
         setCommentTotalPages(Math.max(1, Math.ceil(totalCount / COMMENT_PAGE_SIZE)));
@@ -133,24 +136,22 @@ export function usePostDetail(postId, user, navigate) {
     [postId, user, commentSort]
   );
 
+  // localStorage 복원 전에 로드하면 isMine=false로 고정됨 → isRestored 후 로드, user·postId 변경 시 재로드.
   useEffect(() => {
     if (!postId) {
       setLoading(false);
       return;
     }
-    let ignore = false;
-    loadPost(true).then(() => {
-      if (!ignore) setLoading(false);
-    });
-    return () => {
-      ignore = true;
-    };
-  }, [postId]);
+    if (!isRestored) {
+      return;
+    }
+    void loadPost();
+  }, [postId, loadPost, isRestored]);
 
   useEffect(() => {
-    if (!postId) return;
+    if (!postId || !isRestored) return;
     loadComments(1);
-  }, [postId, commentSort, loadComments]);
+  }, [postId, commentSort, loadComments, isRestored]);
 
   const handleLike = useCallback(async () => {
     if (!postId) return;
@@ -168,9 +169,9 @@ export function usePostDetail(postId, user, navigate) {
       const res = currentlyLiked
         ? await api.delete(`/likes/posts/${postId}`)
         : await api.post(`/likes/posts/${postId}`);
-      const data = res?.data ?? res;
-      const likeCount = data?.likeCount ?? data?.like_count;
-      const isLiked = data?.isLiked ?? data?.is_liked;
+      const data = res?.data ?? null;
+      const likeCount = data?.likeCount;
+      const isLiked = data?.isLiked;
       if (likeCount !== undefined || isLiked !== undefined) {
         setPost((p) =>
           p
@@ -228,7 +229,7 @@ export function usePostDetail(postId, user, navigate) {
       setMessage('');
       setReplyForm((prev) => ({ ...prev, submitting: true }));
       try {
-        await api.post(`/posts/${postId}/comments`, { content, parent_id: parentId });
+        await api.post(`/posts/${postId}/comments`, { content, parentId });
         setReplyForm((prev) => ({ ...prev, content: '', submitting: false }));
         setReplyToCommentId(null);
         setPost((p) => (p ? { ...p, commentCount: (p.commentCount ?? 0) + 1 } : p));

@@ -55,7 +55,7 @@ export function formatDateTime(dateString) {
 
 const API_ERROR_MESSAGES = {
   INVALID_PASSWORD_FORMAT:
-    '비밀번호는 8~20자, 영문 소문자·숫자·특수문자를 각각 1자 이상 포함해야 합니다.',
+    '8~20자의 영문 소문자·숫자·특수문자 필수 포함해야 합니다.',
   INVALID_NICKNAME_FORMAT: '닉네임은 한글, 영문, 숫자 1~10자로 입력해주세요.',
   INVALID_EMAIL_FORMAT: '이메일 형식이 올바르지 않습니다.',
   INVALID_CREDENTIALS: '이메일 또는 비밀번호가 일치하지 않습니다.',
@@ -74,13 +74,24 @@ const API_ERROR_MESSAGES = {
   UNAUTHORIZED: '로그인이 필요합니다. 다시 로그인해주세요.',
   TOKEN_EXPIRED: '로그인 세션이 만료되었습니다. 다시 로그인해주세요.',
   INVALID_REQUEST: '요청 내용을 확인해주세요.',
+  USER_WITHDRAWN: '탈퇴한 유저입니다.',
   INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
   POST_FILE_LIMIT_EXCEEDED: '이미지는 최대 5장까지 첨부할 수 있습니다.',
 };
 
+export const PASSWORD_POLICY_TEXT = API_ERROR_MESSAGES.INVALID_PASSWORD_FORMAT;
+
 export function getApiErrorMessage(code, fallback = '처리에 실패했습니다.') {
   const key = (code || '').toString().toUpperCase();
   return API_ERROR_MESSAGES[key] || fallback;
+}
+
+/**
+ * api.* 가 반환하는 본문(ApiResponse 래퍼)에서 `data`만 꺼냄. 필드는 항상 camelCase 전제.
+ */
+export function unwrapApiData(res) {
+  if (res == null || typeof res !== 'object') return null;
+  return res.data ?? null;
 }
 
 /**
@@ -108,7 +119,7 @@ export function safeImageUrl(url, fallback = '') {
  * - 그 외면 API에서 내려준 author.profileImageUrl 사용.
  * - null/빈 값/실패 시 반드시 defaultUrl(DEFAULT_PROFILE_IMAGE, /imt.png) 반환하여 엑박 방지.
  * @param {{ profileImageUrl?: string | null } | null} currentUser - 로그인 유저 (AuthContext)
- * @param {{ userId?: number, id?: number, profileImageUrl?: string | null, profile_image_url?: string | null } | null} author - API 작성자
+ * @param {{ userId?: number, id?: number, profileImageUrl?: string | null } | null} author - API 작성자(camelCase)
  * @param {boolean} isMine - 현재 유저가 작성자인지
  * @param {string} defaultUrl - DEFAULT_PROFILE_IMAGE (/imt.png)
  * @returns {string} 절대 빈 문자열이 되지 않도록 defaultUrl로 보정
@@ -119,7 +130,7 @@ export function getProfileImageUrl(currentUser, author, isMine, defaultUrl) {
   if (isMine && currentUser?.profileImageUrl) {
     out = safeImageUrl(currentUser.profileImageUrl, fallback) || fallback;
   } else {
-    const url = author?.profileImageUrl ?? author?.profile_image_url ?? null;
+    const url = author?.profileImageUrl ?? null;
     out = safeImageUrl(url, fallback) || fallback;
   }
   return (out && String(out).trim()) ? out : (defaultUrl || '');
@@ -133,14 +144,14 @@ export function isValidEmail(email) {
 export function validatePassword(value) {
   if (!value || typeof value !== 'string') return { ok: false, message: '비밀번호를 입력해주세요.' };
   const v = value.trim();
-  if (v.length < 8) return { ok: false, message: '비밀번호는 8자 이상 입력해주세요.' };
-  if (v.length > 20) return { ok: false, message: '비밀번호는 20자 이내로 입력해주세요.' };
+  if (v.length < 8) return { ok: false, message: PASSWORD_POLICY_TEXT };
+  if (v.length > 20) return { ok: false, message: PASSWORD_POLICY_TEXT };
   if (
     !/^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(v)
   ) {
     return {
       ok: false,
-      message: '비밀번호에 영문 소문자·숫자·특수문자를 각각 1자 이상 포함해주세요.',
+      message: PASSWORD_POLICY_TEXT,
     };
   }
   return { ok: true };

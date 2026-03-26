@@ -1,5 +1,8 @@
 // 비밀번호 변경 폼: 현재/새/새 확인 3필드.
+import { PASSWORD_POLICY_TEXT } from '../../utils/index.js';
+
 export function ChangePasswordFormFields({ formData, errors, onFieldChange }) {
+  const policyInParens = PASSWORD_POLICY_TEXT.replace(/^비밀번호는\s*/, '');
   return (
     <>
       <div className="form-group">
@@ -32,7 +35,7 @@ export function ChangePasswordFormFields({ formData, errors, onFieldChange }) {
           id="new-password"
           name="new-password"
           className="form-input"
-          placeholder="새 비밀번호를 입력하세요"
+          placeholder={`${policyInParens}`}
           value={formData.newPassword}
           onChange={onFieldChange('newPassword')}
           aria-invalid={!!errors.newPassword}

@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getApiErrorMessage, isValidEmail } from '../utils/index.js';
+import { getApiErrorMessage, isValidEmail, unwrapApiData } from '../utils/index.js';
 
 export function useLogin() {
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ export function useLogin() {
           email: emailTrim,
           password: passwordVal,
         });
-        const data = result?.data?.data ?? result?.data;
+        const data = unwrapApiData(result) ?? result?.data;
         if (data) {
           const accessToken = data.accessToken ?? result?.data?.accessToken;
           const baseUser = {
@@ -73,7 +73,7 @@ export function useLogin() {
           setUser({ ...baseUser, dogs: data.dogs ?? [] });
           try {
             const meRes = await api.get('/users/me');
-            const me = meRes?.data?.data ?? meRes?.data ?? null;
+            const me = unwrapApiData(meRes);
             if (me) {
               setUser({
                 ...baseUser,

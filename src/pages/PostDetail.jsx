@@ -1,5 +1,5 @@
 // 게시글 상세 페이지: usePostDetail 훅 + PostDetail 하위 컴포넌트 조합.
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -69,6 +69,46 @@ export function PostDetail() {
     }));
   };
 
+  const redirectToLoginForReport = useCallback(() => {
+    if (
+      !window.confirm('신고하려면 로그인이 필요합니다. 로그인 페이지로 이동할까요?')
+    ) {
+      return false;
+    }
+    sessionStorage.setItem('login_return_path', `/posts/${postId}`);
+    navigate('/login');
+    return true;
+  }, [postId, navigate]);
+
+  const openPostReport = useCallback(() => {
+    if (!user) {
+      redirectToLoginForReport();
+      return;
+    }
+    setModalState((prev) => ({
+      ...prev,
+      reportOpen: true,
+      reportTargetType: 'POST',
+      reportTargetId: Number(postId),
+    }));
+  }, [user, postId, redirectToLoginForReport, setModalState]);
+
+  const openCommentReport = useCallback(
+    (targetType, targetId) => {
+      if (!user) {
+        redirectToLoginForReport();
+        return;
+      }
+      setModalState((prev) => ({
+        ...prev,
+        reportOpen: true,
+        reportTargetType: targetType,
+        reportTargetId: targetId,
+      }));
+    },
+    [user, redirectToLoginForReport, setModalState]
+  );
+
   if (!postId) return <PostDetailFallback variant="invalid" />;
   if (loading && !post) return <PostDetailFallback variant="loading" />;
   if (error && !post) {
@@ -111,14 +151,7 @@ export function PostDetail() {
             onEdit={(path) => navigate(path)}
             onDeleteOpen={() => setModalState((prev) => ({ ...prev, postDeleteOpen: true }))}
             onBlockUser={handleBlockUser}
-            onReportOpen={() =>
-              setModalState((prev) => ({
-                ...prev,
-                reportOpen: true,
-                reportTargetType: 'POST',
-                reportTargetId: Number(postId),
-              }))
-            }
+            onReportOpen={openPostReport}
             currentUserId={user?.userId ?? user?.id}
           >
             <CommentForm
@@ -138,14 +171,7 @@ export function PostDetail() {
               onCommentLike={handleCommentLike}
               onDeleteOpen={(id) => setModalState((prev) => ({ ...prev, commentDeleteId: id }))}
               onBlockUser={handleBlockUser}
-              onReportOpen={(targetType, targetId) =>
-                setModalState((prev) => ({
-                  ...prev,
-                  reportOpen: true,
-                  reportTargetType: targetType,
-                  reportTargetId: targetId,
-                }))
-              }
+              onReportOpen={openCommentReport}
               commentPage={commentPage}
               commentTotalPages={commentTotalPages}
               setCommentPage={setCommentPage}

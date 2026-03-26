@@ -1,4 +1,6 @@
 // 회원가입 폼: 이메일·비밀번호·비밀번호 확인·닉네임 4필드.
+import { PASSWORD_POLICY_TEXT } from '../../utils/index.js';
+
 export function SignupFormFields({ formData, errors, onFieldChange }) {
   return (
     <>
@@ -32,7 +34,7 @@ export function SignupFormFields({ formData, errors, onFieldChange }) {
           id="password"
           name="password"
           className="form-input"
-          placeholder="비밀번호를 입력하세요"
+          placeholder={PASSWORD_POLICY_TEXT}
           value={formData.password}
           onChange={onFieldChange('password')}
           aria-invalid={!!errors.password}

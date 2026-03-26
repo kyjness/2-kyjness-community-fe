@@ -8,6 +8,7 @@ import {
   validatePostTitle,
   validatePostContent,
 } from '../utils/index.js';
+import { parseHashtagsInput } from '../utils/postMeta.js';
 
 const MAX_IMAGES = 5;
 
@@ -37,6 +38,8 @@ export function useNewPost() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [categoryId, setCategoryId] = useState(1);
+  const [hashtagsInput, setHashtagsInput] = useState('');
   const [titleError, setTitleError] = useState('');
   const [contentError, setContentError] = useState('');
   const [formError, setFormError] = useState('');
@@ -83,10 +86,13 @@ export function useNewPost() {
       try {
         const uploaded = await uploadNewImages();
         const imageIds = uploaded.map((x) => x.imageId).filter((id) => id != null);
+        const hashtags = parseHashtagsInput(hashtagsInput);
         const res = await api.post('/posts', {
           title: titleTrim,
           content: contentTrim,
           imageIds: imageIds.length ? imageIds : undefined,
+          categoryId,
+          hashtags: hashtags.length ? hashtags : undefined,
         });
         const postId = res?.data?.id;
         alert('게시글이 작성되었습니다!');
@@ -103,7 +109,7 @@ export function useNewPost() {
         setSubmitting(false);
       }
     },
-    [submitting, title, content, uploadNewImages, navigate]
+    [submitting, title, content, categoryId, hashtagsInput, uploadNewImages, navigate]
   );
 
   const handleTitleChange = useCallback((e) => {
@@ -116,9 +122,19 @@ export function useNewPost() {
     setContentError('');
   }, []);
 
+  const handleCategoryChange = useCallback((e) => {
+    setCategoryId(Number(e.target.value));
+  }, []);
+
+  const handleHashtagsChange = useCallback((e) => {
+    setHashtagsInput(e.target.value);
+  }, []);
+
   return {
     title,
     content,
+    categoryId,
+    hashtagsInput,
     titleError,
     contentError,
     formError,
@@ -133,5 +149,7 @@ export function useNewPost() {
     handleSubmit,
     handleTitleChange,
     handleContentChange,
+    handleCategoryChange,
+    handleHashtagsChange,
   };
 }

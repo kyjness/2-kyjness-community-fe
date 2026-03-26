@@ -3,7 +3,16 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, getApiErrorMessage, isValidEmail, validatePassword, validateNickname, getImageUploadData } from '../utils.js';
+import {
+  PASSWORD_POLICY_TEXT,
+  showFieldError,
+  clearErrors,
+  getApiErrorMessage,
+  isValidEmail,
+  validatePassword,
+  validateNickname,
+  getImageUploadData,
+} from '../utils.js';
 
 export function renderSignup() {
   const root = document.getElementById('app-root');
@@ -31,7 +40,7 @@ export function renderSignup() {
           </div>
           <div class="form-group">
             <label for="password" class="form-label">비밀번호*</label>
-            <input type="password" id="password" name="password" class="form-input" placeholder="비밀번호를 입력하세요" required />
+            <input type="password" id="password" name="password" class="form-input" placeholder="${PASSWORD_POLICY_TEXT}" required />
             <span class="helper-text" id="password-error"></span>
           </div>
           <div class="form-group">

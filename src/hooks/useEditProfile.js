@@ -10,16 +10,18 @@ import {
   getImageUploadData,
   safeImageUrl,
   revokeObjectUrlSafely,
+  unwrapApiData,
 } from '../utils/index.js';
 
+/** GET /users/me 등 API(camelCase) → 폼 상태. snake_case 폴백 없음. */
 function toFormDog(d) {
-  const pid = d?.profileImageId ?? d?.profile_image_id;
+  const pid = d?.profileImageId;
   return {
-    id: d?.dogId ?? d?.id ?? null,
+    id: d?.id ?? null,
     name: (d?.name ?? '').trim(),
     breed: (d?.breed ?? '').trim(),
     gender: d?.gender === 'female' ? 'female' : 'male',
-    birthDate: (d?.birthDate ?? d?.birth_date ?? '').trim().slice(0, 10),
+    birthDate: (d?.birthDate ?? '').trim().slice(0, 10),
     isRepresentative: !!d?.isRepresentative,
     ...(pid != null ? { profileImageId: Number(pid) } : {}),
   };
@@ -39,8 +41,7 @@ function buildDogsPayload(dogsArray) {
         isRepresentative:
           arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
       };
-      const pid = d.profileImageId ?? d.profile_image_id;
-      if (pid != null) row.profileImageId = Number(pid);
+      if (d.profileImageId != null) row.profileImageId = Number(d.profileImageId);
       return row;
     });
 }
@@ -160,39 +161,26 @@ export function useEditProfile() {
         payload.dogs = buildDogsPayload(user?.dogs);
 
         const patchRes = await api.patch('/users/me', payload);
-        const updatedFromPatch = patchRes?.data?.data ?? patchRes?.data ?? null;
-
-        if (updatedFromPatch) {
+        // PATCH 본문을 우선 반영(GET 실패·리플리카 지연에도 UI 일치). null 프로필 URL은 ?? 로 이전값 복구하면 안 됨.
+        let updated = unwrapApiData(patchRes);
+        if (!updated) {
+          try {
+            updated = unwrapApiData(await api.get('/users/me'));
+          } catch (_) {
+            /* ignore */
+          }
+        }
+        if (updated) {
           setUser({
             ...user,
-            ...updatedFromPatch,
+            ...updated,
+            userId: updated.id ?? user?.userId,
+            accessToken: user?.accessToken,
           });
-          setNickname(updatedFromPatch.nickname ?? nickTrim);
+          setNickname((updated.nickname ?? nickTrim).trim());
         } else {
-          try {
-            const meRes = await api.get('/users/me');
-            const updated = meRes?.data?.data ?? null;
-            if (updated) {
-              setUser({
-                ...user,
-                userId: updated.id ?? user?.userId,
-                email: updated.email ?? user?.email,
-                nickname: updated.nickname ?? nickTrim,
-                profileImageId: updated.profileImageId ?? null,
-                profileImageUrl: updated.profileImageUrl ?? null,
-                dogs: updated.dogs ?? user?.dogs,
-                representativeDog: updated.representativeDog ?? null,
-                accessToken: user?.accessToken,
-              });
-              setNickname(updated.nickname ?? nickTrim);
-            } else {
-              setUser({ ...user, nickname: nickTrim });
-              setNickname(nickTrim);
-            }
-          } catch (_) {
-            setUser({ ...user, nickname: nickTrim });
-            setNickname(nickTrim);
-          }
+          setUser({ ...user, nickname: nickTrim });
+          setNickname(nickTrim);
         }
 
         alert('회원정보가 수정되었습니다.');

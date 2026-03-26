@@ -6,6 +6,7 @@ import { Header } from '../Header.jsx';
 import { usePostStore } from '../../store/usePostStore';
 import type { ExistingImageItem, NewImageItem } from '../../api/api-types.js';
 import { safeImageUrl } from '../../utils/index.js';
+import { POST_CATEGORY_OPTIONS } from '../../utils/postMeta.js';
 const MAX_IMAGES = 5;
 
 /** 이미지 미리보기 1건 (기존/신규) — 제거 시 onRemove(type, index) */
@@ -50,6 +51,8 @@ export function EditPost() {
   const {
     title,
     content,
+    categoryId,
+    hashtagsInput,
     loading,
     formError,
     titleError,
@@ -59,6 +62,8 @@ export function EditPost() {
     newImages,
     setTitle,
     setContent,
+    setCategoryId,
+    setHashtagsInput,
     setFormError,
     loadPost,
     addFiles,
@@ -113,9 +118,6 @@ export function EditPost() {
       if (!postId || submitting) return;
       setFormError('');
       await submit(postId, () => {
-        if (typeof window !== 'undefined') {
-          window.sessionStorage.setItem('post_detail_skip_view', String(postId));
-        }
         alert('게시글이 수정되었습니다!');
         navigate(backHref);
       });
@@ -140,6 +142,26 @@ export function EditPost() {
               noValidate
               onSubmit={handleSubmit}
             >
+              <div className="form-group">
+                <label htmlFor="edit-post-category" className="form-label">
+                  카테고리
+                </label>
+                <select
+                  id="edit-post-category"
+                  name="categoryId"
+                  className="form-input"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(Number(e.target.value))}
+                  disabled={loading}
+                  aria-label="게시판 카테고리"
+                >
+                  {POST_CATEGORY_OPTIONS.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="form-group">
                 <label htmlFor="edit-post-title" className="form-label">
                   제목*
@@ -234,6 +256,22 @@ export function EditPost() {
                     {totalCount > 0 ? `총 ${totalCount}장` : '파일을 선택해주세요.'}
                   </span>
                 </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="edit-post-hashtags" className="form-label">
+                  해시태그
+                </label>
+                <input
+                  id="edit-post-hashtags"
+                  name="hashtags"
+                  type="text"
+                  className="form-input"
+                  placeholder="예: 강아지, 산책"
+                  value={hashtagsInput}
+                  onChange={(e) => setHashtagsInput(e.target.value)}
+                  disabled={loading}
+                  autoComplete="off"
+                />
               </div>
               {formError && (
                 <span className="helper-text form-error-common" id="form-error" role="alert">

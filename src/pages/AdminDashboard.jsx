@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client.js';
-import { formatDateTime } from '../utils/index.js';
+import { formatDateTime, getApiErrorMessage } from '../utils/index.js';
 
 const PAGE_SIZE = 20;
 
@@ -25,9 +25,9 @@ export function AdminDashboard() {
       const res = await api.get(
         `/admin/reported-posts?page=${pageNum}&size=${PAGE_SIZE}`
       );
-      const payload = res?.data?.data ?? res?.data ?? {};
-      const items = Array.isArray(payload?.items) ? payload.items : [];
-      const totalCount = payload?.total ?? 0;
+      const payload = res?.data ?? {};
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      const totalCount = payload.total ?? 0;
       setList(items);
       setTotal(Number(totalCount) || 0);
       setPage(pageNum);
@@ -58,7 +58,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/posts/${postId}/unblind`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '복구 처리에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '복구 처리에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -71,7 +71,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/users/${userId}/suspend`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '유저 정지에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '유저 정지에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -84,7 +84,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/users/${userId}/activate`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '정지 해제에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '정지 해제에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -97,7 +97,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/posts/${postId}/blind`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '블라인드 처리에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '블라인드 처리에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -110,7 +110,7 @@ export function AdminDashboard() {
       await api.delete(`/admin/posts/${postId}`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '글 삭제에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '글 삭제에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -123,7 +123,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/posts/${postId}/reset-reports`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '신고 무시 처리에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '신고 무시 처리에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -136,7 +136,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/comments/${commentId}/unblind`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '댓글 블라인드 해제에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 블라인드 해제에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -149,7 +149,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/comments/${commentId}/blind`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '댓글 블라인드 처리에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 블라인드 처리에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -162,7 +162,7 @@ export function AdminDashboard() {
       await api.patch(`/admin/comments/${commentId}/reset-reports`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '댓글 신고 무시 처리에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 신고 무시 처리에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -175,7 +175,7 @@ export function AdminDashboard() {
       await api.delete(`/admin/posts/${postId}/comments/${commentId}`);
       await fetchReportedPosts(page);
     } catch (err) {
-      alert(err?.message ?? '댓글 삭제에 실패했습니다.');
+      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 삭제에 실패했습니다.'));
     } finally {
       setActionLoading(null);
     }
@@ -219,13 +219,13 @@ export function AdminDashboard() {
                 </thead>
                 <tbody>
                   {list.map((row) => (
-                    <tr key={`${row.target_type ?? 'POST'}-${row.id}`} style={{ borderBottom: '1px solid #eee' }}>
+                    <tr key={`${row.targetType ?? 'POST'}-${row.id}`} style={{ borderBottom: '1px solid #eee' }}>
                       <td style={{ padding: 12 }}>
-                        {(row.target_type ?? row.targetType) === 'COMMENT' ? '댓글' : '게시글'}
+                        {row.targetType === 'COMMENT' ? '댓글' : '게시글'}
                       </td>
                       <td style={{ padding: 12 }}>
                         <Link
-                          to={`/posts/${row.post_id ?? row.postId ?? row.id}?from=admin`}
+                          to={`/posts/${row.postId ?? row.id}?from=admin`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ color: 'var(--color-link, #2563eb)', textDecoration: 'underline' }}
@@ -236,19 +236,19 @@ export function AdminDashboard() {
                       <td style={{ padding: 12 }}>
                         <div
                           className="admin-report-reason-cell"
-                          title={row.content_preview ?? row.contentPreview ?? ''}
+                          title={row.contentPreview ?? ''}
                           style={{ fontSize: 12, maxWidth: 200 }}
                         >
-                          {row.content_preview ?? row.contentPreview ?? '-'}
+                          {row.contentPreview ?? '-'}
                         </div>
                       </td>
                       <td style={{ padding: 12 }}>
-                        {row.author?.nickname ?? `user_${row.user_id ?? row.userId}`}
+                        {row.author?.nickname ?? `user_${row.userId}`}
                       </td>
-                      <td style={{ padding: 12, textAlign: 'right' }}>{row.reportCount ?? row.report_count ?? 0}</td>
+                      <td style={{ padding: 12, textAlign: 'right' }}>{row.reportCount ?? 0}</td>
                       <td style={{ padding: 12, maxWidth: 180 }}>
                         {(() => {
-                          const reasons = row.report_reasons ?? row.reportReasons ?? [];
+                          const reasons = row.reportReasons ?? [];
                           if (!reasons.length) return '-';
                           const countByReason = reasons.reduce((acc, r) => {
                             acc[r] = (acc[r] ?? 0) + 1;
@@ -266,8 +266,8 @@ export function AdminDashboard() {
                         })()}
                       </td>
                       <td style={{ padding: 12 }}>
-                        {(row.last_reported_at ?? row.lastReportedAt)
-                          ? formatDateTime(row.last_reported_at ?? row.lastReportedAt)
+                        {row.lastReportedAt
+                          ? formatDateTime(row.lastReportedAt)
                           : '-'}
                       </td>
                       <td style={{ padding: 12, textAlign: 'center' }}>
@@ -278,14 +278,14 @@ export function AdminDashboard() {
                         )}
                       </td>
                       <td style={{ padding: 12, textAlign: 'center' }}>
-                        {(row.isBlinded ?? row.is_blinded) ? (
+                        {row.isBlinded ? (
                           <span className="admin-badge admin-badge--orange" title="블라인드">블라인드</span>
                         ) : (
                           <span className="admin-badge admin-badge--gray" title="정상">정상</span>
                         )}
                       </td>
                       <td style={{ padding: 12, width: 140 }}>
-                        {(row.target_type ?? row.targetType) === 'COMMENT' ? (
+                        {row.targetType === 'COMMENT' ? (
                           <details className="admin-action-dropdown">
                             <summary
                               className="admin-action-summary"
@@ -295,7 +295,7 @@ export function AdminDashboard() {
                               관리 메뉴
                             </summary>
                             <div className="admin-action-menu">
-                              {row.isBlinded ?? row.is_blinded ? (
+                              {row.isBlinded ? (
                                 <button
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
@@ -319,25 +319,25 @@ export function AdminDashboard() {
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
                                   disabled={actionLoading != null}
-                                  onClick={() => handleActivateUser(row.user_id ?? row.userId)}
+                                  onClick={() => handleActivateUser(row.userId)}
                                 >
-                                  {actionLoading === `activate-${row.user_id ?? row.userId}` ? '처리 중' : '정지 해제'}
+                                  {actionLoading === `activate-${row.userId}` ? '처리 중' : '정지 해제'}
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   className="admin-action-btn"
                                   disabled={actionLoading != null}
-                                  onClick={() => handleSuspendUser(row.user_id ?? row.userId)}
+                                  onClick={() => handleSuspendUser(row.userId)}
                                 >
-                                  {actionLoading === `suspend-${row.user_id ?? row.userId}` ? '처리 중' : '유저 정지'}
+                                  {actionLoading === `suspend-${row.userId}` ? '처리 중' : '유저 정지'}
                                 </button>
                               )}
                               <button
                                 type="button"
                                 className="admin-action-btn"
                                 disabled={actionLoading != null}
-                                onClick={() => handleDeleteComment(row.post_id ?? row.postId, row.id)}
+                                onClick={() => handleDeleteComment(row.postId, row.id)}
                               >
                                 {actionLoading === `comment-delete-${row.id}` ? '처리 중' : '댓글 삭제'}
                               </button>
@@ -361,7 +361,7 @@ export function AdminDashboard() {
                               관리 메뉴
                             </summary>
                             <div className="admin-action-menu">
-                              {row.isBlinded ?? row.is_blinded ? (
+                              {row.isBlinded ? (
                                 <button
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
@@ -385,18 +385,18 @@ export function AdminDashboard() {
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
                                   disabled={actionLoading != null}
-                                  onClick={() => handleActivateUser(row.user_id ?? row.userId)}
+                                  onClick={() => handleActivateUser(row.userId)}
                                 >
-                                  {actionLoading === `activate-${row.user_id ?? row.userId}` ? '처리 중' : '정지 해제'}
+                                  {actionLoading === `activate-${row.userId}` ? '처리 중' : '정지 해제'}
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   className="admin-action-btn"
                                   disabled={actionLoading != null}
-                                  onClick={() => handleSuspendUser(row.user_id ?? row.userId)}
+                                  onClick={() => handleSuspendUser(row.userId)}
                                 >
-                                  {actionLoading === `suspend-${row.user_id ?? row.userId}` ? '처리 중' : '유저 정지'}
+                                  {actionLoading === `suspend-${row.userId}` ? '처리 중' : '유저 정지'}
                                 </button>
                               )}
                               <button

@@ -1,11 +1,12 @@
 // 게시글 목록 카드: 제목·메타·작성자·강아지·클릭 시 상세 이동.
 import { Image } from 'lucide-react';
 import { formatDate, getProfileImageUrl, escapeHtml, calculateDogAge, formatDogGenderLabel } from '../utils/index.js';
+import { getPostCategoryLabel } from '../utils/postMeta.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 function AuthorBadge({ author }) {
-  const dog = author?.representativeDog ?? author?.representative_dog;
+  const dog = author?.representativeDog;
   const name = escapeHtml(author?.nickname || '알 수 없음');
   if (!dog?.name) return <>{name}</>;
   const genderLabel = dog.gender ? (
@@ -17,7 +18,7 @@ function AuthorBadge({ author }) {
     escapeHtml(dog.name),
     escapeHtml(dog.breed || ''),
     genderLabel,
-    calculateDogAge(dog.birthDate ?? dog.birth_date),
+    calculateDogAge(dog.birthDate),
   ].filter(Boolean);
   return (
     <>
@@ -54,8 +55,12 @@ export function PostCard({ post, onClick }) {
   const commentCount = post.commentCount ?? 0;
   const viewCount = post.viewCount ?? 0;
   const createdAt = post.createdAt ?? '';
-  const author = post.author || {};
-  const isMine = !!(user && (author.userId === user.userId || author.id === user.userId));
+  const author = post.author ?? null;
+  const isMine = !!(
+    user &&
+    author &&
+    (author.userId === user.userId || author.id === user.userId)
+  );
   const authorAvatar = getProfileImageUrl(user, author, isMine, DEFAULT_PROFILE_IMAGE);
   const imgSrc =
     (authorAvatar && String(authorAvatar).trim()) ? authorAvatar : DEFAULT_PROFILE_IMAGE;
@@ -63,6 +68,9 @@ export function PostCard({ post, onClick }) {
     (Array.isArray(post.files) && post.files.length > 0) ||
     (Number(post.fileCount) > 0) ||
     (Number(post.imageCount) > 0);
+  const categoryId = post.categoryId ?? post.categoryid ?? post.category_id ?? null;
+  const categoryLabel = getPostCategoryLabel(categoryId);
+  const tagList = Array.isArray(post.hashtags) ? post.hashtags.map((t) => String(t)) : [];
 
   return (
     <article
@@ -78,6 +86,24 @@ export function PostCard({ post, onClick }) {
       }}
       tabIndex={0}
     >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2" aria-label="카테고리 및 해시태그">
+          <span className="inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs font-semibold text-violet-800">
+            {escapeHtml(categoryLabel)}
+          </span>
+          {tagList.map((t, i) => (
+            <span
+              key={`${postId}-tag-${i}`}
+              className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-xs font-medium text-sky-800"
+            >
+              #{escapeHtml(t)}
+            </span>
+          ))}
+        </div>
+        <span className="post-card-date shrink-0 self-start whitespace-nowrap text-right">
+          {formatDate(createdAt)}
+        </span>
+      </div>
       <div className="post-card-header">
         <div className="post-card-title-row">
           <span className="post-card-title">{title}</span>
@@ -87,7 +113,6 @@ export function PostCard({ post, onClick }) {
             </span>
           )}
         </div>
-        <span className="post-card-date">{formatDate(createdAt)}</span>
       </div>
       {contentPreview ? (
         <p className="post-card-excerpt" title={contentPreview}>
@@ -119,7 +144,9 @@ export function PostCard({ post, onClick }) {
             }}
           />
         </div>
-        <span className="post-card-author-name"><AuthorBadge author={author} /></span>
+        <span className="post-card-author-name">
+          <AuthorBadge author={author ?? { nickname: '탈퇴한 사용자' }} />
+        </span>
       </div>
     </article>
   );

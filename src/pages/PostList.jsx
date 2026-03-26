@@ -10,6 +10,7 @@ import {
   PostListContent,
 } from '../components/PostList';
 import { useAuth } from '../context/AuthContext.jsx';
+import { POST_CATEGORY_OPTIONS } from '../utils/postMeta.js';
 
 export function PostList() {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ export function PostList() {
     setSearchTerm,
     sort,
     setSort,
+    categoryId,
+    setCategoryId,
     bottomRef,
   } = usePostList();
 
@@ -72,6 +75,30 @@ export function PostList() {
         </div>
         <div className="post-list-container">
           <PostListGreeting searchTerm={searchTerm} />
+          <div className="flex w-full max-w-full items-center justify-center gap-3 mt-2 mb-5 self-stretch">
+            <div className="flex min-w-0 flex-nowrap items-center gap-2">
+              <label
+                htmlFor="post-list-category"
+                className="shrink-0 whitespace-nowrap text-sm font-medium text-gray-700"
+              >
+                카테고리
+              </label>
+              <select
+                id="post-list-category"
+                className="form-input !h-auto !min-h-9 w-[160px] !py-1.5 !pl-3 !pr-9 text-sm !leading-tight"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                aria-label="카테고리 필터"
+              >
+                <option value="all">전체</option>
+                {POST_CATEGORY_OPTIONS.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="sort-tabs" role="tablist" aria-label="정렬">
             {POST_SORTS.map((s) => (
               <button

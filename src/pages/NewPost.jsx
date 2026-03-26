@@ -6,6 +6,7 @@ import {
   NewPostContentBlock,
   NewPostImageAttachment,
 } from '../components/NewPost';
+import { POST_CATEGORY_OPTIONS } from '../utils/postMeta.js';
 
 export function NewPost() {
   const {
@@ -25,6 +26,10 @@ export function NewPost() {
     handleSubmit,
     handleTitleChange,
     handleContentChange,
+    categoryId,
+    hashtagsInput,
+    handleCategoryChange,
+    handleHashtagsChange,
   } = useNewPost();
 
   return (
@@ -39,6 +44,25 @@ export function NewPost() {
               noValidate
               onSubmit={handleSubmit}
             >
+              <div className="form-group">
+                <label htmlFor="new-post-category" className="form-label">
+                  카테고리
+                </label>
+                <select
+                  id="new-post-category"
+                  name="categoryId"
+                  className="form-input"
+                  value={categoryId}
+                  onChange={handleCategoryChange}
+                  aria-label="게시판 카테고리"
+                >
+                  {POST_CATEGORY_OPTIONS.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <NewPostTitleField
                 title={title}
                 titleError={titleError}
@@ -59,6 +83,21 @@ export function NewPost() {
                 maxImages={MAX_IMAGES}
                 onFileChange={handleFileChange}
               />
+              <div className="form-group">
+                <label htmlFor="new-post-hashtags" className="form-label">
+                  해시태그
+                </label>
+                <input
+                  id="new-post-hashtags"
+                  name="hashtags"
+                  type="text"
+                  className="form-input"
+                  placeholder="예: 강아지, 산책"
+                  value={hashtagsInput}
+                  onChange={handleHashtagsChange}
+                  autoComplete="off"
+                />
+              </div>
               {formError && (
                 <span
                   className="helper-text form-error-common"

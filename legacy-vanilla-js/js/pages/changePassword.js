@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { navigateTo } from '../router.js';
 import { renderHeader, initHeaderEvents } from '../components/header.js';
-import { showFieldError, clearErrors, getApiErrorMessage, validatePassword } from '../utils.js';
+import { PASSWORD_POLICY_TEXT, showFieldError, clearErrors, getApiErrorMessage, validatePassword } from '../utils.js';
 
 // 비밀번호 변경 페이지 렌더링
 export function renderChangePassword() {
@@ -39,7 +39,7 @@ export function renderChangePassword() {
               id="new-password" 
               name="new-password" 
               class="form-input" 
-              placeholder="새 비밀번호를 입력하세요"
+              placeholder="${PASSWORD_POLICY_TEXT.replace(/^비밀번호는\s*/, '')}"
               required 
             />
             <span class="helper-text" id="new-password-error"></span>

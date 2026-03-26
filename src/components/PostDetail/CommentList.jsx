@@ -68,7 +68,7 @@ function CommentItem({
                     escapeHtml(d.name),
                     escapeHtml(d.breed || ''),
                     genderLabel,
-                    calculateDogAge(d.birthDate ?? d.birth_date),
+                    calculateDogAge(d.birthDate),
                   ].filter(Boolean);
                   return parts.map((p, i) => (
                     <span key={i}>
@@ -81,64 +81,70 @@ function CommentItem({
             )}
           </div>
           <div className="comment-item-actions">
-            {currentUserId != null ? (
-              isMyComment ? (
-                <div className="comment-item-my-actions">
-                  <button
-                    type="button"
-                    className="comment-item-action-btn"
-                    onClick={() => setCommentEdit({ editingId: c.id, content: c.content ?? '' })}
-                  >
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    className="comment-item-action-btn"
-                    onClick={() => onDeleteOpen(c.id)}
-                  >
-                    삭제
-                  </button>
-                </div>
-              ) : (
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="comment-item-menu-trigger"
-                    onClick={() => setMenuOpen((o) => !o)}
-                    aria-label="메뉴"
-                    aria-expanded={menuOpen}
-                  >
-                    <MoreHorizontal size={18} aria-hidden />
-                  </button>
-                  {menuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-[1]"
-                        role="presentation"
-                        onClick={() => setMenuOpen(false)}
-                      />
-                      <ul className="comment-item-menu">
+            {isMyComment && currentUserId != null ? (
+              <div className="comment-item-my-actions">
+                <button
+                  type="button"
+                  className="comment-item-action-btn"
+                  onClick={() => setCommentEdit({ editingId: c.id, content: c.content ?? '' })}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  className="comment-item-action-btn"
+                  onClick={() => onDeleteOpen(c.id)}
+                >
+                  삭제
+                </button>
+              </div>
+            ) : !isMyComment ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  className="comment-item-menu-trigger"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  aria-label="메뉴"
+                  aria-expanded={menuOpen}
+                >
+                  <MoreHorizontal size={18} aria-hidden />
+                </button>
+                {menuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[1]"
+                      role="presentation"
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <ul className="comment-item-menu">
+                      {currentUserId != null && c.author_id != null ? (
                         <li>
-                          <button type="button" onClick={() => {
+                          <button
+                            type="button"
+                            onClick={() => {
                               onBlockUser?.(c.author_id);
                               setMenuOpen(false);
-                            }}>
+                            }}
+                          >
                             차단
                           </button>
                         </li>
-                        <li>
-                          <button type="button" onClick={() => {
-                              onReportOpen?.('COMMENT', c.id);
-                              setMenuOpen(false);
-                            }}>
-                            신고
-                          </button>
-                        </li>
-                      </ul>
-                    </>
-                  )}
-                </div>
-              )
+                      ) : null}
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReportOpen?.('COMMENT', c.id);
+                            setMenuOpen(false);
+                          }}
+                        >
+                          신고
+                        </button>
+                      </li>
+                    </ul>
+                  </>
+                )}
+              </div>
             ) : (
               <div className="comment-item-actions-spacer" aria-hidden />
             )}

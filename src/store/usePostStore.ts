@@ -15,6 +15,7 @@ import {
   validatePostTitle,
   validatePostContent,
 } from '../utils/index.js';
+import { parseHashtagsInput } from '../utils/postMeta.js';
 
 const MAX_IMAGES = 5;
 
@@ -22,6 +23,10 @@ export interface PostEditState {
   postId: string | null;
   title: string;
   content: string;
+  categoryId: number;
+  hashtagsInput: string;
+  /** GET 시점 버전(백엔드가 내려줄 때만 PATCH에 포함) */
+  postVersion: number | null;
   loading: boolean;
   formError: string;
   titleError: string;
@@ -37,6 +42,8 @@ export interface PostEditState {
 export interface PostEditActions {
   setTitle: (v: string) => void;
   setContent: (v: string) => void;
+  setCategoryId: (v: number) => void;
+  setHashtagsInput: (v: string) => void;
   setFormError: (v: string) => void;
   loadPost: (postId: string) => Promise<void>;
   addFiles: (files: FileList | File[]) => void;
@@ -51,6 +58,9 @@ const getInitialState = (): PostEditState => ({
   postId: null,
   title: '',
   content: '',
+  categoryId: 1,
+  hashtagsInput: '',
+  postVersion: null,
   loading: false,
   formError: '',
   titleError: '',
@@ -67,6 +77,8 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
 
   setTitle: (v: string) => set({ title: v, titleError: '' }),
   setContent: (v: string) => set({ content: v, contentError: '' }),
+  setCategoryId: (v: number) => set({ categoryId: v }),
+  setHashtagsInput: (v: string) => set({ hashtagsInput: v }),
   setFormError: (v: string) => set({ formError: v }),
 
   loadPost: async (postId: string) => {
@@ -74,6 +86,21 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
     try {
       const res = await api.get(`/posts/${postId}`) as ApiResponse<PostResponse>;
       const data = res.data ?? (res as unknown as PostResponse);
+      const raw = data as PostResponse & Record<string, unknown>;
+      const cidRaw = raw.categoryId ?? raw.categoryid;
+      const categoryId =
+        cidRaw != null && Number.isFinite(Number(cidRaw)) ? Number(cidRaw) : 1;
+      const tagList = Array.isArray(raw.hashtags)
+        ? raw.hashtags.map((t: unknown) => String(t))
+        : [];
+      const hashtagsInput = tagList.join(', ');
+      let postVersion: number | null = null;
+      const ver = raw.version;
+      if (typeof ver === 'number' && Number.isFinite(ver)) postVersion = ver;
+      else if (ver != null && ver !== '') {
+        const n = Number(ver);
+        if (Number.isFinite(n)) postVersion = n;
+      }
       const files: FileInfo[] = data.files ?? [];
       const ids = files.map((f) => f.imageId ?? f.id).filter((id): id is number => id != null);
       const urls: ExistingImageItem[] = files
@@ -86,6 +113,9 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
       set({
         title: data.title ?? '',
         content: data.content ?? '',
+        categoryId,
+        hashtagsInput,
+        postVersion,
         existingIds: ids,
         existingUrls: urls,
         _initialApplied: true,
@@ -152,7 +182,8 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
   },
 
   submit: async (postId: string, onSuccess: () => void) => {
-    const { title, content, existingIds, uploadNewImages } = get();
+    const { title, content, categoryId, hashtagsInput, postVersion, existingIds, uploadNewImages } =
+      get();
     const titleTrim = title.trim();
     const contentTrim = content.trim();
     const tCheck = validatePostTitle(titleTrim);
@@ -168,14 +199,29 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
       const uploaded = await uploadNewImages();
       const newIds = uploaded.map((x: NewImageItem) => x.imageId).filter((id: number | null): id is number => id != null);
       const imageIds = [...existingIds, ...newIds].slice(0, MAX_IMAGES).map(Number);
-      await api.patch(`/posts/${postId}`, {
+      const hashtags = parseHashtagsInput(hashtagsInput);
+      const body: Record<string, unknown> = {
         title: titleTrim,
         content: contentTrim,
         imageIds,
-      });
+        categoryId,
+        hashtags,
+      };
+      if (postVersion != null) {
+        body.version = postVersion;
+      }
+      await api.patch(`/posts/${postId}`, body);
       onSuccess();
     } catch (err: unknown) {
-      const code = (err as { code?: string; message?: string })?.code ?? (err as Error)?.message;
+      const e = err as { code?: string; message?: string; status?: number };
+      const status = e?.status;
+      const code = e?.code ?? e?.message;
+      if (status === 409 || code === 'CONFLICT') {
+        set({
+          formError: '다른 사용자가 이미 글을 수정했습니다. 최신 데이터를 확인해주세요.',
+        });
+        return;
+      }
       set({ formError: getApiErrorMessage(String(code), '게시글 수정에 실패했습니다.') });
     } finally {
       set({ submitting: false });
