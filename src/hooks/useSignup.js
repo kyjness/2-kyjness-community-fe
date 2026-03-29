@@ -147,7 +147,7 @@ export function useSignup() {
           if (id == null || token == null || String(token).trim() === '') {
             throw new Error('SIGNUP_IMAGE_TOKEN_INVALID');
           }
-          profileImageId = Number(id);
+          profileImageId = String(id);
           signupToken = String(token).trim();
         }
 

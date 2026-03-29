@@ -25,7 +25,7 @@ export type SignupImageUploadData = Schemas["SignupImageUploadData"];
 
 /** 기존 이미지 1건 (서버 FileInfo에서 매핑; UI는 imageId·fileUrl만 사용) */
 export interface ExistingImageItem {
-  imageId: number;
+  imageId: string;
   fileUrl: string;
 }
 
@@ -33,7 +33,7 @@ export interface ExistingImageItem {
 export interface NewImageItem {
   file: File;
   objectUrl: string;
-  imageId: number | null;
+  imageId: string | null;
 }
 
 /** 검증 결과 (validatePostTitle, validatePostContent 등, 프론트 전용) */

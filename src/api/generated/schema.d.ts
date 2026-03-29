@@ -649,7 +649,7 @@ export interface components {
          * ApiCode
          * @enum {string}
          */
-        ApiCode: "OK" | "SIGNUP_SUCCESS" | "LOGIN_SUCCESS" | "LOGOUT_SUCCESS" | "AUTH_SUCCESS" | "EMAIL_ALREADY_EXISTS" | "NICKNAME_ALREADY_EXISTS" | "INVALID_CREDENTIALS" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "USER_RETRIEVED" | "USER_UPDATED" | "PASSWORD_UPDATED" | "USER_NOT_FOUND" | "BLOCKS_RETRIEVED" | "INTERNAL_SERVER_ERROR" | "POST_UPLOADED" | "POST_RETRIEVED" | "POSTS_RETRIEVED" | "POST_UPDATED" | "POST_DELETED" | "POST_VIEW_RECORDED" | "POST_NOT_FOUND" | "POST_FILE_LIMIT_EXCEEDED" | "LIKE_SUCCESS" | "LIKE_DELETED" | "LIKE_NOT_FOUND" | "ALREADY_LIKED" | "CONFLICT" | "FORBIDDEN" | "COMMENT_UPLOADED" | "COMMENT_UPDATED" | "COMMENTS_RETRIEVED" | "COMMENT_NOT_FOUND" | "INVALID_POSTID_FORMAT" | "INVALID_REQUEST" | "INVALID_REQUEST_BODY" | "MISSING_REQUIRED_FIELD" | "INVALID_FILE_FORMAT" | "INVALID_FILE_TYPE" | "IMAGE_NOT_FOUND" | "IMAGE_IN_USE" | "INVALID_IMAGE_FILE" | "FILE_SIZE_EXCEEDED" | "PAYLOAD_TOO_LARGE" | "IMAGE_UPLOADED" | "SIGNUP_IMAGE_TOKEN_INVALID" | "SIGNUP_IMAGE_TOKEN_ALREADY_USED" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "UNPROCESSABLE_ENTITY" | "RATE_LIMIT_EXCEEDED" | "LOGIN_RATE_LIMIT_EXCEEDED" | "CONSTRAINT_ERROR" | "DB_ERROR" | "HTTP_ERROR" | "REPORT_SUBMITTED" | "ALREADY_REPORTED";
+        ApiCode: "OK" | "SIGNUP_SUCCESS" | "LOGIN_SUCCESS" | "LOGOUT_SUCCESS" | "AUTH_SUCCESS" | "EMAIL_ALREADY_EXISTS" | "NICKNAME_ALREADY_EXISTS" | "INVALID_CREDENTIALS" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "USER_RETRIEVED" | "USER_UPDATED" | "PASSWORD_UPDATED" | "USER_NOT_FOUND" | "USER_WITHDRAWN" | "BLOCKS_RETRIEVED" | "INTERNAL_SERVER_ERROR" | "POST_UPLOADED" | "POST_RETRIEVED" | "POSTS_RETRIEVED" | "POST_UPDATED" | "POST_DELETED" | "POST_VIEW_RECORDED" | "POST_NOT_FOUND" | "POST_FILE_LIMIT_EXCEEDED" | "LIKE_SUCCESS" | "LIKE_DELETED" | "LIKE_NOT_FOUND" | "ALREADY_LIKED" | "CONFLICT" | "FORBIDDEN" | "COMMENT_UPLOADED" | "COMMENT_UPDATED" | "COMMENTS_RETRIEVED" | "COMMENT_NOT_FOUND" | "INVALID_POSTID_FORMAT" | "INVALID_REQUEST" | "INVALID_REQUEST_BODY" | "INVALID_PASSWORD_FORMAT" | "MISSING_REQUIRED_FIELD" | "INVALID_FILE_FORMAT" | "INVALID_FILE_TYPE" | "IMAGE_NOT_FOUND" | "IMAGE_IN_USE" | "INVALID_IMAGE_FILE" | "FILE_SIZE_EXCEEDED" | "PAYLOAD_TOO_LARGE" | "IMAGE_UPLOADED" | "SIGNUP_IMAGE_TOKEN_INVALID" | "SIGNUP_IMAGE_TOKEN_ALREADY_USED" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "UNPROCESSABLE_ENTITY" | "RATE_LIMIT_EXCEEDED" | "LOGIN_RATE_LIMIT_EXCEEDED" | "CONSTRAINT_ERROR" | "DB_ERROR" | "HTTP_ERROR" | "REPORT_SUBMITTED" | "ALREADY_REPORTED";
         /** ApiResponse[AccessTokenData] */
         ApiResponse_AccessTokenData_: {
             /** Code */
@@ -990,11 +990,11 @@ export interface components {
         /** AuthorInfo */
         AuthorInfo: {
             /** Id */
-            id: number;
+            id: string;
             /** Nickname */
             nickname: string;
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /** Profileimageurl */
             profileimageurl?: string | null;
             representativedog?: components["schemas"]["RepresentativeDogInfo"] | null;
@@ -1022,7 +1022,7 @@ export interface components {
         /** BlockedUserItem */
         BlockedUserItem: {
             /** Id */
-            id: number;
+            id: string;
             /** Nickname */
             nickname: string;
             /** Profileimageurl */
@@ -1052,11 +1052,11 @@ export interface components {
         /** CommentAuthorInfo */
         CommentAuthorInfo: {
             /** Id */
-            id: number;
+            id: string;
             /** Nickname */
             nickname: string;
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /** Profileimageurl */
             profileimageurl?: string | null;
             representativedog?: components["schemas"]["RepresentativeDogInfo"] | null;
@@ -1064,15 +1064,15 @@ export interface components {
         /** CommentIdData */
         CommentIdData: {
             /** Id */
-            id: number;
+            id: string;
         };
         /** CommentResponse */
         CommentResponse: {
             /** Id */
-            id: number;
+            id: string;
             /** Content */
             content: string;
-            author: components["schemas"]["CommentAuthorInfo"];
+            author?: components["schemas"]["CommentAuthorInfo"] | null;
             /**
              * Createdat
              * Format: date-time
@@ -1084,9 +1084,9 @@ export interface components {
              */
             updatedat: string;
             /** Postid */
-            postid?: number | null;
+            postid?: string | null;
             /** Parentid */
-            parentid?: number | null;
+            parentid?: string | null;
             /**
              * Likecount
              * @default 0
@@ -1118,7 +1118,7 @@ export interface components {
              */
             content: string;
             /** Parentid */
-            parentid?: number | null;
+            parentid?: string | null;
         };
         /** CommentsPageData */
         CommentsPageData: {
@@ -1148,7 +1148,7 @@ export interface components {
         /** DogProfileResponse */
         DogProfileResponse: {
             /** Id */
-            id: number;
+            id: string;
             /** Name */
             name: string;
             /** Breed */
@@ -1160,7 +1160,7 @@ export interface components {
              */
             birthdate: string;
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /** Profileimageurl */
             profileimageurl?: string | null;
             /**
@@ -1175,7 +1175,7 @@ export interface components {
              * Id
              * @description 있으면 수정, 없으면 생성
              */
-            id?: number | null;
+            id?: string | null;
             /** Name */
             name: string;
             /** Breed */
@@ -1187,7 +1187,7 @@ export interface components {
              */
             birthdate: string;
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /**
              * Isrepresentative
              * @default false
@@ -1197,11 +1197,11 @@ export interface components {
         /** FileInfo */
         FileInfo: {
             /** Id */
-            id: number;
+            id: string;
             /** Fileurl */
             fileurl?: string | null;
             /** Imageid */
-            imageid?: number | null;
+            imageid?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1211,7 +1211,7 @@ export interface components {
         /** ImageUploadResponse */
         ImageUploadResponse: {
             /** Id */
-            id: number;
+            id: string;
             /**
              * Fileurl
              * @description 이미지 URL
@@ -1244,7 +1244,7 @@ export interface components {
         /** LoginSuccessData */
         LoginSuccessData: {
             /** Id */
-            id: number;
+            id: string;
             /** Email */
             email: string;
             /** Nickname */
@@ -1252,7 +1252,7 @@ export interface components {
             /** @default ACTIVE */
             status: components["schemas"]["UserStatus"];
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /** Profileimageurl */
             profileimageurl?: string | null;
             /** Accesstoken */
@@ -1303,7 +1303,7 @@ export interface components {
             /** Content */
             content: string;
             /** Imageids */
-            imageids?: number[] | null;
+            imageids?: string[] | null;
             /** Categoryid */
             categoryid?: number | null;
             /** Hashtags */
@@ -1312,12 +1312,12 @@ export interface components {
         /** PostIdData */
         PostIdData: {
             /** Id */
-            id: number;
+            id: string;
         };
         /** PostResponse */
         PostResponse: {
             /** Id */
-            id: number;
+            id: string;
             /** Title */
             title: string;
             /** Content */
@@ -1342,7 +1342,7 @@ export interface components {
              * @default false
              */
             isliked: boolean;
-            author: components["schemas"]["AuthorInfo"];
+            author?: components["schemas"]["AuthorInfo"] | null;
             /** Files */
             files?: components["schemas"]["FileInfo"][];
             /** Categoryid */
@@ -1350,15 +1350,15 @@ export interface components {
             /** Hashtags */
             hashtags?: string[];
             /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /**
              * Createdat
              * Format: date-time
              */
             createdat: string;
-            /**
-             * Version
-             * @description 낙관적 락용 게시글 버전(백엔드가 노출할 때만 존재)
-             */
-            version?: number | null;
         };
         /** PostUpdateRequest */
         PostUpdateRequest: {
@@ -1367,14 +1367,14 @@ export interface components {
             /** Content */
             content?: string | null;
             /** Imageids */
-            imageids?: number[] | null;
+            imageids?: string[] | null;
             /** Categoryid */
             categoryid?: number | null;
             /** Hashtags */
             hashtags?: string[] | null;
             /**
              * Version
-             * @description 수정 시 클라이언트가 마지막으로 조회한 버전(백엔드가 요구·검증할 때)
+             * @description 낙관적 락: 직전 GET 응답의 version과 일치해야 수정 성공
              */
             version?: number | null;
         };
@@ -1384,9 +1384,9 @@ export interface components {
             targettype: components["schemas"]["TargetType"];
             /**
              * Targetid
-             * @description 대상 ID (게시글 또는 댓글 PK)
+             * @description 대상 ID (게시글 또는 댓글 ULID)
              */
-            targetid: number;
+            targetid: string;
             /** @description 신고 사유 (스팸|욕설|부적절한 콘텐츠|기타) */
             reason: components["schemas"]["ReportReason"];
         };
@@ -1412,7 +1412,7 @@ export interface components {
         /** ReportedPostAuthorInfo */
         ReportedPostAuthorInfo: {
             /** Id */
-            id: number;
+            id: string;
             /** Nickname */
             nickname: string;
             /** Profileimageurl */
@@ -1425,9 +1425,9 @@ export interface components {
             /** Targettype */
             targettype: string;
             /** Id */
-            id: number;
+            id: string;
             /** Postid */
-            postid: number;
+            postid: string;
             /** Title */
             title: string;
             /**
@@ -1436,7 +1436,7 @@ export interface components {
              */
             contentpreview: string;
             /** Userid */
-            userid: number;
+            userid: string;
             author?: components["schemas"]["ReportedPostAuthorInfo"] | null;
             /** Authorstatus */
             authorstatus?: string | null;
@@ -1506,9 +1506,9 @@ export interface components {
         SetRepresentativeDogRequest: {
             /**
              * Dogid
-             * @description 대표로 지정할 강아지 ID
+             * @description 대표로 지정할 강아지 ID (ULID)
              */
-            dogid: number;
+            dogid: string;
         };
         /** SignUpRequest */
         SignUpRequest: {
@@ -1529,7 +1529,7 @@ export interface components {
              */
             nickname: string;
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /**
              * Signuptoken
              * @description 업로드 토큰 (Redis Upload Token)
@@ -1539,7 +1539,7 @@ export interface components {
         /** SignupImageUploadData */
         SignupImageUploadData: {
             /** Id */
-            id: number;
+            id: string;
             /**
              * Fileurl
              * @description 이미지 URL
@@ -1593,7 +1593,7 @@ export interface components {
              * Profileimageid
              * @description null이면 프로필 이미지 제거
              */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /**
              * Clearprofileimage
              * @description 프로필 이미지 강제 삭제 플래그 (camelCase: clearProfileImage)
@@ -1609,7 +1609,7 @@ export interface components {
         /** UserProfileResponse */
         UserProfileResponse: {
             /** Id */
-            id: number;
+            id: string;
             /** Email */
             email: string;
             /** Nickname */
@@ -1623,7 +1623,7 @@ export interface components {
             /** @description ACTIVE|SUSPENDED|WITHDRAWN */
             status: components["schemas"]["UserStatus"];
             /** Profileimageid */
-            profileimageid?: number | null;
+            profileimageid?: string | null;
             /** Profileimageurl */
             profileimageurl?: string | null;
             /**
@@ -1994,7 +1994,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                target_user_id: number;
+                target_user_id: string;
             };
             cookie?: never;
         };
@@ -2131,8 +2131,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 이미지 ID */
-                image_id: number;
+                /** @description 이미지 ULID */
+                image_id: string;
             };
             cookie?: never;
         };
@@ -2167,6 +2167,8 @@ export interface operations {
                 q?: string | null;
                 /** @description 정렬: latest|popular|views|oldest */
                 sort?: string | null;
+                /** @description 카테고리 ID 필터 */
+                category_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -2234,8 +2236,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2266,8 +2268,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2298,8 +2300,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2330,8 +2332,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2373,8 +2375,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2405,8 +2407,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2441,10 +2443,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
-                /** @description 댓글 ID */
-                comment_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
+                /** @description 댓글 ULID */
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -2473,10 +2475,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
-                /** @description 댓글 ID */
-                comment_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
+                /** @description 댓글 ULID */
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -2511,8 +2513,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2543,8 +2545,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ID */
-                post_id: number;
+                /** @description 게시글 ULID */
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2575,8 +2577,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 댓글 ID */
-                comment_id: number;
+                /** @description 댓글 ULID */
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -2607,8 +2609,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 댓글 ID */
-                comment_id: number;
+                /** @description 댓글 ULID */
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -2724,7 +2726,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                post_id: number;
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2755,7 +2757,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                post_id: number;
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2786,7 +2788,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                user_id: number;
+                user_id: string;
             };
             cookie?: never;
         };
@@ -2817,7 +2819,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                user_id: number;
+                user_id: string;
             };
             cookie?: never;
         };
@@ -2848,7 +2850,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                post_id: number;
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2879,7 +2881,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                post_id: number;
+                post_id: string;
             };
             cookie?: never;
         };
@@ -2910,7 +2912,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                comment_id: number;
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -2941,7 +2943,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                comment_id: number;
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -2972,7 +2974,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                comment_id: number;
+                comment_id: string;
             };
             cookie?: never;
         };
@@ -3003,8 +3005,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                post_id: number;
-                comment_id: number;
+                post_id: string;
+                comment_id: string;
             };
             cookie?: never;
         };

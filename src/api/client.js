@@ -46,6 +46,8 @@ export function setUnauthorizedHandler(fn) {
 
 let isRefreshing = false;
 let refreshSubscribers = [];
+let refreshAttemptPromise = null;
+const MAX_REFRESH_RETRY = 1;
 
 function subscribeTokenRefresh(cb) {
   refreshSubscribers.push(cb);
@@ -59,6 +61,31 @@ function onRefreshed(newToken) {
 function onRefreshFailed() {
   refreshSubscribers.forEach((cb) => cb(null));
   refreshSubscribers = [];
+}
+
+function waitForTokenFromRefresh(timeoutMs = 1500) {
+  return new Promise((resolve) => {
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      resolve(getAccessToken());
+    }, timeoutMs);
+    subscribeTokenRefresh((newToken) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(newToken ?? getAccessToken());
+    });
+  });
+}
+
+async function requestRefreshToken() {
+  const res = await axios.post(`${BASE_URL}${REFRESH_ENDPOINT}`, null, {
+    withCredentials: true,
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return res?.data?.data?.accessToken ?? res?.data?.accessToken ?? null;
 }
 
 function clearUserAndRedirect() {
@@ -153,6 +180,7 @@ instance.interceptors.response.use(
     const url = originalRequest?.url ?? originalRequest?.baseURL ?? '';
     const status = error.response?.status;
     const body = error.response?.data;
+    const refreshTry = Number(originalRequest?._refreshRetry || 0);
 
     if (status !== 401) {
       const err = new Error(
@@ -182,12 +210,13 @@ instance.interceptors.response.use(
       if (!isRefreshing) {
         isRefreshing = true;
         originalRequest._retry = true;
+        originalRequest._refreshRetry = refreshTry;
         try {
-          const res = await axios.post(`${BASE_URL}${REFRESH_ENDPOINT}`, null, {
-            withCredentials: true,
-            headers: { 'Content-Type': 'application/json' },
-          });
-          const newToken = res?.data?.data?.accessToken ?? res?.data?.accessToken;
+          refreshAttemptPromise = requestRefreshToken();
+          let newToken = await refreshAttemptPromise;
+          if (!newToken && getAccessToken()) {
+            newToken = getAccessToken();
+          }
           if (newToken) {
             setAccessToken(newToken);
             onRefreshed(newToken);
@@ -195,15 +224,33 @@ instance.interceptors.response.use(
             return instance(originalRequest);
           }
         } catch (refreshErr) {
+          const refreshStatus = refreshErr?.response?.status;
+          const canRetry409 = refreshStatus === 409 && refreshTry < MAX_REFRESH_RETRY;
+          if (canRetry409) {
+            // 다른 요청(선행 refresh) 완료를 잠시 대기한 뒤 원요청을 1회 재시도.
+            const waitedToken = await waitForTokenFromRefresh();
+            const tokenAfterWait = waitedToken || getAccessToken();
+            if (tokenAfterWait) {
+              setAccessToken(tokenAfterWait);
+              onRefreshed(tokenAfterWait);
+              originalRequest._refreshRetry = refreshTry + 1;
+              originalRequest.headers.Authorization = `Bearer ${tokenAfterWait}`;
+              return instance(originalRequest);
+            }
+          }
           onRefreshFailed();
           clearUserAndRedirect();
           const err = new Error(
             refreshErr?.response?.data?.code ?? (body?.code ?? 'UNAUTHORIZED')
           );
-          err.code = refreshErr?.response?.data?.code ?? body?.code ?? null;
-          err.status = 401;
+          err.code =
+            refreshErr?.response?.data?.code ??
+            body?.code ??
+            (refreshStatus === 409 ? 'CONFLICT' : null);
+          err.status = refreshStatus ?? 401;
           return Promise.reject(err);
         } finally {
+          refreshAttemptPromise = null;
           isRefreshing = false;
         }
       }

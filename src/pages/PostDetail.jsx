@@ -89,7 +89,7 @@ export function PostDetail() {
       ...prev,
       reportOpen: true,
       reportTargetType: 'POST',
-      reportTargetId: Number(postId),
+      reportTargetId: postId,
     }));
   }, [user, postId, redirectToLoginForReport, setModalState]);
 

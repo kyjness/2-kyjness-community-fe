@@ -2,7 +2,7 @@
 
 **PuppyTalk** 커뮤니티의 웹 프론트엔드입니다. React + Vite 기반 SPA로, 회원가입·게시글·댓글·좋아요·프로필·차단·관리자 기능을 제공합니다.
 
-- **백엔드**: [2-kyjness-community-be](https://github.com/kyjness/2-kyjness-community-be)
+- **백엔드**: [PuppyTalk Backend](https://github.com/kyjness/2-kyjness-community-be)
 - **인프라·배포**: [PuppyTalk Infra](https://github.com/kyjness/2-kyjness-community-infra)
 
 ---

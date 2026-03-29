@@ -89,6 +89,7 @@ export function usePostDetail(postId, user, navigate) {
   const [replyForm, setReplyForm] = useState({ content: '', submitting: false });
 
   const isLikingRef = useRef(false);
+  const pendingCommentLikeIdsRef = useRef(new Set());
 
   // 조회수는 GET /posts/{id} 한 번으로 처리(백엔드가 Redis NX + 증가 시 응답에 viewCount+1 반영).
   // POST /view 를 먼저 호출하면 Redis 키만 소비되고 GET 에서는 증가·낙관적 반영이 스킵되어,
@@ -288,6 +289,7 @@ export function usePostDetail(postId, user, navigate) {
   const handleCommentLike = useCallback(
     async (commentId) => {
       if (!postId || !commentId) return;
+      if (pendingCommentLikeIdsRef.current.has(commentId)) return;
       if (!user) {
         if (!window.confirm('로그인이 필요한 서비스입니다. 로그인하시겠습니까?')) return;
         sessionStorage.setItem('login_return_path', `/posts/${postId}`);
@@ -295,6 +297,7 @@ export function usePostDetail(postId, user, navigate) {
         return;
       }
       setMessage('');
+      pendingCommentLikeIdsRef.current.add(commentId);
       const comment = comments.find((c) => c.id === commentId);
       const isCurrentlyLiked = comment?.isLiked ?? false;
       setComments((prev) =>
@@ -347,6 +350,8 @@ export function usePostDetail(postId, user, navigate) {
         setMessage(
           getApiErrorMessage(err?.code ?? err?.message, '댓글 좋아요 처리에 실패했습니다.')
         );
+      } finally {
+        pendingCommentLikeIdsRef.current.delete(commentId);
       }
     },
     [postId, user, navigate, comments]

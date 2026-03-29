@@ -23,7 +23,7 @@ function toFormDog(d) {
     gender: d?.gender === 'female' ? 'female' : 'male',
     birthDate: (d?.birthDate ?? '').trim().slice(0, 10),
     isRepresentative: !!d?.isRepresentative,
-    ...(pid != null ? { profileImageId: Number(pid) } : {}),
+    ...(pid != null && pid !== '' ? { profileImageId: String(pid) } : {}),
   };
 }
 
@@ -33,7 +33,7 @@ function buildDogsPayload(dogsArray) {
     .filter((d) => d.name && d.breed && d.birthDate)
     .map((d, i, arr) => {
       const row = {
-        id: d.id != null ? Number(d.id) : undefined,
+        id: d.id != null && d.id !== '' ? String(d.id) : undefined,
         name: d.name,
         breed: d.breed,
         gender: d.gender,
@@ -41,7 +41,8 @@ function buildDogsPayload(dogsArray) {
         isRepresentative:
           arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
       };
-      if (d.profileImageId != null) row.profileImageId = Number(d.profileImageId);
+      if (d.profileImageId != null && d.profileImageId !== '')
+        row.profileImageId = String(d.profileImageId);
       return row;
     });
 }
@@ -156,7 +157,7 @@ export function useEditProfile() {
           payload.profileImageId = null;
           payload.clearProfileImage = true;
         } else if (profileImageId != null) {
-          payload.profileImageId = Number(profileImageId);
+          payload.profileImageId = String(profileImageId);
         }
         payload.dogs = buildDogsPayload(user?.dogs);
 

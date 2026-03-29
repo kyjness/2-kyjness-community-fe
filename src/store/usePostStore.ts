@@ -34,7 +34,7 @@ export interface PostEditState {
   submitting: boolean;
   /** 초기 기존 이미지 적용 여부 (한 번만 적용) */
   _initialApplied: boolean;
-  existingIds: number[];
+  existingIds: string[];
   existingUrls: ExistingImageItem[];
   newImages: NewImageItem[];
 }
@@ -97,18 +97,27 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
       let postVersion: number | null = null;
       const ver = raw.version;
       if (typeof ver === 'number' && Number.isFinite(ver)) postVersion = ver;
-      else if (ver != null && ver !== '') {
+      else if (ver != null) {
         const n = Number(ver);
         if (Number.isFinite(n)) postVersion = n;
       }
       const files: FileInfo[] = data.files ?? [];
-      const ids = files.map((f) => f.imageId ?? f.id).filter((id): id is number => id != null);
+      const fileRow = (f: FileInfo) => {
+        const fr = f as FileInfo & { imageId?: string; fileUrl?: string };
+        const iid = fr.imageId ?? fr.imageid ?? fr.id;
+        const url = fr.fileUrl ?? fr.fileurl ?? '';
+        return { iid, url };
+      };
+      const ids = files
+        .map(fileRow)
+        .map(({ iid }) => iid)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0);
       const urls: ExistingImageItem[] = files
-        .filter((f): f is FileInfo & { imageId: number; fileUrl: string } =>
-          (f.imageId ?? f.id) != null && (f.fileUrl ?? '').length > 0)
-        .map((f) => ({
-          imageId: (f.imageId ?? f.id) as number,
-          fileUrl: f.fileUrl ?? '',
+        .map(fileRow)
+        .filter(({ iid, url }) => Boolean(iid) && url.length > 0)
+        .map(({ iid, url }) => ({
+          imageId: iid as string,
+          fileUrl: url,
         }));
       set({
         title: data.title ?? '',
@@ -149,7 +158,8 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
     const { existingUrls, existingIds } = get();
     const item = existingUrls[index];
     const nextUrls = existingUrls.filter((_: ExistingImageItem, i: number) => i !== index);
-    const nextIds = item?.imageId != null ? existingIds.filter((id: number) => id !== item.imageId) : existingIds;
+    const nextIds =
+      item?.imageId != null ? existingIds.filter((id: string) => id !== item.imageId) : existingIds;
     set({ existingUrls: nextUrls, existingIds: nextIds });
   },
 
@@ -197,8 +207,10 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
     set({ submitting: true, formError: '' });
     try {
       const uploaded = await uploadNewImages();
-      const newIds = uploaded.map((x: NewImageItem) => x.imageId).filter((id: number | null): id is number => id != null);
-      const imageIds = [...existingIds, ...newIds].slice(0, MAX_IMAGES).map(Number);
+      const newIds = uploaded
+        .map((x: NewImageItem) => x.imageId)
+        .filter((id: string | null): id is string => id != null && id.length > 0);
+      const imageIds = [...existingIds, ...newIds].slice(0, MAX_IMAGES);
       const hashtags = parseHashtagsInput(hashtagsInput);
       const body: Record<string, unknown> = {
         title: titleTrim,

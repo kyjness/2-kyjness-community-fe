@@ -25,7 +25,7 @@ function toFormDog(d) {
     gender: d?.gender === 'female' ? 'female' : 'male',
     birthDate: (d?.birthDate ?? '').trim().slice(0, 10),
     isRepresentative: !!d?.isRepresentative,
-    ...(pid != null ? { profileImageId: Number(pid) } : {}),
+    ...(pid != null && pid !== '' ? { profileImageId: String(pid) } : {}),
   };
 }
 
@@ -119,6 +119,7 @@ export function useDogManagement() {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+      if (submitting) return;
       setFormError('');
       if (!dogsChanged) {
         setFormError('변경된 내용이 없습니다.');
@@ -129,7 +130,7 @@ export function useDogManagement() {
         .filter((d) => d.name.trim() && d.breed.trim() && d.birthDate.trim())
         .map((d, i, arr) => {
           const row = {
-            id: d.id != null ? Number(d.id) : undefined,
+            id: d.id != null && d.id !== '' ? String(d.id) : undefined,
             name: d.name.trim(),
             breed: d.breed.trim(),
             gender: d.gender,
@@ -137,7 +138,8 @@ export function useDogManagement() {
             isRepresentative:
               arr.filter((x) => x.isRepresentative).length > 0 ? !!d.isRepresentative : i === 0,
           };
-          if (d.profileImageId != null) row.profileImageId = Number(d.profileImageId);
+          if (d.profileImageId != null && d.profileImageId !== '')
+            row.profileImageId = String(d.profileImageId);
           return row;
         });
 
@@ -176,17 +178,18 @@ export function useDogManagement() {
         alert('반려견 정보가 저장되었습니다.');
         setFormError('');
       } catch (err) {
-        setFormError(
-          getApiErrorMessage(
-            err?.code ?? err?.message,
-            '반려견 정보 저장에 실패했습니다. 다시 시도해주세요.'
-          )
-        );
+        const code = err?.code ?? err?.message;
+        const status = err?.status;
+        if (status === 403 || code === 'FORBIDDEN') {
+          setFormError('유효하지 않은 반려견 정보가 포함되어 저장할 수 없습니다.');
+          return;
+        }
+        setFormError(getApiErrorMessage(code, '반려견 정보 저장에 실패했습니다. 다시 시도해주세요.'));
       } finally {
         setSubmitting(false);
       }
     },
-    [user, dogs, dogsChanged, setUser]
+    [user, dogs, dogsChanged, setUser, submitting]
   );
 
   return {
