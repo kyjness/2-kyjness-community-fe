@@ -204,6 +204,34 @@
   margin: 0;
 }
 
+.comment-item-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-item-content--clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.comment-item-readmore-btn {
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: #6b7280; /* gray-500 */
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.comment-item-readmore-btn:hover {
+  color: #374151; /* gray-700 */
+}
+
 .comment-item-content-row .comment-item-content {
   flex: 1;
   min-width: 0;
@@ -296,7 +324,7 @@
 /* 수정/삭제 또는 ...: absolute로 헤더 높이에 포함되지 않게 해서 닉네임–내용 간격 제거 */
 .comment-item-actions {
   position: absolute;
-  top: -9px;
+  top: -3px;
   right: 0;
   display: flex;
   flex-direction: row;
@@ -304,15 +332,6 @@
   gap: 8px;
   flex-shrink: 0;
 }
-
-/* 내 댓글: 게시글과 동일한 수정·삭제 버튼 */
-.comment-item-my-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* .comment-item-action-btn 스타일은 .detail-action-btn와 통일 */
 
 /* ... 버튼 트리거 */
 .comment-item-menu-trigger {
@@ -323,7 +342,7 @@
   height: 32px;
   padding: 0;
   position: relative;
-  top: 0;
+  top: -9px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -349,7 +368,7 @@
   position: absolute;
   right: 0;
   top: 100%;
-  margin-top: 0;
+  margin-top: -14px;
   min-width: 88px;
   padding: 6px;
   list-style: none;
@@ -365,6 +384,11 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 200;
+}
+
+/* 게시글 상세의 ... 메뉴는 댓글보다 살짝 아래로 */
+.comment-item-menu.post-detail-menu {
+  margin-top: -1px;
 }
 
 .comment-item-menu li {
@@ -416,50 +440,6 @@
   visibility: hidden;
 }
 
-.comment-item-like {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: 24px;
-}
-
-.comment-item-like button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  cursor: pointer;
-  color: #94a3b8;
-  transition: color 0.15s, background-color 0.15s;
-}
-
-.comment-item-like button:hover {
-  color: #f43f5e;
-  background-color: #fff1f2;
-}
-
-.comment-item-like button.is-liked {
-  color: #f43f5e;
-}
-
-.comment-item-like span {
-  font-size: 11px;
-  line-height: 1;
-  color: #64748b;
-  text-align: center;
-  display: block;
-  min-width: 1ch;
-}
-
-.comment-item-like button svg {
-  display: block;
-}
-
 .comment-item-edited {
   color: #94a3b8;
   font-size: 12px;
@@ -470,6 +450,27 @@
   padding-left: 0;
   margin-left: -40px;
   overflow: visible;
+}
+
+.comment-replies-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  margin-left: 35px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7c3aed; /* purple-600 */
+  cursor: pointer;
+  transition: color 0.15s ease-in-out;
+}
+
+.comment-replies-toggle:hover {
+  color: #6d28d9; /* purple-700/800 */
 }
 
 .comment-edit-form {
@@ -490,32 +491,7 @@
 }
 
 .comment-edit-form .comment-edit-actions {
-  display: flex;
-  gap: 8px;
   margin-top: 8px;
-}
-
-.comment-edit-form .comment-edit-actions button {
-  /* 게시글/댓글 수정·삭제 버튼과 동일 */
-  min-width: auto;
-  height: auto;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  font-size: 11px;
-  font-family: 'Pretendard', sans-serif;
-  color: #333;
-  cursor: pointer;
-  text-decoration: none;
-  transition: color 0.15s;
-}
-
-.comment-edit-form .comment-edit-actions button:hover {
-  background-color: transparent;
-  border-color: transparent;
-  text-decoration: none;
-  color: #111;
 }
 
 .comment-sort-tabs {

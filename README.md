@@ -25,36 +25,36 @@
 
 ```
 2-kyjness-community-fe/
-├── index.html              # SPA 엔트리 (root, Pretendard·Lottie CDN)
-├── img/                    # 정적 파일 (Vite publicDir: 'img')
-│   ├── anim1.json, anim2.json, anim3.json   # 스플래시 Lottie
-│   └── imt.png             # 기본 프로필 이미지
-├── legacy-vanilla-js/      # 과거 바닐라 JS 구현체 (참고용)
+├── index.html                           # SPA 엔트리 (root, Pretendard·Lottie CDN)
+├── img/                                 # 정적 파일 (Vite publicDir: 'img')
+│   ├── anim1.json, anim2.json, anim3.json  # 스플래시 Lottie
+│   └── imt.png                          # 기본 프로필 이미지
+├── legacy-vanilla-js/                   # 과거 바닐라 JS 구현체 (참고용)
+├── scripts/                             # OpenAPI 스펙 fetch / 타입 생성 스크립트
+├── openapi.json                         # (로컬 생성) 백엔드 OpenAPI 스펙 캐시
 ├── src/
-│   ├── main.jsx            # 진입점, createRoot → App
-│   ├── App.jsx             # 스플래시 후 BrowserRouter + AuthProvider + Router
-│   ├── Router.jsx          # Routes, ProtectedRoute, 401 처리
-│   ├── config.js           # BASE_URL, DEFAULT_PROFILE_IMAGE, SPLASH_ITEMS
-│   ├── index.css           # Tailwind 진입
-│   ├── css/base.css        # 공통 스타일
-│   ├── api/
-│   │   ├── client.js       # Axios 인스턴스, Silent Refresh, Bearer
-│   │   ├── api-types.ts    # ApiResponse, 스키마 단축 타입, NewImageItem 등
-│   │   └── generated/schema.d.ts   # OpenAPI 기반 자동 생성 타입 (SSOT)
-│   ├── context/AuthContext.jsx     # 인증 상태(Auth) 전역 컨텍스트 (localStorage 복원, setUser/clearUser)
-│   ├── hooks/              # useLogin, useSignup, usePostList, useNewPost, usePostDetail,
-│   │                       # usePostImages, useEditProfile, useDogManagement, useChangePassword
-│   ├── pages/              # Login, Signup, PostList, PostDetail, NewPost, EditPost,
-│   │                       # MyPage, AdminDashboard, NotFound
-│   ├── components/        # Header, SplashScreen, ProtectedRoute, PostCard, DogProfileBanner,
-│   │                       # Login/, Signup/, ChangePassword/, NewPost/, PostDetail/, PostList/,
-│   │                       # EditPost/, EditProfile/, MyPage/(BlockManagement, DogManagement, ProfileEdit, PasswordEdit)
-│   ├── store/usePostStore.ts       # 게시글 수정(EditPost) 전용 Zustand 스토어 (로드/검증/이미지/submit)
-│   ├── scripts/                    # OpenAPI → schema.d.ts 생성 스크립트 (fetch-openapi, generate)
-│   └── utils/index.js              # 공통 유틸 (XSS escape, 날짜 포맷, 에러 메시지, 검증 등)
-├── vite.config.js          # React, Tailwind, proxy: /api → 8000, /upload → 8000
-├── package.json            # 프론트 의존성/스크립트 (dev, build, lint, openapi 생성)
-└── README.md               # 사용 방법·구조·API 연동 문서
+│   ├── main.jsx                         # 진입점, createRoot → App
+│   ├── App.jsx                          # 스플래시 후 BrowserRouter + AuthProvider + Router
+│   ├── Router.jsx                       # Routes, ProtectedRoute, 401 처리
+│   ├── config.js                        # BASE_URL, DEFAULT_PROFILE_IMAGE, SPLASH_ITEMS
+│   ├── index.css                        # Tailwind 엔트리
+│   ├── css/                             # 페이지/기능별 CSS (legacy 포함)
+│   │   └── base.css                     # 공통 스타일
+│   ├── api/                             # API 클라이언트 + 타입(SSOT)
+│   │   ├── client.js                    # Axios 인스턴스, Silent Refresh, Bearer, credentials
+│   │   ├── api-types.ts                 # ApiResponse 등 공용 타입 re-export
+│   │   └── generated/schema.d.ts        # OpenAPI 기반 자동 생성 타입 (SSOT)
+│   ├── context/                         # 전역 컨텍스트
+│   │   └── AuthContext.jsx              # 인증 상태(Auth) 컨텍스트 (복원/갱신/클리어)
+│   ├── hooks/                           # 도메인별 API 훅 (login/signup/posts/profile/admin 등)
+│   ├── pages/                           # 라우트 단위 페이지 컴포넌트
+│   ├── components/                      # 재사용 UI/기능 컴포넌트 (페이지 하위 포함)
+│   ├── store/                           # 상태 저장소
+│   │   └── usePostStore.ts              # EditPost 전용 Zustand 스토어 (로드/검증/이미지/submit)
+│   └── utils/                           # 공통 유틸 (XSS escape, 날짜 포맷, 에러 메시지, 검증 등)
+├── vite.config.js                       # dev proxy: /api → 8000, /upload → 8000
+├── package.json                         # 스크립트(dev/build/lint/openapi) 및 의존성
+└── README.md                            # 사용 방법·구조·API 연동 문서
 ```
 ---
 
@@ -81,7 +81,7 @@ npm install
 npm run dev
 ```
 
-- 브라우저 **http://localhost:5173** 접속.
+- 브라우저 `http://localhost:5173` 접속.
 - 개발 시 `/api`, `/upload` 는 Vite 프록시로 `http://localhost:8000` 에 전달됨.
 
 ### 4. 기타 스크립트
@@ -114,7 +114,7 @@ npm run generate-api
 - **Prefix**: `config.js` 의 `BASE_URL` 은 개발 시 `/api/v1` (프록시로 8000 의 `/v1` 전달). 배포 시 `VITE_API_BASE_URL` 로 오버라이드.
 - **인증**: Access Token(Authorization Bearer), Refresh Token(HttpOnly 쿠키). 401 시 `api/client.js` 에서 refresh 후 재시도.
 - **응답**: `{ code, data, message }`. 목록은 `data.items`, 단일은 `data` 로 사용 (백엔드 PaginatedResponse·BlocksData 등과 일치).
-- **문서**: 백엔드 서버 실행 후 Swagger `http://localhost:8000/docs`, ReDoc `http://localhost:8000/redoc`.
+- **문서**: 백엔드 서버 실행 후 Swagger `http://localhost:8000/v1/docs`, ReDoc `http://localhost:8000/v1/redoc`.
 
 ---
 
@@ -131,3 +131,13 @@ npm run generate-api
 
 - **API 주소**: 빌드 시 `VITE_API_BASE_URL` 로 실제 API 베이스 URL 지정 (예: `https://api.example.com/v1`).
 - **정적 파일**: `img/` 가 publicDir 이므로 `/imt.png`, `/anim1.json` 등으로 접근 가능.
+
+---
+
+## 확장 전략 (SEO·SSR/SSG 전환 계획)
+
+현재 프론트는 React + Vite 기반 **SPA(CSR)** 로 구성되어 있습니다. 추후 **검색 유입(SEO)** 과 **초기 로딩 성능** 개선이 필요한 일부 페이지는 **Next.js 기반으로 단계적 전환**할 계획입니다.
+
+- **대상(예시)**: 게시글 목록/상세, 공개 프로필 등 검색 노출 가치가 큰 공개 페이지
+- **전환 방식**: 페이지 성격에 따라 SSR 또는 SSG/ISR 적용 (나머지 기능성 페이지는 CSR 유지)
+- **마이그레이션 방향**: API 계약(OpenAPI 기반 타입, `ApiResponse` 형태)은 유지하고, 라우팅/렌더링 레이어만 점진적으로 분리·대체

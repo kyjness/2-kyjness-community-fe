@@ -10,7 +10,7 @@ export function ProfileImageSection({
 }) {
   return (
     <div className="form-group mb-6">
-      <label className="form-label">프로필 사진*</label>
+      <label className="form-label">프로필 사진</label>
       <div className="flex flex-col items-start gap-2.5 mb-6">
         <div
           className="w-[149px] aspect-square rounded-full bg-gray-800/55 relative flex items-center justify-center overflow-hidden shadow-md cursor-default"

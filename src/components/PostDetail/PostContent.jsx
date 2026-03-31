@@ -1,4 +1,3 @@
-// 게시글 상세 카드: 제목·메타·이미지·본문·통계·메시지.
 import { useState } from 'react';
 import { MoreHorizontal, UserX, AlertTriangle } from 'lucide-react';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
@@ -43,7 +42,7 @@ export function PostContent({
     <section className="w-full">
       <div className="post-detail-category-row flex flex-wrap items-center gap-2">
         <span
-          className="inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs font-semibold text-violet-800 ring-1 ring-inset ring-violet-200"
+          className="post-category-chip inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs leading-[1.2] font-semibold text-violet-800 ring-1 ring-inset ring-violet-200"
           title="카테고리"
         >
           {escapeHtml(categoryLabel)}
@@ -97,22 +96,22 @@ export function PostContent({
         {(post?.isMine || showPostReport) && (
           <div className="post-detail-author-actions flex items-center gap-2">
             {post?.isMine && (
-              <>
+              <div className="action-link-group">
                 <button
                   type="button"
-                  className="detail-action-btn"
+                  className="action-link-btn"
                   onClick={() => onEdit(`/posts/${postId}/edit`)}
                 >
                   수정
                 </button>
                 <button
                   type="button"
-                  className="detail-action-btn"
+                  className="action-link-btn"
                   onClick={onDeleteOpen}
                 >
                   삭제
                 </button>
-              </>
+              </div>
             )}
             {showPostReport && (
               <div className="relative">
@@ -133,7 +132,7 @@ export function PostContent({
                       aria-hidden="true"
                       onClick={() => setMenuOpen(false)}
                     />
-                    <ul className="comment-item-menu">
+                    <ul className="comment-item-menu post-detail-menu">
                       {showBlockInPostMenu ? (
                         <li>
                           <button
@@ -195,7 +194,7 @@ export function PostContent({
           {tagList.map((t, i) => (
             <span
               key={`${t}-${i}`}
-              className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-[13px] font-medium text-sky-800 ring-1 ring-sky-100"
+              className="post-tag-chip inline-flex items-center text-[13px] leading-[1.2] font-semibold text-sky-700"
             >
               #{escapeHtml(String(t))}
             </span>

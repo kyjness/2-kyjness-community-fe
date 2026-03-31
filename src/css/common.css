@@ -289,15 +289,6 @@
   margin-bottom: 16px;
 }
 
-.profile-group .label {
-  font-family: 'Pretendard';
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 100%;
-  letter-spacing: 0%;
-  color: #000000;
-}
-
 /* 회원가입 프로필 사진 원형 (크기 변경 가능) */
 .avatar-wrapper {
   width: 130px;
@@ -339,10 +330,6 @@
   border-radius: 50%;
   display: block;
   aspect-ratio: 1 / 1;
-}
-
-.avatar:not(.profile-edit-avatar) .profile-edit-avatar-change {
-  display: none !important;
 }
 
 .plus {
@@ -475,13 +462,6 @@
 }
 
 /* 구분선 (게시글/댓글 사이 등) */
-.divider {
-  height: 1px;
-  background-color: #D9D9D9;
-  width: 100%;
-  margin: 16px 0;
-  display: block;
-}
 /* 스켈레톤(공통): 초기 로딩용 pulse */
 @keyframes skeleton-pulse {
   0% {

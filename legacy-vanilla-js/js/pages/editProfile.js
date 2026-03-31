@@ -22,7 +22,7 @@ export function renderEditProfile() {
         <form id="form" class="form" novalidate>
           <!-- 1) 프로필 사진 -->
           <div class="form-group signup-profile-group">
-            <label class="form-label">프로필 사진*</label>
+            <label class="form-label">프로필 사진</label>
 
             <div class="avatar-wrapper">
               <div

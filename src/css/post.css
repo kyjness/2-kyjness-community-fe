@@ -1,31 +1,31 @@
-/* 상세 페이지 수정/삭제 버튼 그룹 */
-.detail-action-group {
-  display: flex;
-  gap: 8px;
-}
-
-.detail-action-btn,
-.comment-item-action-btn {
+.action-link-btn {
   min-width: auto;
   height: auto;
   padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 11px;
-  font-family: 'Pretendard', sans-serif;
+  font-size: 11.5px;
+  font-family: inherit;
+  font-weight: inherit;
   color: #333;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s;
 }
 
-.detail-action-btn:hover,
-.comment-item-action-btn:hover {
+.action-link-btn:hover {
   background-color: transparent;
   border-color: transparent;
   text-decoration: none;
   color: #111;
+}
+
+/* 수정/삭제, 저장/취소 등 액션 링크 버튼 그룹(공통) */
+.action-link-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 
@@ -76,6 +76,19 @@
   outline: 2px solid rgba(15, 23, 42, 0.45);
   outline-offset: 4px;
   border-radius: 10px;
+}
+
+/* 카테고리/해시태그 칩: 폰트가 큰 경우 위아래 잘림 방지 */
+.post-category-chip,
+.post-tag-chip {
+  line-height: 1.2;
+}
+
+/* 해시태그는 배경(원/칩) 없이 텍스트로만 노출 */
+.post-tag-chip {
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
 }
 
 /* 게시글 목록 검색(우측): 오른쪽 영역(sticky) */
@@ -183,237 +196,82 @@
   position: relative;
 }
 
-/* MyPage(mypage-layout)와 동일 컨셉: 좌측 메뉴 + 중앙 컨텐츠 + 우측 스페이서 */
-.postlist-layout {
-  width: 100%;
-  max-width: var(--content-max);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 1px;
-  gap: 18px;
-  align-items: start;
-  padding-top: 12px;
-}
-
-.postlist-nav-wrap {
-  display: none;
-}
-
-.postlist-nav {
-  position: sticky;
-  top: 80px;
-  border-radius: 18px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-  padding: 14px;
-}
-
-.postlist-nav-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 13px;
-  color: #0f172a;
-}
-
-.postlist-nav-items {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.postlist-nav-btn {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: #475569;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-  padding: 10px 12px;
-  border-radius: 14px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.postlist-nav-btn:hover {
-  background: rgba(148, 163, 184, 0.18);
-  color: #0f172a;
-  transform: translateY(-1px);
-}
-
-.postlist-nav-btn--active {
-  background: #0f172a;
-  color: #ffffff;
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.22);
-}
-
-.postlist-content {
-  min-width: 0;
-}
-
-.postlist-spacer {
-  display: none;
-}
-
-@media (min-width: 1024px) {
-  .postlist-nav-wrap {
-    display: block;
-  }
-  .postlist-spacer {
-    display: block;
-  }
-}
-
-.post-list-search-fixed {
-  position: fixed;
-  top: 72px;
-  right: 24px;
-  z-index: 100;
-}
-
-.sort-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 12px;
-  align-items: center;
-  margin-top: 18px;
-}
-
-.sort-text-btn {
-  padding: 6px 10px;
-  font-size: 14px;
-  border: none;
-  background: none;
-  color: #94a3b8;
-  cursor: pointer;
-  border-radius: 6px;
-}
-
-.sort-text-btn:hover {
-  color: #64748b;
-}
-
-.sort-text-btn.active {
-  font-weight: 700;
-  color: #1e293b;
-}
-
 .post-list-scroll-top-btn {
   position: fixed;
   right: 24px;
   bottom: 24px;
   z-index: 90;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  background: radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 255, 255, 0.9),
-      rgba(255, 255, 255, 0) 60%
-    ),
-    linear-gradient(135deg, #3b82f6, #7c3aed);
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.92) 0%,
+    rgba(129, 140, 248, 0.92) 45%,
+    rgba(168, 85, 247, 0.92) 100%
+  );
   color: #ffffff;
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  box-shadow:
-    0 18px 40px rgba(59, 130, 246, 0.28),
-    0 12px 22px rgba(124, 58, 237, 0.22),
-    0 4px 10px rgba(0, 0, 0, 0.18);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 12px 24px -6px rgba(138, 180, 255, 0.45);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease, border-color 0.18s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .post-list-fab {
   position: fixed;
   right: 24px;
   z-index: 95; /* scroll-top(90) 위에 */
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  background: radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 255, 255, 0.9),
-      rgba(255, 255, 255, 0) 60%
-    ),
-    linear-gradient(135deg, #f97316, #db2777);
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: linear-gradient(
+    135deg,
+    rgba(129, 140, 248, 0.95) 0%,
+    rgba(168, 85, 247, 0.95) 100%
+  );
   color: #ffffff;
   cursor: pointer;
-  box-shadow:
-    0 20px 44px rgba(249, 115, 22, 0.26),
-    0 14px 26px rgba(219, 39, 119, 0.22),
-    0 4px 10px rgba(0, 0, 0, 0.18);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 12px 24px -6px rgba(172, 160, 235, 0.5);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease, border-color 0.18s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .post-list-fab:hover {
-  transform: scale(1.05);
+  transform: scale(1.1);
   filter: saturate(1.08) brightness(1.02);
-  box-shadow:
-    0 18px 40px rgba(249, 115, 22, 0.24),
-    0 12px 22px rgba(219, 39, 119, 0.18),
-    0 4px 10px rgba(0, 0, 0, 0.12);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 14px 30px -6px rgba(172, 160, 235, 0.62);
 }
 
 .post-list-fab:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 .post-list-scroll-top-btn:hover {
-  transform: scale(1.05);
+  transform: scale(1.1);
   filter: saturate(1.08) brightness(1.02);
-  box-shadow:
-    0 16px 34px rgba(59, 130, 246, 0.22),
-    0 10px 18px rgba(99, 102, 241, 0.16),
-    0 4px 10px rgba(0, 0, 0, 0.12);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 14px 30px -6px rgba(138, 180, 255, 0.62);
 }
 
 .post-list-scroll-top-btn:active {
-  transform: scale(0.97);
-}
-
-.post-list-greeting {
-  font-size: 18px;
-  line-height: 140%;
-  color: #000;
-  margin-bottom: 28px;
-  text-align: center;
-}
-
-.post-list-greeting strong {
-  font-weight: 700;
-}
-
-.post-list-write-wrap {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.post-list-write-wrap.post-list-write-right {
-  display: flex;
-  justify-content: flex-end;
+  transform: scale(0.95);
 }
 
 .post-list-message {
@@ -515,26 +373,11 @@
   margin-bottom: 24px;
 }
 
-.post-list-search-input {
-  width: 200px;
-  padding: 8px 12px;
-  font-size: 14px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-sizing: border-box;
-  background: #fff;
-}
-
-.post-list-search-input:focus {
-  outline: none;
-  border-color: #333;
-}
-
 .post-card {
   width: 100%;
   background: #ffffff;
   border-radius: 16px;
-  padding: 20px 24px 10px 24px;
+  padding: 12px 20px 9px 20px;
   box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: transform 0.1s ease;
@@ -581,6 +424,11 @@
 .post-card-date {
   font-size: 13px;
   color: #777;
+}
+
+/* 게시글 카드 상단(카테고리/해시태그) 줄: 카드 패딩은 유지하고 칩만 살짝 왼쪽으로 */
+.post-card-chips-row {
+  margin-left: -6px;
 }
 
 /* 제목 아래 본문 첫 줄 미리보기, 길면 말줄임 */

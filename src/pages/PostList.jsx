@@ -137,7 +137,7 @@ export function PostList() {
             bottom: showScrollTop ? 84 : 24,
           }}
         >
-          <Pencil size={20} aria-hidden="true" />
+          <Pencil size={18} strokeWidth={2.2} color="#fff" aria-hidden="true" />
         </button>
         {showScrollTop && (
           <button

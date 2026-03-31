@@ -92,14 +92,14 @@ export function PostCard({ post, onClick }) {
       tabIndex={0}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2" aria-label="카테고리 및 해시태그">
-          <span className="inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs font-semibold text-violet-800">
+        <div className="post-card-chips-row flex min-w-0 flex-1 flex-wrap items-center gap-2" aria-label="카테고리 및 해시태그">
+          <span className="post-category-chip inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs leading-[1.2] font-semibold text-violet-800">
             {escapeHtml(categoryLabel)}
           </span>
           {tagList.map((t, i) => (
             <span
               key={`${postId}-tag-${i}`}
-              className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-xs font-medium text-sky-800"
+              className="post-tag-chip inline-flex items-center text-xs leading-[1.2] font-semibold text-sky-700"
             >
               #{escapeHtml(t)}
             </span>

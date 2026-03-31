@@ -72,18 +72,12 @@
   cursor: not-allowed;
 }
 
-.admin-action-btn--gray,
-.admin-action-btn--orange,
-.admin-action-btn--dark,
-.admin-action-btn--danger {
+.admin-action-btn--gray {
   background: transparent;
   color: #000;
 }
 
-.admin-action-btn--gray:hover:not(:disabled),
-.admin-action-btn--orange:hover:not(:disabled),
-.admin-action-btn--dark:hover:not(:disabled),
-.admin-action-btn--danger:hover:not(:disabled) {
+.admin-action-btn--gray:hover:not(:disabled) {
   background: transparent;
   color: #000;
 }

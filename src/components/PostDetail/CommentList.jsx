@@ -1,9 +1,57 @@
-// 댓글 목록·수정/삭제·답글·페이지네이션. 트리(대댓글 1-depth) 렌더링.
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Heart, MoreHorizontal, UserX, AlertTriangle } from 'lucide-react';
 import { escapeHtml, formatDateTime, calculateDogAge, formatDogGenderLabel } from '../../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
-function CommentItem({
+
+function didCommentChange(prevC, nextC) {
+  if (prevC === nextC) return false;
+  if (!prevC || !nextC) return true;
+  if (prevC.id !== nextC.id) return true;
+  // 핵심 렌더링 필드들만 비교 (불필요한 전체 객체 비교/깊은 비교 방지)
+  if ((prevC.content ?? '') !== (nextC.content ?? '')) return true;
+  if (prevC.isDeleted !== nextC.isDeleted) return true;
+  if (prevC.isEdited !== nextC.isEdited) return true;
+  if ((prevC.created_at ?? '') !== (nextC.created_at ?? '')) return true;
+  if ((prevC.updated_at ?? '') !== (nextC.updated_at ?? '')) return true;
+  if ((prevC.likeCount ?? 0) !== (nextC.likeCount ?? 0)) return true;
+  if ((prevC.isLiked ?? false) !== (nextC.isLiked ?? false)) return true;
+  if ((prevC.parentId ?? null) !== (nextC.parentId ?? null)) return true;
+  const prevRepliesLen = Array.isArray(prevC.replies) ? prevC.replies.length : 0;
+  const nextRepliesLen = Array.isArray(nextC.replies) ? nextC.replies.length : 0;
+  if (prevRepliesLen !== nextRepliesLen) return true;
+  return false;
+}
+
+function arePropsEqual(prev, next) {
+  // 해당 CommentItem의 데이터가 바뀌면 반드시 리렌더
+  if (didCommentChange(prev.c, next.c)) return false;
+
+  // 본인/타인 여부, 메뉴 노출 등에 영향
+  if ((prev.currentUserId ?? null) !== (next.currentUserId ?? null)) return false;
+
+  // 현재 댓글이 "답글 입력창 대상"이면 reply 관련 변화에 반응해야 함
+  const prevReplyTarget = prev.replyToCommentId === prev.c?.id;
+  const nextReplyTarget = next.replyToCommentId === next.c?.id;
+  if (prevReplyTarget !== nextReplyTarget) return false;
+  if (nextReplyTarget) {
+    // 이 댓글의 답글 입력 내용/로딩 상태 변화만 반영
+    if ((prev.replyForm?.content ?? '') !== (next.replyForm?.content ?? '')) return false;
+    if ((prev.replyForm?.submitting ?? false) !== (next.replyForm?.submitting ?? false)) return false;
+  }
+
+  // 현재 댓글이 "수정 중"이면 edit 관련 변화에 반응해야 함
+  const prevEditing = prev.commentEdit?.editingId === prev.c?.id;
+  const nextEditing = next.commentEdit?.editingId === next.c?.id;
+  if (prevEditing !== nextEditing) return false;
+  if (nextEditing) {
+    if ((prev.commentEdit?.content ?? '') !== (next.commentEdit?.content ?? '')) return false;
+  }
+
+  // 핸들러/세터 레퍼런스는 부모에서 안정화(useCallback)시키는 전제.
+  return true;
+}
+
+const CommentItem = React.memo(function CommentItem({
   c,
   currentUserId,
   commentEdit,
@@ -21,6 +69,10 @@ function CommentItem({
   depth = 0,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showMoreBtn, setShowMoreBtn] = useState(false);
+  const [showAllReplies, setShowAllReplies] = useState(false);
+  const contentRef = useRef(null);
   const replyTextareaRef = useRef(null);
   const editTextareaRef = useRef(null);
   const isReply = depth > 0;
@@ -48,9 +100,32 @@ function CommentItem({
     if (replyToCommentId === c.id) adjustReplyHeight();
   }, [replyToCommentId, c.id, replyForm.content, adjustReplyHeight]);
 
+  // 답글 입력창 열릴 때 즉시 포커스(체감 지연 감소)
+  useEffect(() => {
+    if (replyToCommentId !== c.id) return;
+    const raf = window.requestAnimationFrame(() => {
+      replyTextareaRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [replyToCommentId, c.id]);
+
   useEffect(() => {
     if (commentEdit.editingId === c.id) adjustEditHeight();
   }, [commentEdit.editingId, c.id, commentEdit.content, adjustEditHeight]);
+
+  // 3줄 초과 여부 측정(접힌 상태에서만): scrollHeight vs clientHeight
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (isExpanded) return;
+    const raf = window.requestAnimationFrame(() => {
+      const current = contentRef.current;
+      if (!current) return;
+      const overflow = current.scrollHeight > current.clientHeight + 1;
+      setShowMoreBtn(overflow);
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [c?.content, c?.isDeleted, isExpanded]);
 
   return (
     <article
@@ -96,17 +171,17 @@ function CommentItem({
           </div>
           <div className="comment-item-actions">
             {isMyComment && currentUserId != null ? (
-              <div className="comment-item-my-actions">
+              <div className="action-link-group">
                 <button
                   type="button"
-                  className="comment-item-action-btn"
+                  className="action-link-btn"
                   onClick={() => setCommentEdit({ editingId: c.id, content: c.content ?? '' })}
                 >
                   수정
                 </button>
                 <button
                   type="button"
-                  className="comment-item-action-btn"
+                  className="action-link-btn"
                   onClick={() => onDeleteOpen(c.id)}
                 >
                   삭제
@@ -189,12 +264,13 @@ function CommentItem({
                 adjustEditHeight();
               }}
             />
-            <div className="comment-edit-actions">
-              <button type="submit">
+            <div className="action-link-group comment-edit-actions">
+              <button type="submit" className="action-link-btn">
                 저장
               </button>
               <button
                 type="button"
+                className="action-link-btn"
                 onClick={() => setCommentEdit({ editingId: null, content: '' })}
               >
                 취소
@@ -204,9 +280,26 @@ function CommentItem({
         ) : (
           <div className="comment-item-content-block">
             <div className="comment-item-content-row">
-              <p className="comment-item-content">
-                {c.isDeleted ? '삭제된 댓글입니다.' : escapeHtml(c.content ?? '')}
-              </p>
+              <div className="comment-item-text-wrap">
+                <p
+                  ref={contentRef}
+                  className={[
+                    'comment-item-content',
+                    !isExpanded ? 'comment-item-content--clamp' : '',
+                  ].join(' ')}
+                >
+                  {c.isDeleted ? '삭제된 댓글입니다.' : escapeHtml(c.content ?? '')}
+                </p>
+                {showMoreBtn && !c.isDeleted && (
+                  <button
+                    type="button"
+                    className="comment-item-readmore-btn"
+                    onClick={() => setIsExpanded((v) => !v)}
+                  >
+                    {isExpanded ? '접기' : '더보기'}
+                  </button>
+                )}
+              </div>
               {!isReply && onCommentLike && !c.isDeleted && (
                 <div className="comment-item-like-col">
                   <div className="comment-item-like-icon">
@@ -282,7 +375,10 @@ function CommentItem({
         )}
         {Array.isArray(c.replies) && c.replies.length > 0 && (
           <div className="comment-replies">
-            {c.replies.map((r) => (
+            {(showAllReplies || c.replies.length <= 2
+              ? c.replies
+              : c.replies.slice(0, 2)
+            ).map((r) => (
               <CommentItem
                 key={r.id}
                 c={r}
@@ -302,12 +398,23 @@ function CommentItem({
                 depth={1}
               />
             ))}
+            {c.replies.length > 2 && (
+              <button
+                type="button"
+                className="comment-replies-toggle"
+                onClick={() => setShowAllReplies((v) => !v)}
+              >
+                {showAllReplies
+                  ? '―― 답글 숨기기'
+                  : `―― 답글 ${c.replies.length - 2}개 더보기`}
+              </button>
+            )}
           </div>
         )}
       </div>
     </article>
   );
-}
+}, arePropsEqual);
 
 const COMMENT_SORTS = [
   { value: 'popular', label: '인기순' },
@@ -336,6 +443,53 @@ export function CommentList({
   setReplyForm,
   onReplySubmit,
 }) {
+  // React.memo가 제대로 동작하도록 핸들러 레퍼런스 안정화
+  const handleEditSave = useCallback((...args) => onEditSave?.(...args), [onEditSave]);
+  const handleCommentLike = useCallback((...args) => onCommentLike?.(...args), [onCommentLike]);
+  const handleDeleteOpen = useCallback((...args) => onDeleteOpen?.(...args), [onDeleteOpen]);
+  const handleBlockUser = useCallback((...args) => onBlockUser?.(...args), [onBlockUser]);
+  const handleReportOpen = useCallback((...args) => onReportOpen?.(...args), [onReportOpen]);
+  const handleReplySubmit = useCallback((...args) => onReplySubmit?.(...args), [onReplySubmit]);
+
+  const renderedComments = useMemo(
+    () =>
+      comments.map((c) => (
+        <CommentItem
+          key={c.id}
+          c={c}
+          currentUserId={currentUserId}
+          commentEdit={commentEdit}
+          setCommentEdit={setCommentEdit}
+          onEditSave={handleEditSave}
+          onCommentLike={handleCommentLike}
+          onDeleteOpen={handleDeleteOpen}
+          onBlockUser={handleBlockUser}
+          onReportOpen={handleReportOpen}
+          replyToCommentId={replyToCommentId}
+          setReplyToCommentId={setReplyToCommentId}
+          replyForm={replyForm}
+          setReplyForm={setReplyForm}
+          onReplySubmit={handleReplySubmit}
+        />
+      )),
+    [
+      comments,
+      currentUserId,
+      commentEdit,
+      setCommentEdit,
+      handleEditSave,
+      handleCommentLike,
+      handleDeleteOpen,
+      handleBlockUser,
+      handleReportOpen,
+      replyToCommentId,
+      setReplyToCommentId,
+      replyForm,
+      setReplyForm,
+      handleReplySubmit,
+    ]
+  );
+
   return (
     <>
       <div className="comment-sort-tabs" role="tablist" aria-label="댓글 정렬">
@@ -352,25 +506,7 @@ export function CommentList({
         ))}
       </div>
       <section id="comment-list">
-        {comments.map((c) => (
-          <CommentItem
-            key={c.id}
-            c={c}
-            currentUserId={currentUserId}
-            commentEdit={commentEdit}
-            setCommentEdit={setCommentEdit}
-            onEditSave={onEditSave}
-            onCommentLike={onCommentLike}
-            onDeleteOpen={onDeleteOpen}
-            onBlockUser={onBlockUser}
-            onReportOpen={onReportOpen}
-            replyToCommentId={replyToCommentId}
-            setReplyToCommentId={setReplyToCommentId}
-            replyForm={replyForm}
-            setReplyForm={setReplyForm}
-            onReplySubmit={onReplySubmit}
-          />
-        ))}
+        {renderedComments}
       </section>
       {commentTotalPages > 1 && (
         <nav className="comment-pagination" aria-label="댓글 페이지">
