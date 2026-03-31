@@ -1,0 +1,350 @@
+/* 마이페이지 내 프로필: 블록은 중앙, 제목·아바타·수정완료는 중앙 정렬 */
+.profile-edit-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-edit-center .form-title {
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.profile-edit-center .form-label,
+.mypage-form-center .form-label {
+  font-size: 12px;
+}
+
+/* 마이페이지 입력칸(반려견 관리 포함): 입력 글씨만 살짝 축소 */
+.profile-edit-center .form-input,
+.mypage-form-center .form-input {
+  font-size: 13px;
+}
+
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  text-align: left;
+}
+
+.profile-edit-center .form-group {
+  width: 100%;
+}
+
+/* 프로필 사진 영역만 중앙 정렬 */
+.profile-edit-center .form-group:first-child > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.profile-edit-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* 닉네임 입력칸 ↔ 액션 버튼 간격 축소 */
+.profile-edit-center .form-group:last-of-type {
+  margin-bottom: 10px;
+}
+
+.profile-edit-complete {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 12px;
+  padding: 7px 22px;
+  border-radius: 18px;
+}
+
+/* 마이페이지 공통: 비밀번호/반려견 등 폼 중앙 정렬 */
+.mypage-form-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.mypage-form-center .form-title {
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.mypage-form-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 360px;
+  text-align: left;
+}
+
+/* 비밀번호 수정: 3개 입력칸이라 폭을 살짝만 넓힘 */
+.mypage-form-center--password .mypage-form-inner {
+  max-width: 380px;
+}
+
+/* 반려견 관리만 폼 가로 넓게 */
+.mypage-form-center--wide .mypage-form-inner {
+  max-width: 480px;
+}
+
+.mypage-form-center .form-group {
+  width: 100%;
+}
+
+.mypage-form-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* 차단 관리: 안내 문구 중앙 정렬 */
+.block-management-placeholder {
+  text-align: center;
+  width: 100%;
+}
+
+/* 차단 관리: 유저 목록 간격 */
+.block-management-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 차단 관리: row(프로필/닉네임/버튼)과 구분선 사이 여백 */
+.block-management-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 16px; /* 아래 여백을 더 줘서 구분선과 띄움 */
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.block-management-item:last-child {
+  border-bottom: 0;
+}
+
+/* 게시글/댓글 강아지 성별: 동그란 배경 없이 이모지만 */
+.dog-gender-badge {
+  display: inline;
+  font-size: 1em;
+}
+
+.dog-gender-badge.dog-gender--male,
+.dog-gender-badge.dog-gender--female {
+  background: none;
+  color: inherit;
+}
+
+/* 반려견 관리 카드: 배경 없음, 비밀번호 폼과 동일한 form-group/입력 스타일 */
+.dog-card {
+  padding: 1rem 0 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+}
+
+.dog-card:last-of-type {
+  margin-bottom: 1rem;
+}
+
+/* 반려견 카드 2열 그리드: 이름|품종, 성별|생년월일, 대표 강아지 */
+.dog-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .dog-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dog-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dog-card-field--full {
+  grid-column: 1 / -1;
+}
+
+/* 반려견 관리 성별: 라벨 아래 버튼, 칸 꽉 차게 */
+.dog-choice-group--full {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+
+.dog-choice-group--full .dog-choice-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 대표로 설정: 라벨 없이 버튼만 성별·생년월일 아래 중앙 */
+.dog-card-rep {
+  justify-content: center;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+
+.dog-card-rep .dog-choice-group {
+  justify-content: center;
+}
+
+/* 성별·대표 강아지 선택 버튼 (필 스타일) */
+.dog-choice-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dog-choice-btn {
+  padding: 0.5rem 1rem;
+  font-size: 13px;
+  font-family: 'Pretendard', sans-serif;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  background: #fff;
+  color: #374151;
+}
+
+.dog-choice-btn:hover {
+  border-color: rgba(0, 0, 0, 0.35);
+  background: #f9fafb;
+}
+
+.dog-choice-btn--active {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
+.dog-choice-btn--active:hover {
+  background: #111827;
+  border-color: #111827;
+}
+
+.dog-choice-btn--single {
+  min-width: 7rem;
+}
+
+.dog-card-actions {
+  margin-top: 1rem;
+}
+
+/* 헤더 프로필 아이콘 + 드롭다운 메뉴 */
+.header-profile-wrapper {
+  position: absolute;
+  right: 25%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+}
+
+.header-profile-wrapper .profile-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.header-profile-wrapper .profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 드롭다운 (JS에서 .visible 토글) - 게시글 목록 검색창(fixed z-index:100) 위에 보이도록 */
+.profile-dropdown {
+  position: absolute;
+  right: 25%;
+  top: 60px;
+  z-index: 200;
+  background: #D9D9D9;
+  border: 1px solid #DDD;
+  width: 100px;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .header-profile-wrapper {
+    right: 16px;
+  }
+
+  .profile-dropdown {
+    right: 16px;
+  }
+}
+
+.profile-dropdown.visible {
+  display: flex;
+}
+
+.profile-dropdown button {
+  padding: 6px 10px;
+  border: none;
+  background: #D9D9D9;
+  text-align: center;
+  font-family: 'Pretendard';
+  font-size: 12px;
+  cursor: pointer;
+  height: 32px;
+}
+
+.profile-dropdown button:hover {
+  background: #BDBDBD;
+}
+
+/* 차단 관리 스켈레톤 */
+.block-skeleton-row {
+  animation: skeleton-pulse 1.05s ease-in-out infinite;
+}
+
+.block-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
+}
+
+.block-skeleton-name {
+  height: 14px;
+  width: min(180px, 40vw);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.block-skeleton-btn {
+  width: 88px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
+}

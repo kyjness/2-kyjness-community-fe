@@ -6,8 +6,8 @@ export function PasswordEdit() {
   const { formData, errors, submitting, handleFieldChange, handleSubmit } = useChangePassword();
 
   return (
-    <div className="pb-6 max-w-[600px] w-full mypage-form-center">
-      <h2 className="form-title text-[22px] mb-6">비밀번호 수정</h2>
+    <div className="pb-6 max-w-[600px] w-full mypage-form-center mypage-form-center--password">
+      <h2 className="form-title text-[16px] mb-6">비밀번호 수정</h2>
       <form id="form" className="form mypage-form-inner" noValidate onSubmit={handleSubmit}>
         <ChangePasswordFormFields
           formData={formData}

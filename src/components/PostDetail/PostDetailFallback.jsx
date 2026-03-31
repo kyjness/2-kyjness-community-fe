@@ -5,7 +5,7 @@ export function PostDetailFallback({ variant, error, onBack }) {
   const content = {
     invalid: <p className="post-list-message">유효하지 않은 게시글입니다.</p>,
     loading: (
-      <p style={{ textAlign: 'center', padding: 40 }}>게시글을 불러오는 중...</p>
+      <div className="app-skeleton-screen" aria-label="로딩" />
     ),
     error: (
       <>

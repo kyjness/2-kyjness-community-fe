@@ -81,9 +81,20 @@ const API_ERROR_MESSAGES = {
 
 export const PASSWORD_POLICY_TEXT = API_ERROR_MESSAGES.INVALID_PASSWORD_FORMAT;
 
+/** PATCH /users/me/password 새 비밀번호: 백엔드 PasswordUpdateStr (8~128자, 복잡도 동일) */
+export const PASSWORD_POLICY_TEXT_CHANGE = '8~128자의 영문 소문자·숫자·특수문자 필수 포함해야 합니다.';
+
 export function getApiErrorMessage(code, fallback = '처리에 실패했습니다.') {
   const key = (code || '').toString().toUpperCase();
   return API_ERROR_MESSAGES[key] || fallback;
+}
+
+/** api 래퍼·Axios 에러에서 코드 추출 (message fallback) */
+export function getClientErrorCode(err) {
+  if (err == null) return '';
+  const fromAxios = err.response?.data?.code ?? err.response?.data?.detail?.code;
+  const raw = fromAxios ?? err.code ?? err.message ?? '';
+  return typeof raw === 'string' ? raw : String(raw);
 }
 
 /**
@@ -141,18 +152,29 @@ export function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+const PASSWORD_COMPLEXITY_RE =
+  /^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/;
+
+/** 가입·로그인 비밀번호 (백엔드 PasswordStr / LoginRequest: 8~20자) */
 export function validatePassword(value) {
   if (!value || typeof value !== 'string') return { ok: false, message: '비밀번호를 입력해주세요.' };
   const v = value.trim();
   if (v.length < 8) return { ok: false, message: PASSWORD_POLICY_TEXT };
   if (v.length > 20) return { ok: false, message: PASSWORD_POLICY_TEXT };
-  if (
-    !/^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(v)
-  ) {
-    return {
-      ok: false,
-      message: PASSWORD_POLICY_TEXT,
-    };
+  if (!PASSWORD_COMPLEXITY_RE.test(v)) {
+    return { ok: false, message: PASSWORD_POLICY_TEXT };
+  }
+  return { ok: true };
+}
+
+/** 비밀번호 변경 새 비밀번호 (백엔드 PasswordUpdateStr: 8~128자) */
+export function validatePasswordChangeNew(value) {
+  if (!value || typeof value !== 'string') return { ok: false, message: '비밀번호를 입력해주세요.' };
+  const v = value.trim();
+  if (v.length < 8) return { ok: false, message: PASSWORD_POLICY_TEXT_CHANGE };
+  if (v.length > 128) return { ok: false, message: PASSWORD_POLICY_TEXT_CHANGE };
+  if (!PASSWORD_COMPLEXITY_RE.test(v)) {
+    return { ok: false, message: PASSWORD_POLICY_TEXT_CHANGE };
   }
   return { ok: true };
 }

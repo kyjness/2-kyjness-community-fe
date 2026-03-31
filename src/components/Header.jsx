@@ -62,7 +62,29 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
         )}
         <h1 className="header-title">
           <Link to="/posts" id="header-title-link">
-            {HEADER_TITLE}
+            <span className="header-title__brand">
+              <svg
+                className="header-title__logo"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M7.2 10.1c1 0 1.8-.95 1.8-2.12S8.2 5.86 7.2 5.86 5.4 6.8 5.4 7.98 6.2 10.1 7.2 10.1Zm9.6 0c1 0 1.8-.95 1.8-2.12s-.8-2.12-1.8-2.12-1.8.95-1.8 2.12.8 2.12 1.8 2.12ZM11.1 8.9c.95 0 1.7-.88 1.7-1.97S12.05 5 11.1 5 9.4 5.88 9.4 6.93s.75 1.97 1.7 1.97Zm1.8 0c.95 0 1.7-.88 1.7-1.97S13.85 5 12.9 5s-1.7.88-1.7 1.97.75 1.97 1.7 1.97Z"
+                  fill="currentColor"
+                  opacity="0.9"
+                />
+                <path
+                  d="M12 11.2c-3 0-5.6 2.05-5.6 4.6 0 1.7 1.5 3.1 3.4 3.1.95 0 1.65-.2 2.2-.55.55.35 1.25.55 2.2.55 1.9 0 3.4-1.4 3.4-3.1 0-2.55-2.6-4.6-5.6-4.6Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span className="header-title__text">{HEADER_TITLE}</span>
+            </span>
           </Link>
         </h1>
         {showProfile && isLoggedIn && (
@@ -98,6 +120,15 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
               </button>
             </div>
           </div>
+        )}
+        {showProfile && !isLoggedIn && (
+          <button
+            type="button"
+            className="header-login-btn"
+            onClick={() => navigate('/login')}
+          >
+            로그인
+          </button>
         )}
         <div className="header-divider" />
       </header>

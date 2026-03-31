@@ -16,7 +16,19 @@ export function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
+
+  const optimisticRollback = useCallback(async (mutate, request, failMessage) => {
+    const prevList = list;
+    const prevTotal = total;
+    mutate();
+    try {
+      await request();
+    } catch (err) {
+      alert(getApiErrorMessage(err?.code ?? err?.message, failMessage));
+      setList(prevList);
+      setTotal(prevTotal);
+    }
+  }, [list, total]);
 
   const fetchReportedPosts = useCallback(async (pageNum = 1) => {
     setLoading(true);
@@ -53,132 +65,126 @@ export function AdminDashboard() {
 
   const handleUnblind = async (postId) => {
     if (!window.confirm('이 글의 블라인드를 해제(복구)하시겠습니까?')) return;
-    setActionLoading(postId);
-    try {
-      await api.patch(`/admin/posts/${postId}/unblind`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '복구 처리에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => setList((prev) => prev.map((r) => (r.id === postId ? { ...r, isBlinded: false } : r))),
+      () => api.patch(`/admin/posts/${postId}/unblind`),
+      '복구 처리에 실패했습니다.'
+    );
   };
 
   const handleSuspendUser = async (userId) => {
     if (!window.confirm('해당 유저를 정지하시겠습니까? 정지된 유저는 로그인 및 활동이 제한됩니다.')) return;
-    setActionLoading(`suspend-${userId}`);
-    try {
-      await api.patch(`/admin/users/${userId}/suspend`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '유저 정지에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () =>
+        setList((prev) =>
+          prev.map((r) =>
+            r.userId === userId
+              ? {
+                  ...r,
+                  authorStatus: 'SUSPENDED',
+                  author: r.author ? { ...r.author, status: 'SUSPENDED' } : r.author,
+                }
+              : r
+          )
+        ),
+      () => api.patch(`/admin/users/${userId}/suspend`),
+      '유저 정지에 실패했습니다.'
+    );
   };
 
   const handleActivateUser = async (userId) => {
     if (!window.confirm('해당 유저의 정지를 해제하시겠습니까?')) return;
-    setActionLoading(`activate-${userId}`);
-    try {
-      await api.patch(`/admin/users/${userId}/activate`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '정지 해제에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () =>
+        setList((prev) =>
+          prev.map((r) =>
+            r.userId === userId
+              ? {
+                  ...r,
+                  authorStatus: 'ACTIVE',
+                  author: r.author ? { ...r.author, status: 'ACTIVE' } : r.author,
+                }
+              : r
+          )
+        ),
+      () => api.patch(`/admin/users/${userId}/activate`),
+      '정지 해제에 실패했습니다.'
+    );
   };
 
   const handleBlindPost = async (postId) => {
     if (!window.confirm('이 글을 블라인드 처리하시겠습니까? 게시글이 비공개 처리됩니다.')) return;
-    setActionLoading(`blind-${postId}`);
-    try {
-      await api.patch(`/admin/posts/${postId}/blind`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '블라인드 처리에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => setList((prev) => prev.map((r) => (r.id === postId ? { ...r, isBlinded: true } : r))),
+      () => api.patch(`/admin/posts/${postId}/blind`),
+      '블라인드 처리에 실패했습니다.'
+    );
   };
 
   const handleDeletePost = async (postId) => {
     if (!window.confirm('이 게시글을 삭제하시겠습니까? 삭제된 글은 복구할 수 없습니다.')) return;
-    setActionLoading(`delete-${postId}`);
-    try {
-      await api.delete(`/admin/posts/${postId}`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '글 삭제에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => {
+        setList((prev) => prev.filter((r) => !(r.targetType !== 'COMMENT' && r.id === postId)));
+        setTotal((t) => Math.max(0, (Number(t) || 0) - 1));
+      },
+      () => api.delete(`/admin/posts/${postId}`),
+      '글 삭제에 실패했습니다.'
+    );
   };
 
   const handleResetReports = async (postId) => {
     if (!window.confirm('이 글의 신고를 초기화하시겠습니까? 해당 신고는 목록에서 사라집니다.')) return;
-    setActionLoading(`reset-${postId}`);
-    try {
-      await api.patch(`/admin/posts/${postId}/reset-reports`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '신고 무시 처리에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => {
+        setList((prev) => prev.filter((r) => !(r.targetType !== 'COMMENT' && r.id === postId)));
+        setTotal((t) => Math.max(0, (Number(t) || 0) - 1));
+      },
+      () => api.patch(`/admin/posts/${postId}/reset-reports`),
+      '신고 무시 처리에 실패했습니다.'
+    );
   };
 
   const handleUnblindComment = async (commentId) => {
     if (!window.confirm('이 댓글의 블라인드를 해제하시겠습니까?')) return;
-    setActionLoading(`comment-unblind-${commentId}`);
-    try {
-      await api.patch(`/admin/comments/${commentId}/unblind`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 블라인드 해제에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => setList((prev) => prev.map((r) => (r.id === commentId ? { ...r, isBlinded: false } : r))),
+      () => api.patch(`/admin/comments/${commentId}/unblind`),
+      '댓글 블라인드 해제에 실패했습니다.'
+    );
   };
 
   const handleBlindComment = async (commentId) => {
     if (!window.confirm('이 댓글을 블라인드 처리하시겠습니까?')) return;
-    setActionLoading(`comment-blind-${commentId}`);
-    try {
-      await api.patch(`/admin/comments/${commentId}/blind`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 블라인드 처리에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => setList((prev) => prev.map((r) => (r.id === commentId ? { ...r, isBlinded: true } : r))),
+      () => api.patch(`/admin/comments/${commentId}/blind`),
+      '댓글 블라인드 처리에 실패했습니다.'
+    );
   };
 
   const handleResetCommentReports = async (commentId) => {
     if (!window.confirm('이 댓글의 신고를 초기화하시겠습니까? 해당 신고는 목록에서 사라집니다.')) return;
-    setActionLoading(`comment-reset-${commentId}`);
-    try {
-      await api.patch(`/admin/comments/${commentId}/reset-reports`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 신고 무시 처리에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => {
+        setList((prev) => prev.filter((r) => !(r.targetType === 'COMMENT' && r.id === commentId)));
+        setTotal((t) => Math.max(0, (Number(t) || 0) - 1));
+      },
+      () => api.patch(`/admin/comments/${commentId}/reset-reports`),
+      '댓글 신고 무시 처리에 실패했습니다.'
+    );
   };
 
   const handleDeleteComment = async (postId, commentId) => {
     if (!window.confirm('이 댓글을 삭제하시겠습니까? 삭제된 댓글은 복구할 수 없습니다.')) return;
-    setActionLoading(`comment-delete-${commentId}`);
-    try {
-      await api.delete(`/admin/posts/${postId}/comments/${commentId}`);
-      await fetchReportedPosts(page);
-    } catch (err) {
-      alert(getApiErrorMessage(err?.code ?? err?.message, '댓글 삭제에 실패했습니다.'));
-    } finally {
-      setActionLoading(null);
-    }
+    await optimisticRollback(
+      () => {
+        setList((prev) => prev.filter((r) => !(r.targetType === 'COMMENT' && r.id === commentId)));
+        setTotal((t) => Math.max(0, (Number(t) || 0) - 1));
+      },
+      () => api.delete(`/admin/posts/${postId}/comments/${commentId}`),
+      '댓글 삭제에 실패했습니다.'
+    );
   };
 
   if (user != null && user?.role !== 'ADMIN') {
@@ -195,7 +201,12 @@ export function AdminDashboard() {
           </p>
 
           {loading ? (
-            <p style={{ padding: 40, textAlign: 'center' }}>목록을 불러오는 중...</p>
+            <div className="admin-skeleton" aria-label="목록 로딩">
+              <div className="admin-skeleton__header" aria-hidden="true" />
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="admin-skeleton__row" aria-hidden="true" />
+              ))}
+            </div>
           ) : error ? (
             <p style={{ color: 'var(--color-error)', padding: 20 }}>{error}</p>
           ) : list.length === 0 ? (
@@ -299,55 +310,49 @@ export function AdminDashboard() {
                                 <button
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleUnblindComment(row.id)}
                                 >
-                                  {actionLoading === `comment-unblind-${row.id}` ? '처리 중' : '블라인드 해제'}
+                                  블라인드 해제
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   className="admin-action-btn"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleBlindComment(row.id)}
                                 >
-                                  {actionLoading === `comment-blind-${row.id}` ? '처리 중' : '블라인드 처리'}
+                                  블라인드 처리
                                 </button>
                               )}
                               {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
                                 <button
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleActivateUser(row.userId)}
                                 >
-                                  {actionLoading === `activate-${row.userId}` ? '처리 중' : '정지 해제'}
+                                  정지 해제
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   className="admin-action-btn"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleSuspendUser(row.userId)}
                                 >
-                                  {actionLoading === `suspend-${row.userId}` ? '처리 중' : '유저 정지'}
+                                  유저 정지
                                 </button>
                               )}
                               <button
                                 type="button"
                                 className="admin-action-btn"
-                                disabled={actionLoading != null}
                                 onClick={() => handleDeleteComment(row.postId, row.id)}
                               >
-                                {actionLoading === `comment-delete-${row.id}` ? '처리 중' : '댓글 삭제'}
+                                댓글 삭제
                               </button>
                               <button
                                 type="button"
                                 className="admin-action-btn admin-action-btn--gray"
-                                disabled={actionLoading != null}
                                 onClick={() => handleResetCommentReports(row.id)}
                               >
-                                {actionLoading === `comment-reset-${row.id}` ? '처리 중' : '신고 무시'}
+                                신고 무시
                               </button>
                             </div>
                           </details>
@@ -365,55 +370,49 @@ export function AdminDashboard() {
                                 <button
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleUnblind(row.id)}
                                 >
-                                  {actionLoading === row.id ? '처리 중' : '블라인드 해제'}
+                                  블라인드 해제
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   className="admin-action-btn"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleBlindPost(row.id)}
                                 >
-                                  {actionLoading === `blind-${row.id}` ? '처리 중' : '블라인드 처리'}
+                                  블라인드 처리
                                 </button>
                               )}
                               {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
                                 <button
                                   type="button"
                                   className="admin-action-btn admin-action-btn--active"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleActivateUser(row.userId)}
                                 >
-                                  {actionLoading === `activate-${row.userId}` ? '처리 중' : '정지 해제'}
+                                  정지 해제
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   className="admin-action-btn"
-                                  disabled={actionLoading != null}
                                   onClick={() => handleSuspendUser(row.userId)}
                                 >
-                                  {actionLoading === `suspend-${row.userId}` ? '처리 중' : '유저 정지'}
+                                  유저 정지
                                 </button>
                               )}
                               <button
                                 type="button"
                                 className="admin-action-btn"
-                                disabled={actionLoading != null}
                                 onClick={() => handleDeletePost(row.id)}
                               >
-                                {actionLoading === `delete-${row.id}` ? '처리 중' : '글 삭제'}
+                                글 삭제
                               </button>
                               <button
                                 type="button"
                                 className="admin-action-btn admin-action-btn--gray"
-                                disabled={actionLoading != null}
                                 onClick={() => handleResetReports(row.id)}
                               >
-                                {actionLoading === `reset-${row.id}` ? '처리 중' : '신고 무시'}
+                                신고 무시
                               </button>
                             </div>
                           </details>

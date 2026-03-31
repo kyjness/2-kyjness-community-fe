@@ -1,8 +1,9 @@
 // 비밀번호 변경 폼: 현재/새/새 확인 3필드.
-import { PASSWORD_POLICY_TEXT } from '../../utils/index.js';
+import { PASSWORD_POLICY_TEXT_CHANGE } from '../../utils/index.js';
+
+const NEW_PW_MAX = 128;
 
 export function ChangePasswordFormFields({ formData, errors, onFieldChange }) {
-  const policyInParens = PASSWORD_POLICY_TEXT.replace(/^비밀번호는\s*/, '');
   return (
     <>
       <div className="form-group">
@@ -15,6 +16,7 @@ export function ChangePasswordFormFields({ formData, errors, onFieldChange }) {
           name="current-password"
           className="form-input"
           placeholder="현재 비밀번호를 입력하세요"
+          maxLength={NEW_PW_MAX}
           value={formData.currentPassword}
           onChange={onFieldChange('currentPassword')}
           aria-invalid={!!errors.currentPassword}
@@ -35,7 +37,8 @@ export function ChangePasswordFormFields({ formData, errors, onFieldChange }) {
           id="new-password"
           name="new-password"
           className="form-input"
-          placeholder={`${policyInParens}`}
+          placeholder={PASSWORD_POLICY_TEXT_CHANGE}
+          maxLength={NEW_PW_MAX}
           value={formData.newPassword}
           onChange={onFieldChange('newPassword')}
           aria-invalid={!!errors.newPassword}
@@ -57,6 +60,7 @@ export function ChangePasswordFormFields({ formData, errors, onFieldChange }) {
           name="new-password-confirm"
           className="form-input"
           placeholder="새 비밀번호를 한번 더 입력하세요"
+          maxLength={NEW_PW_MAX}
           value={formData.newPasswordConfirm}
           onChange={onFieldChange('newPasswordConfirm')}
           aria-invalid={!!errors.newPasswordConfirm}

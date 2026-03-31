@@ -1,6 +1,6 @@
 // 게시글 목록 카드: 제목·메타·작성자·강아지·클릭 시 상세 이동.
-import { Image } from 'lucide-react';
-import { formatDate, getProfileImageUrl, escapeHtml, calculateDogAge, formatDogGenderLabel } from '../utils/index.js';
+import { Eye, Heart, Image, MessageCircle } from 'lucide-react';
+import { formatDateTime, getProfileImageUrl, escapeHtml, calculateDogAge, formatDogGenderLabel } from '../utils/index.js';
 import { getPostCategoryLabel } from '../utils/postMeta.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -55,6 +55,11 @@ export function PostCard({ post, onClick }) {
   const commentCount = post.commentCount ?? 0;
   const viewCount = post.viewCount ?? 0;
   const createdAt = post.createdAt ?? '';
+  const postVersion = post.version ?? post.Version;
+  const isPostEdited =
+    post.isEdited === true ||
+    post.isedited === true ||
+    (typeof postVersion === 'number' && postVersion > 1);
   const author = post.author ?? null;
   const isMine = !!(
     user &&
@@ -101,7 +106,7 @@ export function PostCard({ post, onClick }) {
           ))}
         </div>
         <span className="post-card-date shrink-0 self-start whitespace-nowrap text-right">
-          {formatDate(createdAt)}
+          {formatDateTime(createdAt)}
         </span>
       </div>
       <div className="post-card-header">
@@ -119,34 +124,46 @@ export function PostCard({ post, onClick }) {
           {contentPreview}
         </p>
       ) : null}
-      <div className="post-card-stats">
-        <span>좋아요 {likeCount}</span>
-        <span>댓글 {commentCount}</span>
-        <span>조회수 {viewCount}</span>
-      </div>
       <div className="post-card-divider" />
-      <div className="post-card-author">
-        <div className="post-card-author-img">
-          <img
-            src={imgSrc}
-            alt="작성자 프로필"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              borderRadius: '50%',
-              display: 'block',
-            }}
-            onError={(e) => {
-              if (e.target.src !== DEFAULT_PROFILE_IMAGE) {
-                e.target.src = DEFAULT_PROFILE_IMAGE;
-              }
-            }}
-          />
+      <div className="post-card-footer">
+        <div className="post-card-author">
+          <div className="post-card-author-img">
+            <img
+              src={imgSrc}
+              alt="작성자 프로필"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '50%',
+                display: 'block',
+              }}
+              onError={(e) => {
+                if (e.target.src !== DEFAULT_PROFILE_IMAGE) {
+                  e.target.src = DEFAULT_PROFILE_IMAGE;
+                }
+              }}
+            />
+          </div>
+          <span className="post-card-author-name">
+            <AuthorBadge author={author ?? { nickname: '탈퇴한 사용자' }} />
+          </span>
         </div>
-        <span className="post-card-author-name">
-          <AuthorBadge author={author ?? { nickname: '탈퇴한 사용자' }} />
-        </span>
+
+        <div className="post-card-stats post-card-stats--footer" aria-label="게시글 통계">
+          <span className="post-card-stat" title={`좋아요 ${likeCount}`}>
+            <Heart size={14} aria-hidden="true" />
+            <span className="post-card-stat__num">{likeCount}</span>
+          </span>
+          <span className="post-card-stat" title={`조회수 ${viewCount}`}>
+            <Eye size={14} aria-hidden="true" />
+            <span className="post-card-stat__num">{viewCount}</span>
+          </span>
+          <span className="post-card-stat" title={`댓글 ${commentCount}`}>
+            <MessageCircle size={14} aria-hidden="true" />
+            <span className="post-card-stat__num">{commentCount}</span>
+          </span>
+        </div>
       </div>
     </article>
   );

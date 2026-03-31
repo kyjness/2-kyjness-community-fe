@@ -71,19 +71,27 @@ export function useLogin() {
             accessToken,
           };
           setUser({ ...baseUser, dogs: data.dogs ?? [] });
-          try {
-            const meRes = await api.get('/users/me');
-            const me = unwrapApiData(meRes);
-            if (me) {
-              setUser({
-                ...baseUser,
-                ...me,
-                userId: me.id ?? baseUser.userId,
-                accessToken: accessToken ?? baseUser.accessToken,
-                dogs: me.dogs ?? [],
-              });
+          let me = null;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const meRes = await api.get('/users/me');
+              me = unwrapApiData(meRes);
+              if (me) break;
+            } catch (_) {
+              if (attempt < 2) {
+                await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+              }
             }
-          } catch (_) {}
+          }
+          if (me) {
+            setUser({
+              ...baseUser,
+              ...me,
+              userId: me.id ?? baseUser.userId,
+              accessToken: accessToken ?? baseUser.accessToken,
+              dogs: me.dogs ?? [],
+            });
+          }
         }
         const returnPath =
           (typeof window !== 'undefined' && sessionStorage.getItem('login_return_path')) || from;

@@ -6,3 +6,10 @@
   --color-primary: #aca0eb;
   --color-primary-hover: #9b8ee0;
 }
+@import './css/globals.css';
+@import './css/layout.css';
+@import './css/common.css';
+@import './css/mypage.css';
+@import './css/post.css';
+@import './css/comment.css';
+@import './css/admin.css';

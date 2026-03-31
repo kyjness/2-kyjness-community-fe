@@ -33,7 +33,7 @@ export function CommentForm({ content, submitting, onChangeContent, onSubmit }) 
         />
         <div className="comment-write-box-divider" />
         <button type="submit" className="btn btn-submit" disabled={submitting}>
-          {submitting ? '등록 중...' : '댓글 등록'}
+          댓글 등록
         </button>
       </form>
     </section>

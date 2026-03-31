@@ -11,6 +11,22 @@ import {
 
 const COMMENT_PAGE_SIZE = 10;
 
+const POST_EDIT_MERGE_KEY = (id) => `pt_post_edit_merge_${id}`;
+
+function updateCommentInTree(comments, commentId, patch) {
+  return comments.map((c) => {
+    if (c.id === commentId) return { ...c, ...patch };
+    if (c.replies?.length) {
+      const nextReplies = updateCommentInTree(c.replies, commentId, patch);
+      const same =
+        nextReplies.length === c.replies.length &&
+        nextReplies.every((r, i) => r === c.replies[i]);
+      return same ? c : { ...c, replies: nextReplies };
+    }
+    return c;
+  });
+}
+
 function normalizePost(postData, currentUser) {
   const author = postData?.author ?? null;
   const isMine = !!(currentUser && (author?.id === currentUser.userId || author?.userId === currentUser.userId));
@@ -21,12 +37,25 @@ function normalizePost(postData, currentUser) {
   const categoryId =
     postData?.categoryId ?? postData?.categoryid ?? postData?.category_id ?? null;
 
+  const versionRaw = postData?.version ?? postData?.Version;
+  const versionNum =
+    typeof versionRaw === 'number'
+      ? versionRaw
+      : versionRaw != null && Number.isFinite(Number(versionRaw))
+        ? Number(versionRaw)
+        : null;
+  const isEdited =
+    postData?.isEdited === true ||
+    postData?.isedited === true ||
+    (versionNum !== null && versionNum > 1);
+
   return {
     id: postData?.id,
     title: postData?.title ?? '',
     content: postData?.content ?? '',
     category_id: categoryId,
     hashtags,
+    isEdited,
     author_nickname: author?.nickname ?? '탈퇴한 사용자',
     author_id: author?.id ?? author?.userId ?? null,
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
@@ -59,7 +88,7 @@ function normalizeComment(c, currentUser) {
     isLiked: c?.isLiked ?? false,
     parentId: c?.parentId ?? null,
     replies,
-    isEdited: c?.isEdited ?? false,
+    isEdited: c?.isEdited === true || c?.isedited === true,
     isDeleted: c?.isDeleted ?? false,
   };
 }
@@ -102,7 +131,31 @@ export function usePostDetail(postId, user, navigate) {
       try {
         const res = await api.get(`/posts/${postId}`);
         const data = res?.data ?? null;
-        if (data) setPost(normalizePost(data, user));
+        if (data) {
+          let merge = null;
+          try {
+            const raw = sessionStorage.getItem(POST_EDIT_MERGE_KEY(postId));
+            if (raw) {
+              merge = JSON.parse(raw);
+              sessionStorage.removeItem(POST_EDIT_MERGE_KEY(postId));
+            }
+          } catch {
+            /* ignore */
+          }
+          const normalized = normalizePost(data, user);
+          if (merge && merge.postId === postId) {
+            setPost({
+              ...normalized,
+              title: merge.title ?? normalized.title,
+              content: merge.content ?? normalized.content,
+              category_id: merge.categoryId ?? normalized.category_id,
+              hashtags: Array.isArray(merge.hashtags) ? merge.hashtags : normalized.hashtags,
+              isEdited: true,
+            });
+          } else {
+            setPost(normalized);
+          }
+        }
       } catch (err) {
         setError(getApiErrorMessage(err?.code ?? err?.message, '게시글을 불러오지 못했습니다.'));
       } finally {
@@ -273,9 +326,10 @@ export function usePostDetail(postId, user, navigate) {
         });
         setCommentEdit({ editingId: null, content: '' });
         setComments((prev) =>
-          prev.map((c) =>
-            c.id === commentId ? { ...c, content: newContent.trim() } : c
-          )
+          updateCommentInTree(prev, commentId, {
+            content: newContent.trim(),
+            isEdited: true,
+          })
         );
       } catch (err) {
         setMessage(
@@ -331,7 +385,7 @@ export function usePostDetail(postId, user, navigate) {
           );
         }
       } catch (err) {
-        if (err?.response?.status === 401) {
+        if (err?.status === 401) {
           if (!window.confirm('로그인이 필요한 서비스입니다. 로그인하시겠습니까?')) return;
           sessionStorage.setItem('login_return_path', `/posts/${postId}`);
           navigate('/login');
@@ -373,7 +427,8 @@ export function usePostDetail(postId, user, navigate) {
 
   const handleBlockUser = useCallback(
     async (targetUserId) => {
-      if (!targetUserId || !user?.userId) return;
+      const meId = user?.userId ?? user?.id;
+      if (!targetUserId || !meId) return;
       if (
         !window.confirm(
           '이 사용자를 차단하시겠습니까? 차단한 사용자의 게시글과 댓글이 보이지 않습니다.'
@@ -391,7 +446,7 @@ export function usePostDetail(postId, user, navigate) {
         );
       }
     },
-    [user?.userId]
+    [user?.userId, user?.id]
   );
 
   const displayedComments = useMemo(

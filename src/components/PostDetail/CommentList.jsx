@@ -1,6 +1,6 @@
 // 댓글 목록·수정/삭제·답글·페이지네이션. 트리(대댓글 1-depth) 렌더링.
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Heart, MoreHorizontal } from 'lucide-react';
+import { Heart, MoreHorizontal, UserX, AlertTriangle } from 'lucide-react';
 import { escapeHtml, formatDateTime, calculateDogAge, formatDogGenderLabel } from '../../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
 function CommentItem({
@@ -22,6 +22,7 @@ function CommentItem({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const replyTextareaRef = useRef(null);
+  const editTextareaRef = useRef(null);
   const isReply = depth > 0;
   const isMyComment = c.isMine || (currentUserId != null && c.author_id === currentUserId);
 
@@ -34,9 +35,22 @@ function CommentItem({
     el.style.overflowY = 'hidden';
   }, []);
 
+  const adjustEditHeight = useCallback(() => {
+    const el = editTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const next = Math.min(Math.max(el.scrollHeight, 60), 300);
+    el.style.height = `${next}px`;
+    el.style.overflowY = 'hidden';
+  }, []);
+
   useEffect(() => {
     if (replyToCommentId === c.id) adjustReplyHeight();
   }, [replyToCommentId, c.id, replyForm.content, adjustReplyHeight]);
+
+  useEffect(() => {
+    if (commentEdit.editingId === c.id) adjustEditHeight();
+  }, [commentEdit.editingId, c.id, commentEdit.content, adjustEditHeight]);
 
   return (
     <article
@@ -112,8 +126,9 @@ function CommentItem({
                 {menuOpen && (
                   <>
                     <div
-                      className="fixed inset-0 z-[1]"
+                      className="comment-item-menu-backdrop"
                       role="presentation"
+                      aria-hidden="true"
                       onClick={() => setMenuOpen(false)}
                     />
                     <ul className="comment-item-menu">
@@ -121,11 +136,13 @@ function CommentItem({
                         <li>
                           <button
                             type="button"
+                            className="menu-item-btn menu-item-btn--danger"
                             onClick={() => {
                               onBlockUser?.(c.author_id);
                               setMenuOpen(false);
                             }}
                           >
+                            <UserX size={15} aria-hidden />
                             차단
                           </button>
                         </li>
@@ -133,11 +150,13 @@ function CommentItem({
                       <li>
                         <button
                           type="button"
+                          className="menu-item-btn menu-item-btn--danger"
                           onClick={() => {
                             onReportOpen?.('COMMENT', c.id);
                             setMenuOpen(false);
                           }}
                         >
+                          <AlertTriangle size={15} aria-hidden />
                           신고
                         </button>
                       </li>
@@ -159,12 +178,16 @@ function CommentItem({
             }}
           >
             <textarea
+              ref={editTextareaRef}
               className="w-full min-h-[60px] p-2 border border-gray-300 rounded text-[13px] font-['Pretendard',sans-serif] resize-none"
               aria-label="댓글 수정"
               value={commentEdit.content}
-              onChange={(e) =>
-                setCommentEdit((prev) => ({ ...prev, content: e.target.value }))
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                setCommentEdit((prev) => ({ ...prev, content: value }));
+                // 같은 tick에서 DOM 값이 반영되므로 즉시 높이 재계산 가능
+                adjustEditHeight();
+              }}
             />
             <div className="comment-edit-actions">
               <button type="submit">
@@ -252,7 +275,7 @@ function CommentItem({
                 취소
               </button>
               <button type="submit" className="btn btn-submit" disabled={replyForm.submitting}>
-                {replyForm.submitting ? '등록 중...' : '등록'}
+                등록
               </button>
             </div>
           </form>

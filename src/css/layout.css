@@ -1,0 +1,233 @@
+/* 스플래시 */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #fff;
+  transition: opacity 0.25s ease-out;
+}
+
+.splash.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.splash-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-frame .splash-content {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-frame .splash-content > * {
+  max-width: 100%;
+  max-height: 100%;
+  flex-shrink: 1;
+}
+
+.splash-frame .splash-content svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* 헤더 - 모든 페이지 상단 (header.js) */
+.header {
+  background-color: transparent;
+  padding: 18px 0 0;
+  width: 100%;
+  position: relative;
+  z-index: 150;
+}
+
+.header-title {
+  text-align: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 100%;
+  color: #000000;
+  margin-bottom: 20px;
+  cursor: default;
+}
+
+#header-title-link,
+.header-title a {
+  cursor: pointer;
+  display: inline-block;
+  color: #000000;
+  text-decoration: none;
+}
+.header-title a:hover { color: #000000; }
+
+.header-title__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-title__logo {
+  color: #111827;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55));
+}
+
+.header-divider {
+  height: 1px;
+  background-color: var(--divider);
+  width: 100%;
+  margin-top: 12px;
+  display: block;
+}
+
+/* 메인 영역 */
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 16px 0;
+  background-color: var(--app-bg);
+}
+
+/* 상세/마이페이지 등: 콘텐츠는 항상 위에서부터, 댓글 늘어나면 아래로만 확장 */
+.main.main-top {
+  align-items: flex-start;
+}
+
+/* 마이페이지: 폼은 화면 중앙 고정, 네비는 왼쪽 여백에 */
+.mypage-layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 72px);
+  align-items: stretch;
+}
+
+@media (max-width: 768px) {
+  .mypage-layout {
+    flex-direction: column;
+    padding: 0 1rem;
+  }
+}
+
+/* 왼쪽 여백 영역: flex로 동일 너비 확보 후, 네비만 오른쪽 끝에 배치 */
+.mypage-nav-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .mypage-nav-wrap {
+    flex: none;
+    width: 100%;
+    justify-content: flex-start;
+    padding-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.mypage-nav {
+  flex-shrink: 0;
+  width: 160px;
+  position: sticky;
+  top: 72px;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .mypage-nav {
+    width: 100%;
+    position: static;
+  }
+}
+
+.mypage-nav-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 14px;
+  font-family: 'Pretendard', sans-serif;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  background-color: var(--gray-100, #f3f4f6);
+  color: #374151;
+}
+
+.mypage-nav-btn:hover {
+  background-color: var(--gray-200, #e5e7eb);
+  color: #000;
+}
+
+.mypage-nav-btn--active {
+  background-color: #1f2937;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 수정 폼 영역: 고정 600px, 가로·세로 중앙(내정보/비밀번호/차단관리) */
+.mypage-content {
+  width: 600px;
+  max-width: 92vw;
+  flex-shrink: 0;
+  padding: 2.5rem 1rem 3rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100vh - 72px);
+}
+
+/* 반려견 관리만 세로 중앙 제외(강아지 추가로 내용 늘어나므로 상단 정렬) */
+.mypage-content > .mypage-form--top {
+  align-self: flex-start;
+  margin-top: 0;
+}
+
+@media (max-width: 768px) {
+  .mypage-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 1rem 0 2rem;
+    min-height: 50vh;
+  }
+}
+
+/* 오른쪽 여백: 왼쪽과 동일 너비로 폼이 정중앙에 오도록 */
+.mypage-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .mypage-spacer {
+    display: none;
+  }
+}

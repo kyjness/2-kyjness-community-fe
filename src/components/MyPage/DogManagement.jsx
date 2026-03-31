@@ -16,7 +16,7 @@ export function DogManagement() {
 
   return (
     <div className="pb-6 max-w-[600px] w-full mypage-form-center mypage-form-center--wide mypage-form--top">
-      <h2 className="form-title text-[22px] mb-4">반려견 관리</h2>
+      <h2 className="form-title text-[16px] mb-4">반려견 관리</h2>
       <form className="form mypage-form-inner" noValidate onSubmit={handleSubmit}>
         <DogListSection
           dogs={dogs}

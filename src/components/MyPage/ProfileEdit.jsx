@@ -30,7 +30,7 @@ export function ProfileEdit() {
 
   return (
     <div className="pb-6 max-w-[600px] w-full profile-edit-center">
-      <h2 className="form-title text-[22px] mb-6">내 프로필</h2>
+      <h2 className="form-title text-[16px] mb-6">내 프로필</h2>
       <form id="form" className="form profile-edit-form" noValidate onSubmit={handleSubmit}>
         <ProfileImageSection
           profileImageDisplay={profileImageDisplay}

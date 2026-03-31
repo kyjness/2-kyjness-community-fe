@@ -20,7 +20,7 @@ export function Signup() {
   return (
     <Header showProfile={false} showBackButton backHref="/login">
       <main className="main">
-        <div className="form-container">
+        <div className="form-container form-container--signup">
           <h2 className="form-title">회원가입</h2>
           <form id="signup-form" className="form" noValidate onSubmit={handleSubmit}>
             <SignupProfileSection

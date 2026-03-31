@@ -2,7 +2,11 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
-import { getApiErrorMessage, validatePassword } from '../utils/index.js';
+import {
+  getApiErrorMessage,
+  getClientErrorCode,
+  validatePasswordChangeNew,
+} from '../utils/index.js';
 
 const INITIAL_FORM_DATA = {
   currentPassword: '',
@@ -48,7 +52,7 @@ export function useChangePassword() {
         setErrors((prev) => ({ ...prev, currentPassword: '현재 비밀번호를 입력해주세요.' }));
         hasError = true;
       }
-      const newPwCheck = validatePassword(newPw);
+      const newPwCheck = validatePasswordChangeNew(newPw);
       if (!newPwCheck.ok) {
         setErrors((prev) => ({ ...prev, newPassword: newPwCheck.message }));
         hasError = true;
@@ -77,7 +81,7 @@ export function useChangePassword() {
         setErrors((prev) => ({
           ...prev,
           form: getApiErrorMessage(
-            err?.code ?? err?.message,
+            getClientErrorCode(err),
             '현재 비밀번호가 맞는지 확인한 뒤 다시 시도해주세요.'
           ),
         }));

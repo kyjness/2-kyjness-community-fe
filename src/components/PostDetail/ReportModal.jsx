@@ -1,6 +1,7 @@
 // 신고 사유 선택 모달. 제출 시 POST /reports 호출.
 import { useState } from 'react';
 import { api } from '../../api/client.js';
+import { getApiErrorMessage, getClientErrorCode } from '../../utils/index.js';
 
 const REPORT_REASONS = [
   { value: '스팸', label: '스팸' },
@@ -21,14 +22,14 @@ export function ReportModal({ open, targetType, targetId, onClose, onSuccess }) 
     setSubmitting(true);
     try {
       await api.post('/reports', {
-        target_type: targetType,
-        target_id: targetId,
+        targetType,
+        targetId,
         reason,
       });
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(err?.message ?? '신고 접수에 실패했습니다.');
+      setError(getApiErrorMessage(getClientErrorCode(err), '신고 접수에 실패했습니다.'));
     } finally {
       setSubmitting(false);
     }
@@ -79,8 +80,9 @@ export function ReportModal({ open, targetType, targetId, onClose, onSuccess }) 
               type="submit"
               className="modal-btn modal-btn-confirm"
               disabled={submitting}
+              aria-busy={submitting}
             >
-              {submitting ? '처리 중...' : '신고'}
+              {submitting ? <span className="btn-inline-loader" aria-label="로딩" /> : '신고'}
             </button>
           </div>
         </form>

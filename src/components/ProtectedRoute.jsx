@@ -9,7 +9,7 @@ export function ProtectedRoute({ children }) {
   if (!isRestored) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        로딩 중...
+        <div className="app-skeleton-screen" aria-label="로딩" />
       </div>
     );
   }

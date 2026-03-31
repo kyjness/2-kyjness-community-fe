@@ -8,19 +8,23 @@ export function PostListContent({
   loadingMore,
   onCardClick,
 }) {
+  const hasPosts = Array.isArray(posts) && posts.length > 0;
+  const showInitialSkeleton = !hasPosts && loading;
   return (
     <>
-      {loading && (
-        <p style={{ textAlign: 'center', padding: 20 }}>게시글을 불러오는 중...</p>
-      )}
-
       {!loading && error && <p className="post-list-message">{error}</p>}
 
-      {!loading && !error && posts.length === 0 && (
-        <p className="post-list-message">게시글이 없습니다.</p>
+      {showInitialSkeleton && !error && (
+        <div className="postlist-skeleton" aria-label="게시글 로딩">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="postlist-skeleton__card" />
+          ))}
+        </div>
       )}
 
-      {!loading && Array.isArray(posts) && posts.length > 0 && (
+      {!loading && !error && !hasPosts && <p className="post-list-message">게시글이 없습니다.</p>}
+
+      {hasPosts && (
         <div className="post-card-list" role="list">
           {(posts ?? []).map((post, index) => (
             <PostCard
@@ -32,9 +36,7 @@ export function PostListContent({
         </div>
       )}
 
-      {loadingMore && (
-        <p style={{ textAlign: 'center', padding: 20 }}>게시글을 불러오는 중...</p>
-      )}
+      {loadingMore && <div className="app-skeleton-bar" aria-label="추가 로딩" />}
     </>
   );
 }

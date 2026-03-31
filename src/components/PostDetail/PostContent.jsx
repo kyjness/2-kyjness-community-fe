@@ -1,6 +1,6 @@
 // 게시글 상세 카드: 제목·메타·이미지·본문·통계·메시지.
 import { useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, UserX, AlertTriangle } from 'lucide-react';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
 import {
   escapeHtml,
@@ -41,7 +41,7 @@ export function PostContent({
 
   return (
     <section className="w-full">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
+      <div className="post-detail-category-row flex flex-wrap items-center gap-2">
         <span
           className="inline-flex items-center rounded-full bg-violet-100 px-4 py-2 text-xs font-semibold text-violet-800 ring-1 ring-inset ring-violet-200"
           title="카테고리"
@@ -88,7 +88,10 @@ export function PostContent({
                 </span>
               )}
             </span>
-            <span className="post-detail-author-date">{formatDateTime(post?.created_at)}</span>
+            <span className="post-detail-author-date">
+              {formatDateTime(post?.created_at)}
+              {post?.isEdited ? <span className="comment-item-edited"> (수정됨)</span> : null}
+            </span>
           </div>
         </div>
         {(post?.isMine || showPostReport) && (
@@ -97,14 +100,14 @@ export function PostContent({
               <>
                 <button
                   type="button"
-                  className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
+                  className="detail-action-btn"
                   onClick={() => onEdit(`/posts/${postId}/edit`)}
                 >
                   수정
                 </button>
                 <button
                   type="button"
-                  className="min-w-[46px] h-[27px] rounded-md border border-[#aca0eb] bg-white text-xs font-['Pretendard'] cursor-pointer"
+                  className="detail-action-btn"
                   onClick={onDeleteOpen}
                 >
                   삭제
@@ -125,8 +128,9 @@ export function PostContent({
                 {menuOpen && (
                   <>
                     <div
-                      className="fixed inset-0 z-[1]"
+                      className="comment-item-menu-backdrop"
                       role="presentation"
+                      aria-hidden="true"
                       onClick={() => setMenuOpen(false)}
                     />
                     <ul className="comment-item-menu">
@@ -134,11 +138,13 @@ export function PostContent({
                         <li>
                           <button
                             type="button"
+                            className="menu-item-btn menu-item-btn--danger"
                             onClick={() => {
                               onBlockUser?.(post.author_id);
                               setMenuOpen(false);
                             }}
                           >
+                            <UserX size={15} aria-hidden />
                             차단
                           </button>
                         </li>
@@ -146,11 +152,13 @@ export function PostContent({
                       <li>
                         <button
                           type="button"
+                          className="menu-item-btn menu-item-btn--danger"
                           onClick={() => {
                             onReportOpen?.();
                             setMenuOpen(false);
                           }}
                         >
+                          <AlertTriangle size={15} aria-hidden />
                           신고
                         </button>
                       </li>
@@ -162,7 +170,7 @@ export function PostContent({
           </div>
         )}
       </div>
-      <div className="h-px bg-gray-200 my-1 w-full" />
+      <div className="h-px post-detail-divider my-[5px] w-full" />
       {uniqueFiles.length > 0 && (
         <div className="post-detail-images flex flex-wrap gap-3 justify-center">
           {uniqueFiles.map((f, i) => {
@@ -183,11 +191,11 @@ export function PostContent({
         {escapeHtml(String(post?.content || '내용이 없습니다.').trim())}
       </p>
       {tagList.length > 0 ? (
-        <div className="mt-3 mb-1 flex flex-wrap gap-2" aria-label="해시태그">
+        <div className="mt-[5px] mb-[5px] flex flex-wrap gap-2" aria-label="해시태그">
           {tagList.map((t, i) => (
             <span
               key={`${t}-${i}`}
-              className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-800 ring-1 ring-sky-100"
+              className="inline-flex items-center rounded-full bg-sky-50 px-4 py-2 text-[13px] font-medium text-sky-800 ring-1 ring-sky-100"
             >
               #{escapeHtml(String(t))}
             </span>
@@ -196,25 +204,25 @@ export function PostContent({
       ) : null}
       <div className="post-detail-stats flex justify-center gap-3">
         <div
-          className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center cursor-pointer"
+          className="w-20 h-14 rounded-xl bg-gray-300 flex flex-col items-center justify-center cursor-pointer"
           id="like-stat-box"
           onClick={onLike}
         >
-          <span className="text-base font-bold mb-1 text-black">{post?.likes ?? 0}</span>
-          <span className="text-xs font-bold text-black">좋아요수</span>
+          <span className="text-[15px] font-bold mb-1 text-black">{post?.likes ?? 0}</span>
+          <span className="text-[10px] font-bold text-black">좋아요수</span>
         </div>
-        <div className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center">
-          <span className="text-base font-bold mb-1 text-black">{post?.views ?? 0}</span>
-          <span className="text-xs font-bold text-black">조회수</span>
+        <div className="w-20 h-14 rounded-xl bg-gray-300 flex flex-col items-center justify-center">
+          <span className="text-[15px] font-bold mb-1 text-black">{post?.views ?? 0}</span>
+          <span className="text-[10px] font-bold text-black">조회수</span>
         </div>
-        <div className="w-24 h-16 rounded-xl bg-gray-300 flex flex-col items-center justify-center">
-          <span className="text-base font-bold mb-1 text-black">
+        <div className="w-20 h-14 rounded-xl bg-gray-300 flex flex-col items-center justify-center">
+          <span className="text-[15px] font-bold mb-1 text-black">
             {post?.commentCount ?? commentTotalCount ?? 0}
           </span>
-          <span className="text-xs font-bold text-black">댓글</span>
+          <span className="text-[10px] font-bold text-black">댓글</span>
         </div>
       </div>
-      <div className="h-px bg-gray-200 my-1 w-full" />
+      <div className="h-px post-detail-divider my-[5px] w-full" />
       {message && (
         <span className="helper-text" id="post-detail-message">
           * {message}

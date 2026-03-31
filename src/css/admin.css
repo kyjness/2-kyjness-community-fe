@@ -1,0 +1,124 @@
+/* ============================================
+   관리자 대시보드 - 액션 드롭다운·컴팩트 버튼
+   ============================================ */
+.admin-action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.admin-action-summary {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #000;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.admin-action-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-action-summary::after {
+  content: '';
+  display: inline-block;
+  margin-left: 6px;
+  border: 4px solid transparent;
+  border-top-color: currentColor;
+  vertical-align: middle;
+}
+
+.admin-action-dropdown[open] .admin-action-summary::after {
+  border-top-color: transparent;
+  border-bottom-color: currentColor;
+  margin-bottom: 2px;
+}
+
+.admin-action-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 50;
+  margin-top: 4px;
+  min-width: 120px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-action-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.admin-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-action-btn--gray,
+.admin-action-btn--orange,
+.admin-action-btn--dark,
+.admin-action-btn--danger {
+  background: transparent;
+  color: #000;
+}
+
+.admin-action-btn--gray:hover:not(:disabled),
+.admin-action-btn--orange:hover:not(:disabled),
+.admin-action-btn--dark:hover:not(:disabled),
+.admin-action-btn--danger:hover:not(:disabled) {
+  background: transparent;
+  color: #000;
+}
+
+/* 눌려 있는 상태(현재 적용된 상태)일 때만 배경 표시: 블라인드 해제, 정지 해제 */
+.admin-action-btn--active {
+  background: #e2e8f0;
+  color: #000;
+}
+
+.admin-action-btn--active:hover:not(:disabled) {
+  background: #cbd5e1;
+}
+
+/* 관리자 대시보드 - 상태 배지 */
+.admin-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.admin-badge--gray {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-badge--red {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-badge--orange {
+  background: #fff7ed;
+  color: #c2410c;
+}

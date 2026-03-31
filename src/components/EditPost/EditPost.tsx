@@ -6,7 +6,7 @@ import { Header } from '../Header.jsx';
 import { usePostStore } from '../../store/usePostStore';
 import type { ExistingImageItem, NewImageItem } from '../../api/api-types.js';
 import { safeImageUrl } from '../../utils/index.js';
-import { POST_CATEGORY_OPTIONS } from '../../utils/postMeta.js';
+import { parseHashtagsInput, POST_CATEGORY_OPTIONS } from '../../utils/postMeta.js';
 const MAX_IMAGES = 5;
 
 /** 이미지 미리보기 1건 (기존/신규) — 제거 시 onRemove(type, index) */
@@ -119,6 +119,21 @@ export function EditPost() {
       setFormError('');
       await submit(postId, () => {
         alert('게시글이 수정되었습니다!');
+        try {
+          const st = usePostStore.getState();
+          sessionStorage.setItem(
+            `pt_post_edit_merge_${postId}`,
+            JSON.stringify({
+              postId,
+              title: st.title.trim(),
+              content: st.content.trim(),
+              categoryId: st.categoryId,
+              hashtags: parseHashtagsInput(st.hashtagsInput),
+            })
+          );
+        } catch {
+          /* ignore */
+        }
         navigate(backHref);
       });
     },
