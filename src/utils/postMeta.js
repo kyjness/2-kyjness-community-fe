@@ -29,8 +29,17 @@ export function parseHashtagsInput(raw) {
   if (raw == null) return [];
   const s = String(raw).trim();
   if (!s) return [];
-  return s
+  const tokens = s
     .split(/[\s,]+/u)
     .map((t) => t.trim().replace(/^#+/u, ''))
     .filter((t) => t.length > 0);
+  const uniq = [];
+  const seen = new Set();
+  for (const t of tokens) {
+    if (seen.has(t)) continue;
+    seen.add(t);
+    uniq.push(t);
+    if (uniq.length >= 6) break;
+  }
+  return uniq;
 }

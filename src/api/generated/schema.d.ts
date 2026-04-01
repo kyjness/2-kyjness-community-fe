@@ -213,6 +213,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/notifications/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 실시간 알림(SSE)
+         * @description Redis Pub/Sub를 구독하는 SSE. 앱에 Redis가 없으면 503(JSON).
+         */
+        get: operations["notifications_stream_v1_notifications_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notifications */
+        get: operations["list_notifications_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark Notifications Read */
+        patch: operations["mark_notifications_read_v1_notifications_read_patch"];
+        trace?: never;
+    };
     "/v1/users/me/dogs/representative": {
         parameters: {
             query?: never;
@@ -276,6 +330,23 @@ export interface paths {
         post?: never;
         /** Delete Image */
         delete: operations["delete_image_v1_media_images__image_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/posts/trending-hashtags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Trending Hashtags */
+        get: operations["get_trending_hashtags_v1_posts_trending_hashtags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -649,7 +720,7 @@ export interface components {
          * ApiCode
          * @enum {string}
          */
-        ApiCode: "OK" | "SIGNUP_SUCCESS" | "LOGIN_SUCCESS" | "LOGOUT_SUCCESS" | "AUTH_SUCCESS" | "EMAIL_ALREADY_EXISTS" | "NICKNAME_ALREADY_EXISTS" | "INVALID_CREDENTIALS" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "USER_RETRIEVED" | "USER_UPDATED" | "PASSWORD_UPDATED" | "USER_NOT_FOUND" | "USER_WITHDRAWN" | "BLOCKS_RETRIEVED" | "INTERNAL_SERVER_ERROR" | "POST_UPLOADED" | "POST_RETRIEVED" | "POSTS_RETRIEVED" | "POST_UPDATED" | "POST_DELETED" | "POST_VIEW_RECORDED" | "POST_NOT_FOUND" | "POST_FILE_LIMIT_EXCEEDED" | "LIKE_SUCCESS" | "LIKE_DELETED" | "LIKE_NOT_FOUND" | "ALREADY_LIKED" | "CONFLICT" | "FORBIDDEN" | "COMMENT_UPLOADED" | "COMMENT_UPDATED" | "COMMENTS_RETRIEVED" | "COMMENT_NOT_FOUND" | "INVALID_POSTID_FORMAT" | "INVALID_REQUEST" | "INVALID_REQUEST_BODY" | "INVALID_PASSWORD_FORMAT" | "MISSING_REQUIRED_FIELD" | "INVALID_FILE_FORMAT" | "INVALID_FILE_TYPE" | "IMAGE_NOT_FOUND" | "IMAGE_IN_USE" | "INVALID_IMAGE_FILE" | "FILE_SIZE_EXCEEDED" | "PAYLOAD_TOO_LARGE" | "IMAGE_UPLOADED" | "SIGNUP_IMAGE_TOKEN_INVALID" | "SIGNUP_IMAGE_TOKEN_ALREADY_USED" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "UNPROCESSABLE_ENTITY" | "RATE_LIMIT_EXCEEDED" | "LOGIN_RATE_LIMIT_EXCEEDED" | "CONSTRAINT_ERROR" | "DB_ERROR" | "HTTP_ERROR" | "REPORT_SUBMITTED" | "ALREADY_REPORTED";
+        ApiCode: "OK" | "SIGNUP_SUCCESS" | "LOGIN_SUCCESS" | "LOGOUT_SUCCESS" | "AUTH_SUCCESS" | "EMAIL_ALREADY_EXISTS" | "NICKNAME_ALREADY_EXISTS" | "INVALID_CREDENTIALS" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "USER_NOT_FOUND" | "USER_WITHDRAWN" | "DOG_UPDATED" | "INTERNAL_SERVER_ERROR" | "POST_NOT_FOUND" | "POST_FILE_LIMIT_EXCEEDED" | "POST_HASHTAG_LIMIT_EXCEEDED" | "LIKE_NOT_FOUND" | "ALREADY_LIKED" | "CONFLICT" | "FORBIDDEN" | "COMMENT_NOT_FOUND" | "INVALID_POSTID_FORMAT" | "INVALID_REQUEST" | "INVALID_REQUEST_BODY" | "INVALID_PASSWORD_FORMAT" | "MISSING_REQUIRED_FIELD" | "INVALID_FILE_FORMAT" | "INVALID_FILE_TYPE" | "IMAGE_NOT_FOUND" | "IMAGE_IN_USE" | "INVALID_IMAGE_FILE" | "FILE_SIZE_EXCEEDED" | "PAYLOAD_TOO_LARGE" | "SIGNUP_IMAGE_TOKEN_INVALID" | "SIGNUP_IMAGE_TOKEN_ALREADY_USED" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "UNPROCESSABLE_ENTITY" | "RATE_LIMIT_EXCEEDED" | "LOGIN_RATE_LIMIT_EXCEEDED" | "CONSTRAINT_ERROR" | "DB_ERROR" | "HTTP_ERROR" | "ALREADY_REPORTED" | "NOTIFICATION_SSE_UNAVAILABLE";
         /** ApiResponse[AccessTokenData] */
         ApiResponse_AccessTokenData_: {
             /** Code */
@@ -804,6 +875,20 @@ export interface components {
              */
             requestid: string;
         };
+        /** ApiResponse[MarkNotificationsReadData] */
+        ApiResponse_MarkNotificationsReadData_: {
+            /** Code */
+            code: components["schemas"]["ApiCode"] | string;
+            data?: components["schemas"]["MarkNotificationsReadData"] | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Requestid
+             * @description 요청 추적 ID(X-Request-ID 헤더와 동일). 에러 토스트·지원 문의용.
+             * @default
+             */
+            requestid: string;
+        };
         /** ApiResponse[MediaSweepResponse] */
         ApiResponse_MediaSweepResponse_: {
             /** Code */
@@ -824,6 +909,20 @@ export interface components {
             code: components["schemas"]["ApiCode"] | string;
             /** Data */
             data?: null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Requestid
+             * @description 요청 추적 ID(X-Request-ID 헤더와 동일). 에러 토스트·지원 문의용.
+             * @default
+             */
+            requestid: string;
+        };
+        /** ApiResponse[PaginatedResponse[NotificationItem]] */
+        ApiResponse_PaginatedResponse_NotificationItem__: {
+            /** Code */
+            code: components["schemas"]["ApiCode"] | string;
+            data?: components["schemas"]["PaginatedResponse_NotificationItem_"] | null;
             /** Message */
             message?: string | null;
             /**
@@ -978,6 +1077,21 @@ export interface components {
             /** Code */
             code: components["schemas"]["ApiCode"] | string;
             data?: components["schemas"]["UserProfileResponse"] | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Requestid
+             * @description 요청 추적 ID(X-Request-ID 헤더와 동일). 에러 토스트·지원 문의용.
+             * @default
+             */
+            requestid: string;
+        };
+        /** ApiResponse[list[TrendingHashtagResponse]] */
+        ApiResponse_list_TrendingHashtagResponse__: {
+            /** Code */
+            code: components["schemas"]["ApiCode"] | string;
+            /** Data */
+            data?: components["schemas"]["TrendingHashtagResponse"][] | null;
             /** Message */
             message?: string | null;
             /**
@@ -1258,6 +1372,19 @@ export interface components {
             /** Accesstoken */
             accesstoken: string;
         };
+        /** MarkNotificationsReadData */
+        MarkNotificationsReadData: {
+            /** Updatedcount */
+            updatedcount: number;
+        };
+        /**
+         * MarkNotificationsReadRequest
+         * @description 비어 있으면 해당 유저의 미읽음 전체를 읽음 처리.
+         */
+        MarkNotificationsReadRequest: {
+            /** Ids */
+            ids?: string[];
+        };
         /** MediaSweepResponse */
         MediaSweepResponse: {
             /**
@@ -1265,6 +1392,46 @@ export interface components {
              * @default true
              */
             sweepstarted: boolean;
+        };
+        /** NotificationItem */
+        NotificationItem: {
+            /** Id */
+            id: string;
+            kind: components["schemas"]["NotificationKind"];
+            /** Actorid */
+            actorid?: string | null;
+            /** Postid */
+            postid?: string | null;
+            /** Commentid */
+            commentid?: string | null;
+            /** Readat */
+            readat?: string | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdat: string;
+        };
+        /**
+         * NotificationKind
+         * @description 인앱 알림 종류. SSE·목록 API에서 동일 문자열 사용.
+         * @enum {string}
+         */
+        NotificationKind: "COMMENT_ON_POST" | "LIKE_POST" | "LIKE_COMMENT";
+        /** PaginatedResponse[NotificationItem] */
+        PaginatedResponse_NotificationItem_: {
+            /** Items */
+            items?: components["schemas"]["NotificationItem"][];
+            /**
+             * Hasmore
+             * @default false
+             */
+            hasmore: boolean;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
         };
         /** PaginatedResponse[PostResponse] */
         PaginatedResponse_PostResponse_: {
@@ -1359,6 +1526,8 @@ export interface components {
              * Format: date-time
              */
             createdat: string;
+            /** Isedited */
+            readonly isedited: boolean;
         };
         /** PostUpdateRequest */
         PostUpdateRequest: {
@@ -1564,6 +1733,13 @@ export interface components {
          * @enum {string}
          */
         TargetType: "POST" | "COMMENT";
+        /** TrendingHashtagResponse */
+        TrendingHashtagResponse: {
+            /** Name */
+            name: string;
+            /** Count */
+            count: number;
+        };
         /** UnblindedResponse */
         UnblindedResponse: {
             /**
@@ -1895,11 +2071,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
             };
         };
     };
@@ -2007,6 +2185,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_BlockToggleResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notifications_stream_v1_notifications_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_notifications_v1_notifications_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PaginatedResponse_NotificationItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_notifications_read_v1_notifications_read_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkNotificationsReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MarkNotificationsReadData_"];
                 };
             };
             /** @description Validation Error */
@@ -2139,11 +2400,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -2152,6 +2415,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trending_hashtags_v1_posts_trending_hashtags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_TrendingHashtagResponse__"];
                 };
             };
         };
@@ -2165,8 +2448,6 @@ export interface operations {
                 size?: number;
                 /** @description 검색어 (title, content ILIKE) */
                 q?: string | null;
-                /** @description 정렬: latest|popular|views|oldest */
-                sort?: string | null;
                 /** @description 카테고리 ID 필터 */
                 category_id?: number | null;
             };
@@ -2453,11 +2734,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
             };
             /** @description Validation Error */
             422: {

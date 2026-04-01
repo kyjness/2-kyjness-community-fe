@@ -14,6 +14,7 @@ import { EditPost } from './pages/EditPost.jsx';
 import { MyPage } from './pages/MyPage.jsx';
 import { AdminDashboard } from './pages/AdminDashboard.jsx';
 import { NotFound } from './pages/NotFound.jsx';
+import { NotificationStreamHost } from './components/Notification/NotificationStreamHost.jsx';
 
 /** API 401 시 로그인으로 보내는 핸들러 (라우터 하위에서 한 번만 등록) */
 function ApiUnauthorizedSetup({ children }) {
@@ -39,6 +40,7 @@ function ApiUnauthorizedSetup({ children }) {
 export default function Router() {
   return (
     <ApiUnauthorizedSetup>
+      <NotificationStreamHost />
       <Routes>
         <Route path="/" element={<PostList />} />
         <Route path="/posts" element={<PostList />} />

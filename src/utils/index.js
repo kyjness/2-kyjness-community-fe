@@ -77,6 +77,7 @@ const API_ERROR_MESSAGES = {
   USER_WITHDRAWN: '탈퇴한 유저입니다.',
   INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
   POST_FILE_LIMIT_EXCEEDED: '이미지는 최대 5장까지 첨부할 수 있습니다.',
+  POST_HASHTAG_LIMIT_EXCEEDED: '해시태그는 최대 6개까지 입력할 수 있습니다.',
 };
 
 export const PASSWORD_POLICY_TEXT = API_ERROR_MESSAGES.INVALID_PASSWORD_FORMAT;

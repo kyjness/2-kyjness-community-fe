@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client.js';
 import { safeImageUrl } from '../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../config.js';
+import { NotificationBell } from './Notification/NotificationBell.jsx';
 
 export function Header({ children, showBackButton = false, backHref = '/posts', showProfile = true }) {
   const { user, isLoggedIn, clearUser } = useAuth();
@@ -88,7 +89,8 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
           </Link>
         </h1>
         {showProfile && isLoggedIn && (
-          <div ref={dropdownRef}>
+          <div className="header-actions" ref={dropdownRef}>
+            <NotificationBell />
             <div
               className="header-profile-wrapper"
               id="header-profile-btn"

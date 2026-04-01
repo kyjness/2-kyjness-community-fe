@@ -18,6 +18,11 @@ function getAccessToken() {
   }
 }
 
+/** SSE 등 Axios 외 클라이언트와 동일한 액세스 토큰 소스(로컬 user JSON). */
+export function getStoredAccessToken() {
+  return getAccessToken();
+}
+
 function setAccessToken(accessToken) {
   try {
     const raw = localStorage.getItem(USER_STORAGE_KEY);
@@ -170,9 +175,6 @@ instance.interceptors.request.use((config) => {
 
 instance.interceptors.response.use(
   (response) => {
-    if (response.status === 204) {
-      response.data = { code: 'OK', data: null };
-    }
     return response;
   },
   async (error) => {
@@ -279,7 +281,8 @@ instance.interceptors.response.use(
 
 function toData(response) {
   const res = response?.data ?? response;
-  if (response?.status === 204 && res == null) return { code: 'OK', data: null };
+  // 백엔드 표준은 200+JSON이지만, 과거/프록시/예외 케이스에서 204 또는 빈 바디가 올 수 있어 보수적으로 폴백.
+  if ((response?.status === 204 || response?.data == null) && res == null) return { code: 'OK', data: null };
   return res;
 }
 
@@ -309,7 +312,6 @@ export const api = {
 
   async delete(endpoint) {
     const response = await instance.delete(endpoint);
-    if (response?.status === 204) return { code: 'OK', data: null };
     return toData(response);
   },
 };

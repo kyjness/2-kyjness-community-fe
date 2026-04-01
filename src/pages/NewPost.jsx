@@ -92,7 +92,7 @@ export function NewPost() {
                   name="hashtags"
                   type="text"
                   className="form-input"
-                  placeholder="예: 강아지, 산책"
+                  placeholder="예: 강아지, 산책 (최대 6개)"
                   value={hashtagsInput}
                   onChange={handleHashtagsChange}
                   autoComplete="off"

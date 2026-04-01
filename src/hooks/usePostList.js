@@ -1,5 +1,6 @@
 // 게시글 목록 로직: 무한 스크롤, 검색(debounce 500ms), loadPage, 목록 정규화·정렬, ref 기반 effect.
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../api/client.js';
 
 const PAGE_SIZE = 10;
@@ -11,15 +12,21 @@ function _makeCacheKey(searchQ, categoryId) {
   return `${cat}::${q}`;
 }
 
+function _qFromSearch(search) {
+  return new URLSearchParams(search).get('q') ?? '';
+}
+
 export function usePostList() {
+  const location = useLocation();
+  const initialQ = _qFromSearch(location.search);
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialQ);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialQ.trim());
   const [categoryId, setCategoryId] = useState('all'); // 'all' | number(string)
 
   const loadingMoreRef = useRef(false);
@@ -169,6 +176,15 @@ export function usePostList() {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [searchTerm]);
+
+  // URL `?q=` ↔ 검색어 동기화 (인기 태그 클릭·공유 링크). 쿼리 변경 시 debounce 없이 즉시 반영.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q') ?? '';
+    setSearchTerm((prev) => (prev === q ? prev : q));
+    const trimmed = q.trim();
+    setDebouncedSearch((prev) => (prev === trimmed ? prev : trimmed));
+  }, [location.search]);
 
   useEffect(() => {
     const q = debouncedSearch.trim() || '';

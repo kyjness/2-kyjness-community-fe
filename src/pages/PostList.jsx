@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Pencil, Search } from 'lucide-react';
 import { Header } from '../components/Header.jsx';
 import { DogProfileBanner } from '../components/DogProfileBanner.jsx';
+import { TrendingHashtags } from '../components/TrendingHashtags.jsx';
 import { usePostList } from '../hooks/usePostList.js';
 import {
   PostListContent,
@@ -94,6 +95,9 @@ export function PostList() {
                   );
                 })}
               </nav>
+              <div className="mt-6 px-1 pb-4">
+                <TrendingHashtags />
+              </div>
             </div>
           </aside>
 
