@@ -15,9 +15,15 @@ export function DogManagement() {
   } = useDogManagement();
 
   return (
-    <div className="pb-6 max-w-[600px] w-full mypage-form-center mypage-form-center--wide mypage-form--top">
-      <h2 className="form-title text-[16px] mb-4">반려견 관리</h2>
-      <form className="form mypage-form-inner" noValidate onSubmit={handleSubmit}>
+    <div className="flex w-full max-w-[600px] flex-col items-center pb-2 text-center">
+      <h2 className="mb-4 text-center font-['Pretendard'] text-[18px] font-bold leading-[18px] text-black">
+        반려견 관리
+      </h2>
+      <form
+        className="flex w-full max-w-[480px] flex-col text-left"
+        noValidate
+        onSubmit={handleSubmit}
+      >
         <DogListSection
           dogs={dogs}
           setDogAt={setDogAt}
@@ -26,13 +32,20 @@ export function DogManagement() {
           setRepresentative={setRepresentative}
         />
         {formError && (
-          <span className="helper-text form-error-common" role="alert">
+          <span
+            className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+            role="alert"
+          >
             * {formError}
           </span>
         )}
-        <div className="mypage-form-actions">
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? '저장 중...' : '저장하기'}
+        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+          <button
+            type="submit"
+            className="inline-flex h-[33px] w-full max-w-[360px] self-center items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50"
+            disabled={submitting}
+          >
+            저장하기
           </button>
         </div>
       </form>

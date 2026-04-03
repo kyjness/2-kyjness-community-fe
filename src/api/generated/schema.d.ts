@@ -699,6 +699,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/chat/rooms/{room_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Room Messages */
+        get: operations["list_room_messages_v1_chat_rooms__room_id__messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -796,6 +813,20 @@ export interface components {
             /** Code */
             code: components["schemas"]["ApiCode"] | string;
             data?: components["schemas"]["BlocksData"] | null;
+            /** Message */
+            message?: string | null;
+            /**
+             * Requestid
+             * @description 요청 추적 ID(X-Request-ID 헤더와 동일). 에러 토스트·지원 문의용.
+             * @default
+             */
+            requestid: string;
+        };
+        /** ApiResponse[ChatMessagesPageData] */
+        ApiResponse_ChatMessagesPageData_: {
+            /** Code */
+            code: components["schemas"]["ApiCode"] | string;
+            data?: components["schemas"]["ChatMessagesPageData"] | null;
             /** Message */
             message?: string | null;
             /**
@@ -1103,7 +1134,10 @@ export interface components {
         };
         /** AuthorInfo */
         AuthorInfo: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Nickname */
             nickname: string;
@@ -1135,7 +1169,10 @@ export interface components {
         };
         /** BlockedUserItem */
         BlockedUserItem: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Nickname */
             nickname: string;
@@ -1163,9 +1200,49 @@ export interface components {
              */
             image: string;
         };
+        /** ChatMessageItem */
+        ChatMessageItem: {
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
+            id: string;
+            /**
+             * Roomid
+             * @description 엔티티 공개 ID (Base62)
+             */
+            roomid: string;
+            /**
+             * Senderid
+             * @description 엔티티 공개 ID (Base62)
+             */
+            senderid: string;
+            /** Content */
+            content: string;
+            /** Isread */
+            isread: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdat: string;
+        };
+        /** ChatMessagesPageData */
+        ChatMessagesPageData: {
+            /** Items */
+            items: components["schemas"]["ChatMessageItem"][];
+            /**
+             * Nextcursor
+             * @description 다음 페이지(더 과거) 조회 시 쿼리 cursor로 전달할 메시지 공개 ID(Base62)
+             */
+            nextcursor?: string | null;
+        };
         /** CommentAuthorInfo */
         CommentAuthorInfo: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Nickname */
             nickname: string;
@@ -1177,12 +1254,18 @@ export interface components {
         };
         /** CommentIdData */
         CommentIdData: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
         };
         /** CommentResponse */
         CommentResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Content */
             content: string;
@@ -1261,7 +1344,10 @@ export interface components {
         DogGender: "male" | "female";
         /** DogProfileResponse */
         DogProfileResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Name */
             name: string;
@@ -1310,7 +1396,10 @@ export interface components {
         };
         /** FileInfo */
         FileInfo: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Fileurl */
             fileurl?: string | null;
@@ -1324,7 +1413,10 @@ export interface components {
         };
         /** ImageUploadResponse */
         ImageUploadResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /**
              * Fileurl
@@ -1357,7 +1449,10 @@ export interface components {
         };
         /** LoginSuccessData */
         LoginSuccessData: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Email */
             email: string;
@@ -1395,7 +1490,10 @@ export interface components {
         };
         /** NotificationItem */
         NotificationItem: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             kind: components["schemas"]["NotificationKind"];
             /** Actorid */
@@ -1478,12 +1576,18 @@ export interface components {
         };
         /** PostIdData */
         PostIdData: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
         };
         /** PostResponse */
         PostResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Title */
             title: string;
@@ -1553,7 +1657,7 @@ export interface components {
             targettype: components["schemas"]["TargetType"];
             /**
              * Targetid
-             * @description 대상 ID (게시글 또는 댓글 ULID)
+             * @description 대상 ID (게시글 또는 댓글, Base62)
              */
             targetid: string;
             /** @description 신고 사유 (스팸|욕설|부적절한 콘텐츠|기타) */
@@ -1580,7 +1684,10 @@ export interface components {
         };
         /** ReportedPostAuthorInfo */
         ReportedPostAuthorInfo: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Nickname */
             nickname: string;
@@ -1593,9 +1700,15 @@ export interface components {
         ReportedPostItem: {
             /** Targettype */
             targettype: string;
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
-            /** Postid */
+            /**
+             * Postid
+             * @description 엔티티 공개 ID (Base62)
+             */
             postid: string;
             /** Title */
             title: string;
@@ -1604,7 +1717,10 @@ export interface components {
              * @default
              */
             contentpreview: string;
-            /** Userid */
+            /**
+             * Userid
+             * @description 엔티티 공개 ID (Base62)
+             */
             userid: string;
             author?: components["schemas"]["ReportedPostAuthorInfo"] | null;
             /** Authorstatus */
@@ -1675,7 +1791,7 @@ export interface components {
         SetRepresentativeDogRequest: {
             /**
              * Dogid
-             * @description 대표로 지정할 강아지 ID (ULID)
+             * @description 대표로 지정할 강아지 ID (Base62)
              */
             dogid: string;
         };
@@ -1707,7 +1823,10 @@ export interface components {
         };
         /** SignupImageUploadData */
         SignupImageUploadData: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /**
              * Fileurl
@@ -1784,7 +1903,10 @@ export interface components {
         };
         /** UserProfileResponse */
         UserProfileResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description 엔티티 공개 ID (Base62)
+             */
             id: string;
             /** Email */
             email: string;
@@ -2172,6 +2294,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 대상 사용자 공개 ID (Base62) */
                 target_user_id: string;
             };
             cookie?: never;
@@ -2392,7 +2515,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 이미지 ULID */
+                /** @description 이미지 공개 ID (Base62) */
                 image_id: string;
             };
             cookie?: never;
@@ -2517,7 +2640,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2549,7 +2672,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2581,7 +2704,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2613,7 +2736,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2656,7 +2779,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2688,7 +2811,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2724,9 +2847,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
-                /** @description 댓글 ULID */
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -2758,9 +2881,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
-                /** @description 댓글 ULID */
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -2796,7 +2919,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2828,7 +2951,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 게시글 ULID */
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -2860,7 +2983,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 댓글 ULID */
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -2892,7 +3015,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 댓글 ULID */
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -3009,6 +3132,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -3040,6 +3164,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -3071,6 +3196,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 사용자 공개 ID (Base62) */
                 user_id: string;
             };
             cookie?: never;
@@ -3102,6 +3228,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 사용자 공개 ID (Base62) */
                 user_id: string;
             };
             cookie?: never;
@@ -3133,6 +3260,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -3164,6 +3292,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
             };
             cookie?: never;
@@ -3195,6 +3324,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -3226,6 +3356,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -3257,6 +3388,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -3288,7 +3420,9 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description 게시글 공개 ID (Base62) */
                 post_id: string;
+                /** @description 댓글 공개 ID (Base62) */
                 comment_id: string;
             };
             cookie?: never;
@@ -3302,6 +3436,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_room_messages_v1_chat_rooms__room_id__messages_get: {
+        parameters: {
+            query?: {
+                /** @description 이전 응답의 next_cursor (더 과거 메시지) */
+                cursor?: string | null;
+                /** @description 한 번에 가져올 최대 개수 */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description 채팅방 공개 ID (Base62) */
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChatMessagesPageData_"];
                 };
             };
             /** @description Validation Error */

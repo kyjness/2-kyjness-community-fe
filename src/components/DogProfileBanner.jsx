@@ -56,7 +56,7 @@ export function DogProfileBanner({ user }) {
 
   return (
     <div
-      className="dog-profile-banner"
+      className="relative w-full my-2 mb-[10px] cursor-pointer rounded-[10px] border border-[rgba(245,158,11,0.25)] bg-[linear-gradient(135deg,#fffbeb_0%,#fef3c7_100%)] px-4 py-2 pr-[44px] shadow-[0_1px_8px_rgba(245,158,11,0.06)] transition-[box-shadow,border-color,background] duration-200 hover:border-[rgba(245,158,11,0.4)] hover:bg-[linear-gradient(135deg,#fef3c7_0%,#fde68a_100%)]"
       role="button"
       tabIndex={0}
       onClick={() => navigate('/mypage?tab=dogs')}
@@ -67,13 +67,13 @@ export function DogProfileBanner({ user }) {
         }
       }}
     >
-      <span className="dog-profile-banner__text">
+      <span className="block text-center text-[14px] leading-[1.4] text-[#78350f]">
         아직 우리 아이를 등록하지 않으셨나요?
-        <span className="dog-profile-banner__cta">🐶 등록하러 가기</span>
+        <span className="ml-1 font-semibold text-[#b45309]">🐶 등록하러 가기</span>
       </span>
       <button
         type="button"
-        className="dog-profile-banner__close"
+        className="absolute right-2 top-1/2 flex h-[26px] w-[26px] -translate-y-1/2 items-center justify-center rounded-[6px] border-0 bg-transparent p-0 text-[18px] leading-none text-[#a16207] cursor-pointer transition-[color,background-color] duration-150 hover:bg-[rgba(245,158,11,0.15)] hover:text-[#78350f]"
         aria-label="배너 닫기"
         onClick={handleDismiss}
       >

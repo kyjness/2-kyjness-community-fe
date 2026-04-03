@@ -6,9 +6,16 @@ export function PasswordEdit() {
   const { formData, errors, submitting, handleFieldChange, handleSubmit } = useChangePassword();
 
   return (
-    <div className="pb-6 max-w-[600px] w-full mypage-form-center mypage-form-center--password">
-      <h2 className="form-title text-[16px] mb-6">비밀번호 수정</h2>
-      <form id="form" className="form mypage-form-inner" noValidate onSubmit={handleSubmit}>
+    <div className="flex w-full max-w-[600px] flex-col items-center pb-2 text-center">
+      <h2 className="mb-4 text-center font-['Pretendard'] text-[18px] font-bold leading-[18px] text-black">
+        비밀번호 수정
+      </h2>
+      <form
+        id="form"
+        className="flex w-full max-w-[370px] flex-col gap-4 text-left"
+        noValidate
+        onSubmit={handleSubmit}
+      >
         <ChangePasswordFormFields
           formData={formData}
           errors={errors}
@@ -16,16 +23,20 @@ export function PasswordEdit() {
         />
         {errors.form && (
           <span
-            className="helper-text form-error-common"
+            className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
             id="change-password-form-error"
             role="alert"
           >
             * {errors.form}
           </span>
         )}
-        <div className="mypage-form-actions">
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? '변경 중...' : '수정하기'}
+        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+          <button
+            type="submit"
+            className="inline-flex h-[33px] w-full self-center items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50"
+            disabled={submitting}
+          >
+            수정하기
           </button>
         </div>
       </form>

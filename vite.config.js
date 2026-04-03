@@ -12,6 +12,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        // WebSocket 업그레이드를 백엔드로 넘김 — 설정 변경 후에는 `npm run dev` 재시작 필요
+        ws: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/upload': {

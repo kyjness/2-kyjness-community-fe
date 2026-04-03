@@ -46,57 +46,64 @@ export function BlockManagement() {
   const avatarUrl = (item) => item?.profileImageUrl ?? DEFAULT_PROFILE_IMAGE;
 
   return (
-    <div className="pb-6 max-w-[600px] w-full mypage-form-center">
-      <h2 className="form-title text-[16px] mb-4">차단 관리</h2>
+    <div className="flex w-full max-w-[600px] flex-col items-center pb-2 text-center">
+      <h2 className="mb-4 text-center font-['Pretendard'] text-[18px] font-bold leading-[18px] text-black">
+        차단 관리
+      </h2>
       {error && (
-        <p className="text-red-500 text-sm mb-3" role="alert">
+        <p className="mb-3 text-sm text-red-500" role="alert">
           {error}
         </p>
       )}
       {loading ? (
-        <ul className="block-management-list list-none p-0 m-0" aria-label="차단 목록 로딩">
+        <ul className="m-0 flex list-none flex-col gap-4 p-0" aria-label="차단 목록 로딩">
           {Array.from({ length: 4 }).map((_, i) => (
             <li
               key={i}
-              className="block-management-item block-skeleton-row flex items-center justify-between gap-4 py-6 border-b border-gray-200 last:border-0"
+              className="animate-[skeleton-pulse_1.05s_ease-in-out_infinite] flex items-center justify-between gap-4 border-b border-[#e5e7eb] pt-1 pb-4 last:border-b-0"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="block-skeleton-avatar" aria-hidden="true" />
-                <div className="block-skeleton-name" aria-hidden="true" />
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className="h-10 w-10 shrink-0 rounded-full bg-[rgba(15,23,42,0.1)]"
+                  aria-hidden="true"
+                />
+                <div
+                  className="h-[14px] min-w-0 max-w-[min(180px,40vw)] rounded-[8px] bg-[rgba(15,23,42,0.1)]"
+                  aria-hidden="true"
+                />
               </div>
-              <div className="block-skeleton-btn" aria-hidden="true" />
+              <div
+                className="h-8 w-[88px] shrink-0 rounded-full bg-[rgba(15,23,42,0.1)]"
+                aria-hidden="true"
+              />
             </li>
           ))}
         </ul>
       ) : list.length === 0 ? (
-        <p className="block-management-placeholder text-gray-600 text-sm m-0">
-          차단한 유저가 없습니다.
-        </p>
+        <p className="m-0 w-full text-center text-sm text-gray-600">차단한 유저가 없습니다.</p>
       ) : (
-        <ul className="block-management-list list-none p-0 m-0">
+        <ul className="m-0 flex list-none flex-col gap-4 p-0">
           {list.map((item) => (
             <li
               key={item.id}
-              className="block-management-item flex items-center justify-between gap-4 py-6 border-b border-gray-200 last:border-0"
+              className="flex items-center justify-between gap-4 border-b border-[#e5e7eb] pt-1 pb-4 last:border-b-0"
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex min-w-0 items-center gap-3">
                 <img
                   src={avatarUrl(item)}
                   alt=""
-                  className="w-10 h-10 rounded-full object-cover shrink-0 bg-gray-200"
+                  className="h-10 w-10 shrink-0 rounded-full bg-gray-200 object-cover"
                   onError={(e) => {
                     if (e.target.src !== DEFAULT_PROFILE_IMAGE) {
                       e.target.src = DEFAULT_PROFILE_IMAGE;
                     }
                   }}
                 />
-                <span className="font-medium text-gray-800 truncate">
-                  {item.nickname ?? ''}
-                </span>
+                <span className="truncate font-medium text-gray-800">{item.nickname ?? ''}</span>
               </div>
               <button
                 type="button"
-                className="btn btn-secondary text-sm shrink-0 disabled:opacity-50"
+                className="inline-flex h-[40px] w-fit shrink-0 items-center justify-center rounded-full border-0 bg-transparent px-5 text-[12px] font-normal leading-[12px] text-black no-underline transition-all duration-200 hover:text-[#333333] active:text-[#111111] disabled:opacity-50"
                 onClick={() => handleUnblock(item.id)}
               >
                 차단 해제

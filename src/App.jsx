@@ -5,6 +5,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import Router from './Router.jsx';
 import { SplashScreen } from './components/SplashScreen.jsx';
+// DM WebSocket 1회 유지: <AuthProvider> 안에서 로그인 상태일 때만 연결되도록 배치
+import { ChatSocketProvider } from './components/Chat/ChatSocketProvider';
 
 const SPLASH_SHOWN_KEY = 'splashShown';
 
@@ -30,7 +32,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Router />
+        <ChatSocketProvider>
+          <Router />
+        </ChatSocketProvider>
       </AuthProvider>
     </BrowserRouter>
   );

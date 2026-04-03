@@ -1,23 +1,35 @@
 // 알림 드롭다운 본문: 로딩·목록·모두 읽음.
+import { useMemo } from 'react';
 import { NotificationItem } from './NotificationItem.jsx';
 
-export function NotificationList({ items, loading, error, listTotal = 0, onMarkRead, onMarkAllRead }) {
+export function NotificationList({
+  items,
+  loading,
+  error,
+  listTotal = 0,
+  visibleCount = 6,
+  onRequestMore,
+  onMarkRead,
+  onMarkAllRead,
+}) {
+  const visibleItems = useMemo(
+    () => items.slice(0, Math.min(Math.max(0, visibleCount), items.length)),
+    [items, visibleCount]
+  );
+  const hasMore = !loading && !error && listTotal > items.length;
   return (
-    <div className="notification-list flex flex-col gap-1 min-w-[280px] max-w-[min(100vw-2rem,360px)]">
+    <div className="notification-list flex flex-col gap-1 min-w-[240px] max-w-[min(100vw-2rem,300px)]">
       <div className="flex items-center justify-between gap-2 px-1 pb-2 border-b border-stone-200/80">
         <span className="text-xs font-semibold text-stone-700">알림</span>
         <button
           type="button"
-          className="text-[11px] text-stone-600 hover:text-stone-900 underline-offset-2 hover:underline disabled:opacity-40"
+          className="cursor-pointer rounded-md border border-stone-200 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:opacity-40"
           onClick={() => onMarkAllRead?.()}
           disabled={loading || items.length === 0}
         >
           모두 읽음
         </button>
       </div>
-      {loading && (
-        <p className="text-xs text-stone-500 py-6 text-center">불러오는 중…</p>
-      )}
       {!loading && error && (
         <p className="text-xs text-red-600 py-4 text-center">알림을 불러오지 못했습니다.</p>
       )}
@@ -31,9 +43,23 @@ export function NotificationList({ items, loading, error, listTotal = 0, onMarkR
       )}
       {!loading &&
         !error &&
-        items.map((item) => (
+        visibleItems.map((item) => (
           <NotificationItem key={item.id} item={item} onMarkRead={onMarkRead} />
         ))}
+      {!loading && !error && visibleItems.length > 0 && listTotal > visibleItems.length && (
+        <p className="px-1 pt-1 text-center text-[11px] text-stone-500">
+          {visibleItems.length}/{listTotal} 표시 중
+        </p>
+      )}
+      {hasMore && (
+        <button
+          type="button"
+          className="mt-1 cursor-pointer rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-[12px] font-semibold text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:opacity-40"
+          onClick={() => onRequestMore?.()}
+        >
+          더보기
+        </button>
+      )}
     </div>
   );
 }

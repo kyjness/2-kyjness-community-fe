@@ -8,6 +8,29 @@ import { formatDateTime, getApiErrorMessage } from '../utils/index.js';
 
 const PAGE_SIZE = 20;
 
+/** @see former admin.css — details/summary 드롭다운 트리거 */
+const ADMIN_ACTION_SUMMARY_CLASS =
+  "list-none cursor-pointer select-none rounded-[6px] border border-[#e2e8f0] bg-[#f1f5f9] py-[6px] px-[10px] text-[13px] font-medium text-black [&::-webkit-details-marker]:hidden after:content-[''] after:ml-[6px] after:inline-block after:align-middle after:border-4 after:border-transparent after:border-t-current group-open:after:mb-[2px] group-open:after:border-t-transparent group-open:after:border-b-current";
+
+/** @see former admin.css — 드롭다운 패널 */
+const ADMIN_ACTION_MENU_CLASS =
+  'absolute left-0 top-full z-50 mt-[4px] flex min-w-[120px] flex-col gap-[2px] rounded-[8px] border border-[#e2e8f0] bg-white p-[4px] shadow-[0_4px_12px_rgba(0,0,0,0.1)]';
+
+/** @see former admin.css — 메뉴 버튼 공통 */
+const ADMIN_ACTION_BTN_BASE =
+  'cursor-pointer rounded-[4px] border-0 bg-transparent py-[6px] px-[10px] text-left text-[12px] font-medium text-black whitespace-nowrap transition-[background-color,color] duration-150 disabled:cursor-not-allowed disabled:opacity-60';
+
+const ADMIN_ACTION_BTN_ACTIVE_CLASS = `${ADMIN_ACTION_BTN_BASE} bg-[#e2e8f0] hover:enabled:bg-[#cbd5e1]`;
+const ADMIN_ACTION_BTN_DEFAULT_CLASS = ADMIN_ACTION_BTN_BASE;
+const ADMIN_ACTION_BTN_GRAY_CLASS = `${ADMIN_ACTION_BTN_BASE} bg-transparent text-black hover:enabled:bg-transparent hover:enabled:text-black`;
+
+/** @see former admin.css — 상태 배지 */
+const ADMIN_BADGE_BASE =
+  'inline-block whitespace-nowrap rounded-[4px] px-[6px] py-[2px] text-[11px] font-semibold';
+const ADMIN_BADGE_GRAY_CLASS = `${ADMIN_BADGE_BASE} bg-[#f1f5f9] text-[#475569]`;
+const ADMIN_BADGE_RED_CLASS = `${ADMIN_BADGE_BASE} bg-[#fef2f2] text-[#b91c1c]`;
+const ADMIN_BADGE_ORANGE_CLASS = `${ADMIN_BADGE_BASE} bg-[#fff7ed] text-[#c2410c]`;
+
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -193,10 +216,10 @@ export function AdminDashboard() {
 
   return (
     <Header showBackButton backHref="/posts">
-      <main className="main admin-dashboard-main">
-        <div className="admin-dashboard-container" style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-          <h1 style={{ marginBottom: 24, textAlign: 'center' }}>관리자 대시보드</h1>
-          <p style={{ marginBottom: 16, color: 'var(--color-text-secondary, #666)', textAlign: 'center' }}>
+      <main className="flex flex-1 items-center justify-center bg-[var(--app-bg)] px-[16px] pt-[8px]">
+        <div className="mx-auto w-full max-w-[1100px] p-6 text-[15px] leading-[1.35] text-black">
+          <h1 className="mb-4 text-center text-[24px] font-extrabold">관리자 대시보드</h1>
+          <p className="mb-3 text-center text-[14px] text-[var(--color-text-secondary,#666)]">
             신고가 누적되었거나 블라인드된 게시글 목록입니다.
           </p>
 
@@ -208,236 +231,262 @@ export function AdminDashboard() {
               ))}
             </div>
           ) : error ? (
-            <p style={{ color: 'var(--color-error)', padding: 20 }}>{error}</p>
+            <p className="p-5 text-[var(--color-error)]">{error}</p>
           ) : list.length === 0 ? (
-            <p style={{ padding: 40, textAlign: 'center' }}>신고된 내용이 없습니다.</p>
+            <p className="p-10 text-center">신고된 내용이 없습니다.</p>
           ) : (
             <>
-              <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #eee' }}>
-                    <th style={{ padding: 12, textAlign: 'left' }}>신고 유형</th>
-                    <th style={{ padding: 12, textAlign: 'left' }}>게시글 제목</th>
-                    <th style={{ padding: 12, textAlign: 'left' }}>내용</th>
-                    <th style={{ padding: 12, textAlign: 'left' }}>작성자 닉네임</th>
-                    <th style={{ padding: 12, textAlign: 'right' }}>신고 횟수</th>
-                    <th style={{ padding: 12, textAlign: 'left' }}>신고 사유</th>
-                    <th style={{ padding: 12, textAlign: 'left' }}>최근 신고 시각</th>
-                    <th style={{ padding: 12, textAlign: 'center' }}>유저 상태</th>
-                    <th style={{ padding: 12, textAlign: 'center' }}>노출 상태</th>
-                    <th style={{ padding: 12, textAlign: 'left' }}>액션</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((row) => (
-                    <tr key={`${row.targetType ?? 'POST'}-${row.id}`} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: 12 }}>
-                        {row.targetType === 'COMMENT' ? '댓글' : '게시글'}
-                      </td>
-                      <td style={{ padding: 12 }}>
-                        <Link
-                          to={`/posts/${row.postId ?? row.id}?from=admin`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: 'var(--color-link, #2563eb)', textDecoration: 'underline' }}
-                        >
-                          {row.title ?? '-'}
-                        </Link>
-                      </td>
-                      <td style={{ padding: 12 }}>
-                        <div
-                          className="admin-report-reason-cell"
-                          title={row.contentPreview ?? ''}
-                          style={{ fontSize: 12, maxWidth: 200 }}
-                        >
-                          {row.contentPreview ?? '-'}
-                        </div>
-                      </td>
-                      <td style={{ padding: 12 }}>
-                        {row.author?.nickname ?? `user_${row.userId}`}
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'right' }}>{row.reportCount ?? 0}</td>
-                      <td style={{ padding: 12, maxWidth: 180 }}>
-                        {(() => {
-                          const reasons = row.reportReasons ?? [];
-                          if (!reasons.length) return '-';
-                          const countByReason = reasons.reduce((acc, r) => {
-                            acc[r] = (acc[r] ?? 0) + 1;
-                            return acc;
-                          }, /** @type {Record<string, number>} */ ({}));
-                          const text = Object.entries(countByReason)
-                            .sort(([a], [b]) => a.localeCompare(b))
-                            .map(([reason, count]) => `${reason}(${count})`)
-                            .join(', ');
-                          return (
-                            <div title={text} className="admin-report-reason-cell" style={{ fontSize: 12 }}>
-                              {text}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td style={{ padding: 12 }}>
-                        {row.lastReportedAt
-                          ? formatDateTime(row.lastReportedAt)
-                          : '-'}
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'center' }}>
-                        {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
-                          <span className="admin-badge admin-badge--red" title="정지된 유저">정지</span>
-                        ) : (
-                          <span className="admin-badge admin-badge--gray" title="정상">정상</span>
-                        )}
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'center' }}>
-                        {row.isBlinded ? (
-                          <span className="admin-badge admin-badge--orange" title="블라인드">블라인드</span>
-                        ) : (
-                          <span className="admin-badge admin-badge--gray" title="정상">정상</span>
-                        )}
-                      </td>
-                      <td style={{ padding: 12, width: 140 }}>
-                        {row.targetType === 'COMMENT' ? (
-                          <details className="admin-action-dropdown">
-                            <summary
-                              className="admin-action-summary"
-                              aria-haspopup="listbox"
-                              aria-expanded="false"
-                            >
-                              관리 메뉴
-                            </summary>
-                            <div className="admin-action-menu">
-                              {row.isBlinded ? (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn admin-action-btn--active"
-                                  onClick={() => handleUnblindComment(row.id)}
-                                >
-                                  블라인드 해제
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn"
-                                  onClick={() => handleBlindComment(row.id)}
-                                >
-                                  블라인드 처리
-                                </button>
-                              )}
-                              {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn admin-action-btn--active"
-                                  onClick={() => handleActivateUser(row.userId)}
-                                >
-                                  정지 해제
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn"
-                                  onClick={() => handleSuspendUser(row.userId)}
-                                >
-                                  유저 정지
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="admin-action-btn"
-                                onClick={() => handleDeleteComment(row.postId, row.id)}
-                              >
-                                댓글 삭제
-                              </button>
-                              <button
-                                type="button"
-                                className="admin-action-btn admin-action-btn--gray"
-                                onClick={() => handleResetCommentReports(row.id)}
-                              >
-                                신고 무시
-                              </button>
-                            </div>
-                          </details>
-                        ) : (
-                          <details className="admin-action-dropdown">
-                            <summary
-                              className="admin-action-summary"
-                              aria-haspopup="listbox"
-                              aria-expanded="false"
-                            >
-                              관리 메뉴
-                            </summary>
-                            <div className="admin-action-menu">
-                              {row.isBlinded ? (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn admin-action-btn--active"
-                                  onClick={() => handleUnblind(row.id)}
-                                >
-                                  블라인드 해제
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn"
-                                  onClick={() => handleBlindPost(row.id)}
-                                >
-                                  블라인드 처리
-                                </button>
-                              )}
-                              {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn admin-action-btn--active"
-                                  onClick={() => handleActivateUser(row.userId)}
-                                >
-                                  정지 해제
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="admin-action-btn"
-                                  onClick={() => handleSuspendUser(row.userId)}
-                                >
-                                  유저 정지
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="admin-action-btn"
-                                onClick={() => handleDeletePost(row.id)}
-                              >
-                                글 삭제
-                              </button>
-                              <button
-                                type="button"
-                                className="admin-action-btn admin-action-btn--gray"
-                                onClick={() => handleResetReports(row.id)}
-                              >
-                                신고 무시
-                              </button>
-                            </div>
-                          </details>
-                        )}
-                      </td>
+              <table className="w-full table-fixed border-collapse text-left text-[14px] [&_th+th]:border-l [&_td+td]:border-l [&_th+th]:border-[#9ca3af] [&_td+td]:border-[#9ca3af]">
+                  <thead>
+                    <tr className="border-b-2 border-[#9ca3af]">
+                      <th className="w-[84px] px-3 py-2 font-extrabold whitespace-nowrap">
+                        신고 유형
+                      </th>
+                      <th className="w-[24%] px-3 py-2 font-extrabold whitespace-nowrap">
+                        게시글 제목
+                      </th>
+                      <th className="w-[26%] px-3 py-2 font-extrabold whitespace-nowrap">
+                        내용
+                      </th>
+                      <th className="w-[120px] px-3 py-2 font-extrabold whitespace-nowrap">
+                        작성자 닉네임
+                      </th>
+                      <th className="hidden lg:table-cell w-[80px] px-3 py-2 text-right font-extrabold whitespace-nowrap">
+                        신고 횟수
+                      </th>
+                      <th className="hidden xl:table-cell w-[18%] px-3 py-2 font-extrabold whitespace-nowrap">
+                        신고 사유
+                      </th>
+                      <th className="hidden xl:table-cell w-[140px] px-3 py-2 font-extrabold whitespace-nowrap">
+                        최근 신고 시각
+                      </th>
+                      <th className="w-[84px] px-3 py-2 text-center font-extrabold whitespace-nowrap">
+                        유저 상태
+                      </th>
+                      <th className="hidden md:table-cell w-[88px] px-3 py-2 text-center font-extrabold whitespace-nowrap">
+                        노출 상태
+                      </th>
+                      <th className="w-[110px] px-3 py-2 font-extrabold whitespace-nowrap">
+                        액션
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {list.map((row) => {
+                      const title = row.title ?? '-';
+                      const contentPreview = row.contentPreview ?? '-';
+                      const authorNickname = row.author?.nickname ?? `user_${row.userId}`;
+
+                      const reasons = row.reportReasons ?? [];
+                      const reasonsText = (() => {
+                        if (!reasons.length) return '-';
+                        const countByReason = reasons.reduce((acc, r) => {
+                          acc[r] = (acc[r] ?? 0) + 1;
+                          return acc;
+                        }, /** @type {Record<string, number>} */ ({}));
+                        return Object.entries(countByReason)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([reason, count]) => `${reason}(${count})`)
+                          .join(', ');
+                      })();
+
+                      const lastReportedAtText = row.lastReportedAt ? formatDateTime(row.lastReportedAt) : '-';
+
+                      return (
+                        <tr key={`${row.targetType ?? 'POST'}-${row.id}`} className="border-b border-[#9ca3af]">
+                          <td className="px-3 py-2 whitespace-nowrap truncate" title={row.targetType === 'COMMENT' ? '댓글' : '게시글'}>
+                            {row.targetType === 'COMMENT' ? '댓글' : '게시글'}
+                          </td>
+                          <td className="px-3 py-2">
+                            <Link
+                              to={`/posts/${row.postId ?? row.id}?from=admin`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block whitespace-normal break-words line-clamp-2 text-[var(--color-link,#2563eb)] underline"
+                              title={title}
+                            >
+                              {title}
+                            </Link>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="block whitespace-normal break-words line-clamp-2 text-[12px]" title={contentPreview}>
+                              {contentPreview}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="block truncate whitespace-nowrap" title={authorNickname}>
+                              {authorNickname}
+                            </span>
+                          </td>
+                          <td className="hidden lg:table-cell px-3 py-2 text-right tabular-nums whitespace-nowrap truncate" title={String(row.reportCount ?? 0)}>
+                            {row.reportCount ?? 0}
+                          </td>
+                          <td className="hidden xl:table-cell px-3 py-2">
+                            <div className="block truncate whitespace-nowrap text-[12px]" title={reasonsText}>
+                              {reasonsText}
+                            </div>
+                          </td>
+                          <td className="hidden xl:table-cell px-3 py-2 whitespace-nowrap truncate" title={lastReportedAtText}>
+                            {lastReportedAtText}
+                          </td>
+                          <td className="px-3 py-2 text-center whitespace-nowrap">
+                            {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
+                              <span className={ADMIN_BADGE_RED_CLASS} title="정지된 유저">정지</span>
+                            ) : (
+                              <span className={ADMIN_BADGE_GRAY_CLASS} title="정상">정상</span>
+                            )}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap">
+                            {row.isBlinded ? (
+                              <span className={ADMIN_BADGE_ORANGE_CLASS} title="블라인드">블라인드</span>
+                            ) : (
+                              <span className={ADMIN_BADGE_GRAY_CLASS} title="정상">정상</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {row.targetType === 'COMMENT' ? (
+                              <details className="group relative inline-block">
+                                <summary
+                                  className={ADMIN_ACTION_SUMMARY_CLASS}
+                                  aria-haspopup="listbox"
+                                  aria-expanded="false"
+                                >
+                                  관리 메뉴
+                                </summary>
+                                <div className={ADMIN_ACTION_MENU_CLASS}>
+                                  {row.isBlinded ? (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_ACTIVE_CLASS}
+                                      onClick={() => handleUnblindComment(row.id)}
+                                    >
+                                      블라인드 해제
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_DEFAULT_CLASS}
+                                      onClick={() => handleBlindComment(row.id)}
+                                    >
+                                      블라인드 처리
+                                    </button>
+                                  )}
+                                  {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_ACTIVE_CLASS}
+                                      onClick={() => handleActivateUser(row.userId)}
+                                    >
+                                      정지 해제
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_DEFAULT_CLASS}
+                                      onClick={() => handleSuspendUser(row.userId)}
+                                    >
+                                      유저 정지
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className={ADMIN_ACTION_BTN_DEFAULT_CLASS}
+                                    onClick={() => handleDeleteComment(row.postId, row.id)}
+                                  >
+                                    댓글 삭제
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={ADMIN_ACTION_BTN_GRAY_CLASS}
+                                    onClick={() => handleResetCommentReports(row.id)}
+                                  >
+                                    신고 무시
+                                  </button>
+                                </div>
+                              </details>
+                            ) : (
+                              <details className="group relative inline-block">
+                                <summary
+                                  className={ADMIN_ACTION_SUMMARY_CLASS}
+                                  aria-haspopup="listbox"
+                                  aria-expanded="false"
+                                >
+                                  관리 메뉴
+                                </summary>
+                                <div className={ADMIN_ACTION_MENU_CLASS}>
+                                  {row.isBlinded ? (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_ACTIVE_CLASS}
+                                      onClick={() => handleUnblind(row.id)}
+                                    >
+                                      블라인드 해제
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_DEFAULT_CLASS}
+                                      onClick={() => handleBlindPost(row.id)}
+                                    >
+                                      블라인드 처리
+                                    </button>
+                                  )}
+                                  {(row.author?.status ?? row.authorStatus) === 'SUSPENDED' ? (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_ACTIVE_CLASS}
+                                      onClick={() => handleActivateUser(row.userId)}
+                                    >
+                                      정지 해제
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className={ADMIN_ACTION_BTN_DEFAULT_CLASS}
+                                      onClick={() => handleSuspendUser(row.userId)}
+                                    >
+                                      유저 정지
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className={ADMIN_ACTION_BTN_DEFAULT_CLASS}
+                                    onClick={() => handleDeletePost(row.id)}
+                                  >
+                                    글 삭제
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={ADMIN_ACTION_BTN_GRAY_CLASS}
+                                    onClick={() => handleResetReports(row.id)}
+                                  >
+                                    신고 무시
+                                  </button>
+                                </div>
+                              </details>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               {total > PAGE_SIZE && (
-                <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'center' }}>
+                <div className="mt-4 flex gap-2 justify-center">
                   <button
                     type="button"
-                    className="btn"
+                    className="cursor-pointer inline-flex h-[33px] items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50"
                     disabled={page <= 1}
                     onClick={() => fetchReportedPosts(page - 1)}
                   >
                     이전
                   </button>
-                  <span style={{ alignSelf: 'center' }}>
+                  <span className="self-center text-[13px] text-black">
                     {page} / {Math.ceil(total / PAGE_SIZE) || 1}
                   </span>
                   <button
                     type="button"
-                    className="btn"
+                    className="cursor-pointer inline-flex h-[33px] items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50"
                     disabled={page * PAGE_SIZE >= total}
                     onClick={() => fetchReportedPosts(page + 1)}
                   >

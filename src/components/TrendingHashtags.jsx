@@ -51,38 +51,54 @@ export function TrendingHashtags() {
     };
   }, []);
 
-  const isEmpty = !loading && (!hashtags || hashtags.length === 0);
+  const displayHashtags = Array.from({ length: 10 }, (_, i) => hashtags[i] ?? null);
 
   return (
-    <section className="bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 pl-5 pr-3 w-full box-border border border-gray-50">
-      <div className="text-[14px] font-bold text-gray-800 border-b border-gray-100 pb-4 mb-5">
-        🔥 지금 뜨는 멍태그
+    <section className="w-full box-border rounded-[20px] bg-gradient-to-br from-[rgba(168,85,247,0.10)] via-white to-white p-3 pl-4 pr-3 shadow-[0_2px_18px_rgba(168,85,247,0.06)]">
+      <div className="flex flex-nowrap items-center gap-2 pb-1 mb-2">
+        <span className="text-[16px] leading-none" aria-hidden="true">
+          🐾
+        </span>
+        <div className="flex-1 whitespace-nowrap text-[14px] font-extrabold text-gray-900">
+          지금 뜨는 멍태그
+        </div>
+        <span className="ml-auto whitespace-nowrap inline-flex items-center rounded-full bg-[rgba(168,85,247,0.10)] px-2 py-[2px] text-[10px] font-bold text-[rgba(91,33,182,1)]">
+          TOP 10
+        </span>
       </div>
 
-      {loading || isEmpty ? (
-        <div className="text-xs text-gray-500 leading-relaxed">
-          아직 인기 태그가 없어요 🐾
-        </div>
+      {loading ? (
+        <ul className="m-0 list-none space-y-1 p-0" aria-busy="true" aria-label="멍태그 순위">
+          {Array.from({ length: 10 }, (_, idx) => (
+            <li key={`sk-${idx}`}>
+              <div className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1">
+                <span className="w-5 shrink-0 text-center text-[12px] tabular-nums text-gray-300">{idx + 1}</span>
+                <span className="h-[18px] flex-1 rounded bg-[rgba(15,23,42,0.08)] [animation:postlist-skeleton-shimmer_1.1s_ease-in-out_infinite]" />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <ul className="space-y-1">
-          {hashtags.map((h, idx) => {
+        <ul className="m-0 list-none space-y-1 p-0">
+          {displayHashtags.map((h, idx) => {
             const rank = idx + 1;
+            const missing = h == null || !h.name;
             return (
-              <li key={`${h.name}-${rank}`}>
+              <li key={`rank-${rank}`}>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 rounded-lg py-3 pl-0 pr-1 text-left cursor-pointer transition-opacity hover:opacity-80 active:opacity-65 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/50"
-                  title={`#${h.name} 검색`}
-                  aria-label={`${h.name} 태그로 게시글 검색`}
-                  onClick={() => handleTagClick(h.name)}
+                  disabled={missing}
+                  className="flex w-full items-center gap-2 rounded-[10px] border-0 bg-transparent px-1.5 py-1 text-left cursor-pointer outline-none transition-colors hover:bg-[rgba(168,85,247,0.08)] focus:outline-none focus-visible:outline-none active:bg-[rgba(168,85,247,0.12)] disabled:cursor-default disabled:opacity-45"
+                  title={missing ? '' : `#${h.name} 검색`}
+                  aria-label={missing ? `${rank}위: -` : `${h.name} 태그로 게시글 검색`}
+                  onClick={() => {
+                    if (missing) return;
+                    handleTagClick(h.name);
+                  }}
                 >
-                  <span
-                    className={`w-5 shrink-0 text-center text-[13px] tabular-nums ${rankClass(rank)}`}
-                  >
-                    {rank}
-                  </span>
-                  <span className="min-w-0 truncate text-[13px] font-medium text-gray-700">
-                    #{h.name}
+                  <span className={`w-5 shrink-0 text-center text-[12px] tabular-nums ${rankClass(rank)}`}>{rank}</span>
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-gray-800">
+                    {missing ? '-' : `#${h.name}`}
                   </span>
                 </button>
               </li>

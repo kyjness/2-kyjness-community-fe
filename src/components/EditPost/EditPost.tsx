@@ -33,9 +33,14 @@ const ImagePreviewItem = memo(function ImagePreviewItem({
   };
 
   return (
-    <div className="post-image-preview-item" data-type={type} data-index={index}>
-      <img src={src} alt={type === 'existing' ? '이미지' : '새 이미지'} />
-      <button type="button" className="post-image-remove" aria-label="제거" onClick={handleRemove}>
+    <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[8px] bg-[#eee]" data-type={type} data-index={index}>
+      <img src={src} alt={type === 'existing' ? '이미지' : '새 이미지'} className="block h-full w-full object-cover" />
+      <button
+        type="button"
+        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border-0 bg-[rgba(0,0,0,0.6)] p-0 text-[18px] leading-none text-white cursor-pointer transition-[background] duration-150 hover:bg-[rgba(0,0,0,0.85)]"
+        aria-label="제거"
+        onClick={handleRemove}
+      >
         ×
       </button>
     </div>
@@ -147,24 +152,30 @@ export function EditPost() {
 
   return (
     <Header showBackButton backHref={backHref}>
-      <main className="main">
-        <div className="post-list-container post-new-container">
-          <div className="form-container">
-            <h2 className="form-title">게시글 수정</h2>
+      <main className="flex flex-1 items-start justify-center bg-[var(--app-bg)] px-[16px] pt-[14px] pb-10">
+        <div className="mx-auto flex w-full max-w-[var(--content-max)] flex-col items-center">
+          <div className="w-full max-w-[min(860px,92vw)] bg-transparent p-2">
+            <h2 className="mb-5 flex items-center justify-center gap-2 text-center font-['Pretendard'] text-[22px] font-extrabold leading-[1] text-[#111827]">
+              <span aria-hidden="true">🛠️</span>
+              게시글 수정
+            </h2>
             <form
               id="edit-post-form"
-              className="form edit-post-form"
+              className="flex flex-col"
               noValidate
               onSubmit={handleSubmit}
             >
-              <div className="form-group">
-                <label htmlFor="edit-post-category" className="form-label">
+              <div className="flex flex-col gap-1 mb-3 last:mb-5">
+                <label
+                  htmlFor="edit-post-category"
+                  className="mb-0 font-['Pretendard'] text-[12px] font-extrabold leading-[12px] text-[#111827]"
+                >
                   카테고리
                 </label>
                 <select
                   id="edit-post-category"
                   name="categoryId"
-                  className="form-input"
+                  className="w-full h-[38px] rounded-[12px] border border-[rgba(168,85,247,0.18)] bg-white px-3 font-['Pretendard',sans-serif] text-[14px] font-medium leading-[14px] text-[#111827] outline-none transition-shadow focus:border-[rgba(168,85,247,0.35)] focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)] disabled:opacity-60"
                   value={categoryId}
                   onChange={(e) => setCategoryId(Number(e.target.value))}
                   disabled={loading}
@@ -177,15 +188,18 @@ export function EditPost() {
                   ))}
                 </select>
               </div>
-              <div className="form-group">
-                <label htmlFor="edit-post-title" className="form-label">
+              <div className="flex flex-col gap-1 mb-3 last:mb-5">
+                <label
+                  htmlFor="edit-post-title"
+                  className="mb-0 font-['Pretendard'] text-[12px] font-extrabold leading-[12px] text-[#111827]"
+                >
                   제목*
                 </label>
                 <input
                   type="text"
                   id="edit-post-title"
                   name="title"
-                  className="form-input"
+                  className="w-full h-[38px] rounded-[12px] border border-[rgba(168,85,247,0.18)] bg-white px-3 font-['Pretendard',sans-serif] text-[14px] font-medium leading-[14px] text-[#111827] outline-none transition-shadow focus:border-[rgba(168,85,247,0.35)] focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)] placeholder:text-[13px] placeholder:font-medium placeholder:text-[rgba(17,24,39,0.55)]"
                   placeholder="제목을 입력하세요. (최대 26글자)"
                   maxLength={26}
                   value={title}
@@ -195,20 +209,27 @@ export function EditPost() {
                   aria-describedby={titleError ? 'edit-post-title-error' : undefined}
                 />
                 {titleError && (
-                  <span className="helper-text" id="edit-post-title-error" role="alert">
+                  <span
+                    className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+                    id="edit-post-title-error"
+                    role="alert"
+                  >
                     * {titleError}
                   </span>
                 )}
               </div>
-              <div className="form-group">
-                <label htmlFor="edit-post-content" className="form-label">
+              <div className="flex flex-col gap-1 mb-3 last:mb-5">
+                <label
+                  htmlFor="edit-post-content"
+                  className="mb-0 font-['Pretendard'] text-[12px] font-extrabold leading-[12px] text-[#111827]"
+                >
                   내용*
                 </label>
                 <textarea
                   ref={textareaRef}
                   id="edit-post-content"
                   name="content"
-                  className="form-input form-textarea"
+                  className="w-full min-h-[260px] resize-none rounded-[16px] border border-[rgba(168,85,247,0.16)] bg-white px-3 py-3 font-['Pretendard',sans-serif] text-[14px] font-medium leading-[1.55] text-[#111827] outline-none transition-shadow focus:border-[rgba(168,85,247,0.35)] focus:shadow-[0_0_0_4px_rgba(168,85,247,0.10)] overflow-hidden"
                   placeholder="내용을 입력하세요."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -217,7 +238,10 @@ export function EditPost() {
                   aria-describedby={contentError ? 'edit-post-content-error' : undefined}
                 />
                 <div
-                  className={`post-image-preview ${totalCount > 0 ? 'has-images' : ''}`}
+                  className={[
+                    totalCount > 0 ? 'flex' : 'hidden',
+                    'flex-wrap gap-[10px] mt-3 py-2',
+                  ].join(' ')}
                   aria-label="첨부 이미지 미리보기"
                 >
                   {existingUrls.map((item, i) => (
@@ -240,47 +264,56 @@ export function EditPost() {
                   ))}
                 </div>
                 {contentError && (
-                  <span className="helper-text" id="edit-post-content-error" role="alert">
+                  <span
+                    className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+                    id="edit-post-content-error"
+                    role="alert"
+                  >
                     * {contentError}
                   </span>
                 )}
               </div>
-              <div className="form-group">
-                <span className="form-label">이미지 (최대 {MAX_IMAGES}장)</span>
-                <div className="file-input-wrapper">
+              <div className="flex flex-col gap-1 mb-3 last:mb-5">
+                <span className="mb-0 font-['Pretendard'] text-[12px] font-extrabold leading-[12px] text-[#111827]">
+                  이미지 (최대 {MAX_IMAGES}장)
+                </span>
+                <div className="flex items-center gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
                     id="edit-file-input"
                     accept="image/jpeg,image/png"
                     multiple
-                    className="file-input-hidden"
+                    className="hidden"
                     aria-hidden
                     onChange={handleFileChange}
                   />
                   <button
                     type="button"
-                    className="file-input-button"
+                    className="inline-flex h-[34px] w-[88px] items-center justify-center rounded-[12px] border border-[rgba(168,85,247,0.18)] bg-white font-['Pretendard',sans-serif] text-[12px] font-extrabold text-[rgba(91,33,182,1)] cursor-pointer transition-shadow hover:shadow-[0_0_0_4px_rgba(168,85,247,0.10)] disabled:opacity-50"
                     id="edit-file-trigger"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={loading || totalCount >= MAX_IMAGES}
                   >
                     파일 선택
                   </button>
-                  <span className="file-input-text">
+                  <span className="font-['Pretendard',sans-serif] text-[12px] text-black">
                     {totalCount > 0 ? `총 ${totalCount}장` : '파일을 선택해주세요.'}
                   </span>
                 </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="edit-post-hashtags" className="form-label">
+              <div className="flex flex-col gap-1 mb-3 last:mb-5">
+                <label
+                  htmlFor="edit-post-hashtags"
+                  className="mb-0 font-['Pretendard'] text-[12px] font-extrabold leading-[12px] text-[#111827]"
+                >
                   해시태그
                 </label>
                 <input
                   id="edit-post-hashtags"
                   name="hashtags"
                   type="text"
-                  className="form-input"
+                  className="w-full h-[38px] rounded-[12px] border border-[rgba(168,85,247,0.18)] bg-white px-3 font-['Pretendard',sans-serif] text-[14px] font-medium leading-[14px] text-[#111827] outline-none transition-shadow focus:border-[rgba(168,85,247,0.35)] focus:shadow-[0_0_0_4px_rgba(168,85,247,0.12)] placeholder:text-[13px] placeholder:font-medium placeholder:text-[rgba(17,24,39,0.55)]"
                   placeholder="예: 강아지, 산책 (최대 6개)"
                   value={hashtagsInput}
                   onChange={(e) => setHashtagsInput(e.target.value)}
@@ -289,17 +322,21 @@ export function EditPost() {
                 />
               </div>
               {formError && (
-                <span className="helper-text form-error-common" id="form-error" role="alert">
+                <span
+                  className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+                  id="form-error"
+                  role="alert"
+                >
                   * {formError}
                 </span>
               )}
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="inline-flex h-[33px] w-full max-w-[360px] self-center items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50 cursor-pointer"
                 id="edit-submit-btn"
                 disabled={loading || submitting}
               >
-                {submitting ? '수정 중...' : '수정하기'}
+                수정하기
               </button>
             </form>
           </div>

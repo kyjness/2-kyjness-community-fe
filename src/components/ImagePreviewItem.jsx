@@ -22,15 +22,19 @@ function ImagePreviewItem({ type, item, index, onRemove }) {
 
   return (
     <div
-      className="post-image-preview-item"
+      className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[8px] bg-[#eee]"
       data-type={type}
       data-index={index}
       {...(dataImageId != null && { 'data-image-id': dataImageId })}
     >
-      <img src={src} alt={type === 'existing' ? '이미지' : '새 이미지'} />
+      <img
+        src={src}
+        alt={type === 'existing' ? '이미지' : '새 이미지'}
+        className="block h-full w-full object-cover"
+      />
       <button
         type="button"
-        className="post-image-remove"
+        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border-0 bg-[rgba(0,0,0,0.6)] p-0 text-[18px] leading-none text-white cursor-pointer transition-[background] duration-150 hover:bg-[rgba(0,0,0,0.85)]"
         aria-label="제거"
         onClick={handleRemove}
       >

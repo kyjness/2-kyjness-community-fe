@@ -12,9 +12,12 @@ export function LoginForm({
   onSignupClick,
 }) {
   return (
-    <form onSubmit={onSubmit} className="form" noValidate>
-      <div className="form-group">
-        <label htmlFor="login-email" className="form-label">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor="login-email"
+          className="mb-0 font-['Pretendard'] text-[12px] font-bold leading-[12px] text-black"
+        >
           이메일
         </label>
         <input
@@ -22,7 +25,7 @@ export function LoginForm({
           id="login-email"
           value={email}
           onChange={onEmailChange}
-          className="form-input"
+          className="w-full h-[33px] border border-black rounded-[4px] bg-[#F4F5F7] py-[12px] pl-2 pr-[14px] font-['Pretendard',sans-serif] text-[14px] font-normal leading-[14px] text-black outline-none focus:border-black placeholder:font-['Pretendard',sans-serif] placeholder:text-[13px] placeholder:font-normal placeholder:leading-[13px] placeholder:text-black placeholder:opacity-100 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-0"
           placeholder="이메일을 입력하세요"
           required
           autoComplete="email"
@@ -30,13 +33,20 @@ export function LoginForm({
           aria-describedby={emailError ? 'login-email-error' : undefined}
         />
         {emailError && (
-          <span className="helper-text has-error" id="login-email-error" role="alert">
+          <span
+            className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+            id="login-email-error"
+            role="alert"
+          >
             * {emailError}
           </span>
         )}
       </div>
-      <div className="form-group">
-        <label htmlFor="login-password" className="form-label">
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor="login-password"
+          className="mb-0 font-['Pretendard'] text-[12px] font-bold leading-[12px] text-black"
+        >
           비밀번호
         </label>
         <input
@@ -44,7 +54,7 @@ export function LoginForm({
           id="login-password"
           value={password}
           onChange={onPasswordChange}
-          className="form-input"
+          className="w-full h-[33px] border border-black rounded-[4px] bg-[#F4F5F7] py-[12px] pl-2 pr-[14px] font-['Pretendard',sans-serif] text-[14px] font-normal leading-[14px] text-black outline-none focus:border-black placeholder:font-['Pretendard',sans-serif] placeholder:text-[13px] placeholder:font-normal placeholder:leading-[13px] placeholder:text-black placeholder:opacity-100 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-0"
           placeholder="비밀번호를 입력하세요"
           required
           autoComplete="current-password"
@@ -54,20 +64,36 @@ export function LoginForm({
           }
         />
         {passwordError && (
-          <span className="helper-text has-error" id="login-password-error" role="alert">
+          <span
+            className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+            id="login-password-error"
+            role="alert"
+          >
             * {passwordError}
           </span>
         )}
       </div>
       {formError && (
-        <span className="helper-text has-error" id="login-form-error" role="alert">
+        <span
+          className="mt-[2px] block min-h-[14px] font-['Pretendard',sans-serif] text-[12px] font-normal leading-[12px] text-[#FF0000]"
+          id="login-form-error"
+          role="alert"
+        >
           * {formError}
         </span>
       )}
-      <button type="submit" className="btn btn-primary" disabled={submitting}>
-        {submitting ? '로그인 중...' : '로그인'}
+      <button
+        type="submit"
+        className="inline-flex h-[33px] w-full max-w-[360px] self-center items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50 cursor-pointer"
+        disabled={submitting}
+      >
+        로그인
       </button>
-      <button type="button" className="btn btn-secondary" onClick={onSignupClick}>
+      <button
+        type="button"
+        className="inline-flex h-[40px] w-fit self-center items-center justify-center rounded-full border-0 bg-transparent px-5 text-[12px] font-normal leading-[12px] text-black no-underline transition-all duration-200 hover:text-[#333333] active:text-[#111111] cursor-pointer"
+        onClick={onSignupClick}
+      >
         회원가입
       </button>
     </form>

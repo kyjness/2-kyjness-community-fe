@@ -28,6 +28,7 @@ export function NotificationBell() {
   const wrapRef = useRef(null);
   const popoverRef = useRef(null);
   const [popoverStyle, setPopoverStyle] = useState({});
+  const [pageSize, setPageSize] = useState(6);
 
   const items = useNotificationStore((s) => s.items);
   const unreadCount = useNotificationStore((s) => s.unreadCount);
@@ -49,7 +50,7 @@ export function NotificationBell() {
       top: r.bottom + margin,
       right: Math.max(8, window.innerWidth - r.right),
       zIndex: POPOVER_Z,
-      maxWidth: 'min(100vw - 2rem, 360px)',
+      maxWidth: 'min(100vw - 2rem, 300px)',
     });
   }, []);
 
@@ -71,8 +72,13 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!open) return;
-    void fetchNotifications(1, 30);
-  }, [open, fetchNotifications]);
+    setPageSize(6);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    void fetchNotifications(1, pageSize);
+  }, [open, pageSize, fetchNotifications]);
 
   // 같은 클릭 제스처로 연 직후 리스너가 붙으면 포털/레이아웃보다 먼저 바깥 클릭으로 닫히는 경우가 있어 1틱 지연.
   useEffect(() => {
@@ -122,7 +128,7 @@ export function NotificationBell() {
             ref={popoverRef}
             role="dialog"
             aria-label="알림 목록"
-            className="min-w-[280px] rounded-xl border border-stone-200/90 bg-white p-2 shadow-xl shadow-stone-900/15"
+            className="min-w-[240px] rounded-xl border border-stone-200/90 bg-white p-2 shadow-xl shadow-stone-900/15"
             style={popoverStyle}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
@@ -132,6 +138,8 @@ export function NotificationBell() {
               loading={listLoading}
               error={Boolean(listError)}
               listTotal={listTotal}
+              visibleCount={pageSize}
+              onRequestMore={() => setPageSize((v) => Math.min(60, v + 12))}
               onMarkRead={(ids) => void markRead(ids)}
               onMarkAllRead={() => void markRead([])}
             />
@@ -145,7 +153,7 @@ export function NotificationBell() {
       <div className="notification-bell-wrap relative" ref={wrapRef}>
         <button
           type="button"
-          className="notification-bell-btn relative flex h-10 w-10 items-center justify-center rounded-full border border-stone-200/80 bg-white/90 text-stone-800 shadow-sm hover:bg-stone-50 transition-colors"
+          className="notification-bell-btn relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-stone-800 shadow-none transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
           aria-label="알림"
           aria-expanded={open}
           onPointerDown={(e) => e.stopPropagation()}

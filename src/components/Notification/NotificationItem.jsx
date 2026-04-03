@@ -50,7 +50,7 @@ export function NotificationItem({ item, onMarkRead }) {
       role="button"
       tabIndex={0}
       className={[
-        'notification-item w-full text-left px-3 py-2.5 rounded-lg border transition-colors',
+        'notification-item w-full cursor-pointer text-left px-3 py-2.5 rounded-lg border transition-colors',
         unread
           ? 'bg-amber-50/90 border-amber-200/80'
           : 'bg-white/80 border-stone-200/60',

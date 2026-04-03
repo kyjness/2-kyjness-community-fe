@@ -119,7 +119,7 @@ export function PostDetail() {
 
   return (
     <Header showBackButton backHref="/posts">
-      <main className="main main-top">
+      <main className="flex flex-1 items-start justify-center bg-[var(--app-bg)] px-[16px] pt-[8px]">
         {toastMessage && (
           <div
             role="status"
@@ -140,7 +140,7 @@ export function PostDetail() {
             {toastMessage}
           </div>
         )}
-        <div className="post-detail-container">
+        <div className="mx-auto w-full max-w-[min(620px,92vw)] pt-8 pb-[140px]">
           <PostContent
             post={post}
             postId={postId}

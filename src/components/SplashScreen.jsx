@@ -51,7 +51,7 @@ export function SplashScreen({ onDone }) {
       onDone?.();
       return;
     }
-    wrapper.classList.add('hide');
+    wrapper.classList.add('opacity-0', 'pointer-events-none');
     const handleTransitionEnd = () => onDone?.();
     wrapper.addEventListener('transitionend', handleTransitionEnd, { once: true });
     return () => wrapper.removeEventListener('transitionend', handleTransitionEnd);
@@ -64,11 +64,18 @@ export function SplashScreen({ onDone }) {
   if (!items.length) return null;
 
   return (
-    <div ref={wrapperRef} className="splash" aria-hidden="true">
-      <div className="splash-stage">
+    <div
+      ref={wrapperRef}
+      className="fixed inset-0 z-[9999] bg-white transition-opacity duration-[250ms] ease-out"
+      aria-hidden="true"
+    >
+      <div className="absolute inset-0 h-full w-full">
         {!isComplete && (
-          <div className="splash-frame">
-            <div ref={containerRef} className="splash-content" />
+          <div className="absolute inset-0 flex h-full w-full items-center justify-center">
+            <div
+              ref={containerRef}
+              className="flex h-full w-full min-h-0 min-w-0 items-center justify-center"
+            />
           </div>
         )}
       </div>

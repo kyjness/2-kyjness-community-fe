@@ -15,6 +15,8 @@ import { MyPage } from './pages/MyPage.jsx';
 import { AdminDashboard } from './pages/AdminDashboard.jsx';
 import { NotFound } from './pages/NotFound.jsx';
 import { NotificationStreamHost } from './components/Notification/NotificationStreamHost.jsx';
+import { ChatRoomErrorBoundary } from './components/Chat/ChatRoomErrorBoundary';
+import { ChatRoom } from './pages/ChatRoom';
 
 /** API 401 시 로그인으로 보내는 핸들러 (라우터 하위에서 한 번만 등록) */
 function ApiUnauthorizedSetup({ children }) {
@@ -50,6 +52,16 @@ export default function Router() {
         <Route path="/posts/:id" element={<PostDetail />} />
         <Route path="/posts/:id/edit" element={<ProtectedRoute><EditPost /></ProtectedRoute>} />
         <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
+        <Route
+          path="/chat/:roomId"
+          element={
+            <ProtectedRoute>
+              <ChatRoomErrorBoundary>
+                <ChatRoom />
+              </ChatRoomErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>

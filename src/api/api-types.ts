@@ -23,6 +23,19 @@ export type AuthorInfo = Schemas["AuthorInfo"];
 export type ImageUploadResponse = Schemas["ImageUploadResponse"];
 export type SignupImageUploadData = Schemas["SignupImageUploadData"];
 
+/** 채팅 메시지 1건 (REST·WS 공통, camelCase UI용) */
+export interface ChatMessageRow {
+  id: string;
+  roomId: string;
+  senderId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export type ChatMessageItemSchema = Schemas["ChatMessageItem"];
+export type ChatMessagesPageDataSchema = Schemas["ChatMessagesPageData"];
+
 /** 기존 이미지 1건 (서버 FileInfo에서 매핑; UI는 imageId·fileUrl만 사용) */
 export interface ExistingImageItem {
   imageId: string;

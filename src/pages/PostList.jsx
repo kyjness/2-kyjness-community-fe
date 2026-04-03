@@ -1,7 +1,7 @@
 // 게시글 목록 페이지: usePostList 훅 + PostList 하위 컴포넌트 조합.
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Pencil, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Pencil, Search, X } from 'lucide-react';
 import { Header } from '../components/Header.jsx';
 import { DogProfileBanner } from '../components/DogProfileBanner.jsx';
 import { TrendingHashtags } from '../components/TrendingHashtags.jsx';
@@ -16,12 +16,14 @@ export function PostList() {
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
   const {
     posts,
     loading,
@@ -34,6 +36,10 @@ export function PostList() {
     setCategoryId,
     bottomRef,
   } = usePostList();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [categoryId]);
 
   const handleWriteClick = () => {
     if (isLoggedIn) {
@@ -55,22 +61,24 @@ export function PostList() {
 
   return (
     <Header showProfile={true}>
-      <div className="post-list-banner-wrap">
+      <div className="mx-auto w-full max-w-[var(--content-max)] px-[16px]">
         <DogProfileBanner user={user} />
       </div>
-      <main className="main main-top post-list-main">
-        <div className="flex items-start justify-center gap-10 max-w-7xl mx-auto w-full">
-          <aside className="hidden lg:block w-[200px] shrink-0" aria-label="카테고리">
+      <main className="relative flex min-h-[calc(100dvh-6.5rem)] flex-1 items-stretch justify-center bg-[var(--app-bg)] px-[16px] pt-[8px] [overflow-anchor:none]">
+        <div className="mx-auto flex w-full max-w-[1100px] items-stretch justify-center gap-4">
+          <aside className="hidden lg:block w-[260px] shrink-0 lg:-ml-6" aria-label="카테고리">
             <div className="sticky top-20">
-              <nav className="postlist-category-plain" aria-label="게시글 카테고리">
+              <nav className="flex flex-col items-center gap-2 px-2 py-3" aria-label="게시글 카테고리">
                 <button
                   type="button"
                   onClick={() => setCategoryId('all')}
                   onMouseEnter={() => prefetchCategory('all')}
                   aria-current={categoryId === 'all' ? 'page' : undefined}
                   className={[
-                    'postlist-category-plain__item',
-                    categoryId === 'all' ? 'is-active' : '',
+                    "w-full cursor-pointer border-0 bg-transparent px-2 py-2 text-center font-['Pretendard',sans-serif] text-[17px] font-bold leading-[1.25] tracking-[-0.02em] transition-[color,transform] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[rgba(15,23,42,0.45)] focus-visible:rounded-[10px]",
+                    categoryId === 'all'
+                      ? 'text-[#0f172a] font-extrabold'
+                      : 'text-[rgba(15,23,42,0.28)] hover:text-[rgba(15,23,42,0.6)] hover:-translate-y-px',
                   ].join(' ')}
                 >
                   전체
@@ -86,8 +94,10 @@ export function PostList() {
                       onMouseEnter={() => prefetchCategory(v)}
                       aria-current={active ? 'page' : undefined}
                       className={[
-                        'postlist-category-plain__item',
-                        active ? 'is-active' : '',
+                        "w-full cursor-pointer border-0 bg-transparent px-2 py-2 text-center font-['Pretendard',sans-serif] text-[18px] font-bold leading-[1.25] tracking-[-0.02em] transition-[color,transform] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[rgba(15,23,42,0.45)] focus-visible:rounded-[10px]",
+                        active
+                          ? 'text-[#0f172a] font-extrabold'
+                          : 'text-[rgba(15,23,42,0.28)] hover:text-[rgba(15,23,42,0.6)] hover:-translate-y-px',
                       ].join(' ')}
                     >
                       {c.label}
@@ -95,15 +105,20 @@ export function PostList() {
                   );
                 })}
               </nav>
-              <div className="mt-6 px-1 pb-4">
+              <div className="mt-2 px-0 pb-4">
                 <TrendingHashtags />
               </div>
             </div>
           </aside>
 
-          <div className="w-full max-w-[590px] mx-auto lg:px-8">
-            <div className="post-list-container">
-              <div className={`postlist-feed ${loading ? 'is-loading' : ''}`}>
+          <div className="w-full max-w-[590px] flex-none shrink-0 self-stretch mx-auto lg:px-4">
+            <div className="mx-auto flex h-full w-full max-w-[var(--content-max)] flex-col items-center justify-start">
+              <div
+                className={[
+                  'w-full min-h-[50vh] transition-opacity duration-200 ease-in-out',
+                  loading ? 'opacity-50 pointer-events-none' : '',
+                ].join(' ')}
+              >
                 <PostListContent
                   loading={loading}
                   error={error}
@@ -117,24 +132,48 @@ export function PostList() {
           </div>
 
           <aside className="hidden lg:block w-[200px] shrink-0" aria-label="게시글 검색">
-            <div className="postlist-search-plain">
-              <div className="postlist-search-plain__input-wrap">
+            <div className="px-2">
+              <div className="relative w-full">
+                <button
+                  type="button"
+                  className="absolute left-1 top-1/2 z-[1] flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-[rgba(15,23,42,0.55)] transition-colors hover:bg-[rgba(15,23,42,0.06)] hover:text-[rgba(15,23,42,0.85)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[rgba(15,23,42,0.35)]"
+                  aria-label="검색"
+                  onClick={() => searchInputRef.current?.focus()}
+                >
+                  <Search size={18} aria-hidden />
+                </button>
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="검색"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="postlist-search-plain__input"
+                  className={[
+                    "h-9 w-full rounded-[12px] border border-[rgba(15,23,42,0.12)] bg-[rgba(255,255,255,0.75)] py-0 pl-[38px] font-['Pretendard',sans-serif] text-[14px] text-[#0f172a] backdrop-blur-[10px] outline-none focus:border-[rgba(15,23,42,0.28)] placeholder:text-[rgba(15,23,42,0.45)]",
+                    searchTerm.trim() !== '' ? 'pr-9' : 'pr-3',
+                  ].join(' ')}
                   aria-label="게시글 검색"
                 />
-                <Search size={18} aria-hidden="true" className="postlist-search-plain__icon" />
+                {searchTerm.trim() !== '' && (
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1/2 z-[1] flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-[rgba(15,23,42,0.45)] transition-colors hover:bg-[rgba(15,23,42,0.06)] hover:text-[rgba(15,23,42,0.75)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[rgba(15,23,42,0.35)]"
+                    aria-label="검색어 지우기"
+                    onClick={() => {
+                      setSearchTerm('');
+                      searchInputRef.current?.focus();
+                    }}
+                  >
+                    <X size={16} strokeWidth={2.25} aria-hidden />
+                  </button>
+                )}
               </div>
             </div>
           </aside>
         </div>
         <button
           type="button"
-          className="post-list-fab"
+          className="fixed right-6 z-[95] flex h-[44px] w-[44px] cursor-pointer items-center justify-center rounded-[20px] border border-[rgba(255,255,255,0.42)] bg-[linear-gradient(135deg,rgba(129,140,248,0.95)_0%,rgba(168,85,247,0.95)_100%)] p-0 text-white shadow-[0_12px_24px_-6px_rgba(172,160,235,0.5)] backdrop-blur-[12px] transition-[transform,box-shadow,filter,border-color] duration-[180ms] ease-out hover:scale-110 hover:brightness-[1.02] hover:saturate-[1.08] hover:border-[rgba(255,255,255,0.6)] hover:shadow-[0_14px_30px_-6px_rgba(172,160,235,0.62)] active:scale-95"
           onClick={handleWriteClick}
           aria-label="게시글 작성"
           style={{
@@ -146,7 +185,7 @@ export function PostList() {
         {showScrollTop && (
           <button
             type="button"
-            className="post-list-scroll-top-btn"
+            className="fixed right-6 bottom-6 z-[90] flex h-[44px] w-[44px] cursor-pointer items-center justify-center rounded-[20px] border border-[rgba(255,255,255,0.42)] bg-[linear-gradient(135deg,rgba(96,165,250,0.92)_0%,rgba(129,140,248,0.92)_45%,rgba(168,85,247,0.92)_100%)] p-0 text-[18px] leading-none text-white shadow-[0_12px_24px_-6px_rgba(138,180,255,0.45)] backdrop-blur-[12px] transition-[transform,box-shadow,filter,border-color] duration-[180ms] ease-out hover:scale-110 hover:brightness-[1.02] hover:saturate-[1.08] hover:border-[rgba(255,255,255,0.6)] hover:shadow-[0_14px_30px_-6px_rgba(138,180,255,0.62)] active:scale-95"
             onClick={scrollToTop}
             aria-label="맨 위로"
           >

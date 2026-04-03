@@ -26,9 +26,11 @@ export function Login() {
 
   return (
     <Header showProfile={false}>
-      <main className="main">
-        <div className="form-container">
-          <h2 className="form-title">로그인</h2>
+      <main className="flex flex-1 items-center justify-center bg-[var(--app-bg)] px-[16px] pt-[8px]">
+        <div className="w-full max-w-[var(--form-max)] p-0 m-0 rounded-none bg-transparent shadow-none">
+          <h2 className="mb-6 text-center font-['Pretendard'] text-[25px] font-bold leading-[25px] text-black">
+            로그인
+          </h2>
           <LoginForm
             email={email}
             password={password}

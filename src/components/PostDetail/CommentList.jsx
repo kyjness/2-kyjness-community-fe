@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Heart, MoreHorizontal, UserX, AlertTriangle } from 'lucide-react';
 import { escapeHtml, formatDateTime, calculateDogAge, formatDogGenderLabel } from '../../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
+import * as CC from './commentClasses.js';
 
 function didCommentChange(prevC, nextC) {
   if (prevC === nextC) return false;
@@ -76,13 +77,14 @@ const CommentItem = React.memo(function CommentItem({
   const replyTextareaRef = useRef(null);
   const editTextareaRef = useRef(null);
   const isReply = depth > 0;
+  const isTopLevel = depth === 0;
   const isMyComment = c.isMine || (currentUserId != null && c.author_id === currentUserId);
 
   const adjustReplyHeight = useCallback(() => {
     const el = replyTextareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const next = Math.min(Math.max(el.scrollHeight, 44), 300);
+    const next = Math.min(Math.max(el.scrollHeight, 36), 300);
     el.style.height = `${next}px`;
     el.style.overflowY = 'hidden';
   }, []);
@@ -130,26 +132,27 @@ const CommentItem = React.memo(function CommentItem({
   return (
     <article
       key={c.id}
-      className={`comment-item ${isReply ? 'is-reply' : ''}`}
+      className={CC.COMMENT_ITEM(isTopLevel, isReply)}
       data-comment-id={c.id}
     >
-      <div className="comment-item-avatar">
+      <div className={CC.COMMENT_ITEM_AVATAR}>
         <img
           src={c.author_profile_image || DEFAULT_PROFILE_IMAGE}
           alt="댓글 작성자 프로필"
+          className={CC.COMMENT_ITEM_AVATAR_IMG}
         />
       </div>
-      <div className="comment-item-body">
-        <div className="comment-item-header">
-          <div className="comment-item-author-wrap">
-            <span className="comment-item-author">{escapeHtml(c.author_nickname ?? '')}</span>
+      <div className={CC.COMMENT_ITEM_BODY}>
+        <div className={CC.COMMENT_ITEM_HEADER}>
+          <div className={CC.COMMENT_ITEM_AUTHOR_WRAP}>
+            <span className={CC.COMMENT_ITEM_AUTHOR}>{escapeHtml(c.author_nickname ?? '')}</span>
             {c.author_representative_dog?.name && (
-              <span className="comment-item-dog">
+              <span className={CC.COMMENT_ITEM_DOG}>
                 {' '}
                 {(() => {
                   const d = c.author_representative_dog;
                   const genderLabel = d.gender ? (
-                    <span className={`dog-gender-badge dog-gender--${d.gender}`}>
+                    <span className="inline bg-transparent text-[1em] text-inherit">
                       {formatDogGenderLabel(d.gender)}
                     </span>
                   ) : null;
@@ -169,19 +172,19 @@ const CommentItem = React.memo(function CommentItem({
               </span>
             )}
           </div>
-          <div className="comment-item-actions">
+          <div className={CC.COMMENT_ITEM_ACTIONS(isReply)}>
             {isMyComment && currentUserId != null ? (
-              <div className="action-link-group">
+              <div className="inline-flex items-center gap-3">
                 <button
                   type="button"
-                  className="action-link-btn"
+                  className="h-auto min-w-0 cursor-pointer border-0 bg-transparent p-0 text-[11.5px] text-[#333] no-underline transition-colors duration-150 hover:text-[#111]"
                   onClick={() => setCommentEdit({ editingId: c.id, content: c.content ?? '' })}
                 >
                   수정
                 </button>
                 <button
                   type="button"
-                  className="action-link-btn"
+                  className="h-auto min-w-0 cursor-pointer border-0 bg-transparent p-0 text-[11.5px] text-[#333] no-underline transition-colors duration-150 hover:text-[#111]"
                   onClick={() => onDeleteOpen(c.id)}
                 >
                   삭제
@@ -191,7 +194,7 @@ const CommentItem = React.memo(function CommentItem({
               <div className="relative">
                 <button
                   type="button"
-                  className="comment-item-menu-trigger"
+                  className={CC.COMMENT_ITEM_MENU_TRIGGER}
                   onClick={() => setMenuOpen((o) => !o)}
                   aria-label="메뉴"
                   aria-expanded={menuOpen}
@@ -201,23 +204,23 @@ const CommentItem = React.memo(function CommentItem({
                 {menuOpen && (
                   <>
                     <div
-                      className="comment-item-menu-backdrop"
+                      className={CC.COMMENT_ITEM_MENU_BACKDROP}
                       role="presentation"
                       aria-hidden="true"
                       onClick={() => setMenuOpen(false)}
                     />
-                    <ul className="comment-item-menu">
+                    <ul className={CC.COMMENT_ITEM_MENU}>
                       {currentUserId != null && c.author_id != null ? (
                         <li>
                           <button
                             type="button"
-                            className="menu-item-btn menu-item-btn--danger"
+                            className={CC.MENU_ITEM_BTN_DANGER}
                             onClick={() => {
                               onBlockUser?.(c.author_id);
                               setMenuOpen(false);
                             }}
                           >
-                            <UserX size={15} aria-hidden />
+                            <UserX size={15} aria-hidden className="block shrink-0" />
                             차단
                           </button>
                         </li>
@@ -225,13 +228,13 @@ const CommentItem = React.memo(function CommentItem({
                       <li>
                         <button
                           type="button"
-                          className="menu-item-btn menu-item-btn--danger"
+                          className={CC.MENU_ITEM_BTN_DANGER}
                           onClick={() => {
                             onReportOpen?.('COMMENT', c.id);
                             setMenuOpen(false);
                           }}
                         >
-                          <AlertTriangle size={15} aria-hidden />
+                          <AlertTriangle size={15} aria-hidden className="block shrink-0" />
                           신고
                         </button>
                       </li>
@@ -240,13 +243,13 @@ const CommentItem = React.memo(function CommentItem({
                 )}
               </div>
             ) : (
-              <div className="comment-item-actions-spacer" aria-hidden />
+              <div className={CC.COMMENT_ITEM_ACTIONS_SPACER} aria-hidden />
             )}
           </div>
         </div>
         {commentEdit.editingId === c.id ? (
           <form
-            className="comment-edit-form"
+            className={CC.COMMENT_EDIT_FORM}
             onSubmit={(e) => {
               e.preventDefault();
               onEditSave(c.id, commentEdit.content);
@@ -254,7 +257,7 @@ const CommentItem = React.memo(function CommentItem({
           >
             <textarea
               ref={editTextareaRef}
-              className="w-full min-h-[60px] p-2 border border-gray-300 rounded text-[13px] font-['Pretendard',sans-serif] resize-none"
+              className={CC.COMMENT_EDIT_TEXTAREA}
               aria-label="댓글 수정"
               value={commentEdit.content}
               onChange={(e) => {
@@ -264,13 +267,13 @@ const CommentItem = React.memo(function CommentItem({
                 adjustEditHeight();
               }}
             />
-            <div className="action-link-group comment-edit-actions">
-              <button type="submit" className="action-link-btn">
+            <div className={CC.COMMENT_EDIT_ACTIONS}>
+              <button type="submit" className="h-auto min-w-0 cursor-pointer border-0 bg-transparent p-0 text-[11.5px] text-[#333] no-underline transition-colors duration-150 hover:text-[#111]">
                 저장
               </button>
               <button
                 type="button"
-                className="action-link-btn"
+                className="h-auto min-w-0 cursor-pointer border-0 bg-transparent p-0 text-[11.5px] text-[#333] no-underline transition-colors duration-150 hover:text-[#111]"
                 onClick={() => setCommentEdit({ editingId: null, content: '' })}
               >
                 취소
@@ -278,22 +281,21 @@ const CommentItem = React.memo(function CommentItem({
             </div>
           </form>
         ) : (
-          <div className="comment-item-content-block">
-            <div className="comment-item-content-row">
-              <div className="comment-item-text-wrap">
+          <div className={CC.COMMENT_ITEM_CONTENT_BLOCK}>
+            <div className={CC.COMMENT_ITEM_CONTENT_ROW}>
+              <div className={CC.COMMENT_ITEM_TEXT_WRAP}>
                 <p
                   ref={contentRef}
-                  className={[
-                    'comment-item-content',
-                    !isExpanded ? 'comment-item-content--clamp' : '',
-                  ].join(' ')}
+                  className={CC.COMMENT_ITEM_CONTENT(
+                    !isExpanded ? CC.COMMENT_ITEM_CONTENT_CLAMP : ''
+                  )}
                 >
                   {c.isDeleted ? '삭제된 댓글입니다.' : escapeHtml(c.content ?? '')}
                 </p>
                 {showMoreBtn && !c.isDeleted && (
                   <button
                     type="button"
-                    className="comment-item-readmore-btn"
+                    className={CC.COMMENT_ITEM_READMORE_BTN}
                     onClick={() => setIsExpanded((v) => !v)}
                   >
                     {isExpanded ? '접기' : '더보기'}
@@ -301,11 +303,11 @@ const CommentItem = React.memo(function CommentItem({
                 )}
               </div>
               {!isReply && onCommentLike && !c.isDeleted && (
-                <div className="comment-item-like-col">
-                  <div className="comment-item-like-icon">
+                <div className={CC.COMMENT_ITEM_LIKE_COL}>
+                  <div className={CC.COMMENT_ITEM_LIKE_ICON_WRAP}>
                     <button
                       type="button"
-                      className={c.isLiked ? 'is-liked' : ''}
+                      className={CC.commentItemLikeIconBtn(c.isLiked)}
                       onClick={() => onCommentLike(c.id)}
                       aria-label={c.isLiked ? '좋아요 취소' : '좋아요'}
                     >
@@ -317,22 +319,22 @@ const CommentItem = React.memo(function CommentItem({
                       />
                     </button>
                   </div>
-                  <div className="comment-item-like-count">
+                  <div className={CC.COMMENT_ITEM_LIKE_COUNT}>
                     <span>{c.likeCount ?? 0}</span>
                   </div>
                 </div>
               )}
             </div>
-            <div className="comment-item-meta-row">
-              <div className="comment-item-meta">
+            <div className={CC.COMMENT_ITEM_META_ROW}>
+              <div className={CC.COMMENT_ITEM_META}>
                 <span>
                   {formatDateTime(c.created_at)}
-                  {c.isEdited && <span className="comment-item-edited"> (수정됨)</span>}
+                  {c.isEdited && <span className={CC.COMMENT_ITEM_EDITED}> (수정됨)</span>}
                 </span>
                 {currentUserId != null && !c.isDeleted && !c.parentId && (
                   <button
                     type="button"
-                    className="comment-reply-btn"
+                    className={CC.COMMENT_REPLY_BTN}
                     onClick={() => setReplyToCommentId(replyToCommentId === c.id ? null : c.id)}
                   >
                     답글 쓰기
@@ -344,22 +346,22 @@ const CommentItem = React.memo(function CommentItem({
         )}
         {currentUserId != null && replyToCommentId === c.id && (
           <form
-            className="comment-reply-box"
+            className={CC.COMMENT_REPLY_BOX}
             onSubmit={(e) => onReplySubmit(e, c.id)}
           >
             <textarea
               ref={replyTextareaRef}
               rows={1}
-              className="comment-reply-textarea"
+              className={CC.COMMENT_REPLY_TEXTAREA}
               placeholder="댓글을 남겨보세요"
               value={replyForm.content}
               onChange={(e) => setReplyForm((prev) => ({ ...prev, content: e.target.value }))}
             />
-            <div className="comment-reply-box-divider" />
-            <div className="comment-reply-actions">
+            <div className={CC.COMMENT_REPLY_BOX_DIVIDER} />
+            <div className={CC.COMMENT_REPLY_ACTIONS}>
               <button
                 type="button"
-                className="comment-reply-cancel"
+                className={CC.COMMENT_REPLY_CANCEL}
                 onClick={() => {
                   setReplyToCommentId(null);
                   setReplyForm((prev) => ({ ...prev, content: '' }));
@@ -367,14 +369,18 @@ const CommentItem = React.memo(function CommentItem({
               >
                 취소
               </button>
-              <button type="submit" className="btn btn-submit" disabled={replyForm.submitting}>
+              <button
+                type="submit"
+                className={CC.COMMENT_REPLY_SUBMIT}
+                disabled={replyForm.submitting}
+              >
                 등록
               </button>
             </div>
           </form>
         )}
         {Array.isArray(c.replies) && c.replies.length > 0 && (
-          <div className="comment-replies">
+          <div className={CC.COMMENT_REPLIES}>
             {(showAllReplies || c.replies.length <= 2
               ? c.replies
               : c.replies.slice(0, 2)
@@ -401,7 +407,7 @@ const CommentItem = React.memo(function CommentItem({
             {c.replies.length > 2 && (
               <button
                 type="button"
-                className="comment-replies-toggle"
+                className={CC.COMMENT_REPLIES_TOGGLE}
                 onClick={() => setShowAllReplies((v) => !v)}
               >
                 {showAllReplies
@@ -492,30 +498,31 @@ export function CommentList({
 
   return (
     <>
-      <div className="comment-sort-tabs" role="tablist" aria-label="댓글 정렬">
+      <div className={CC.COMMENT_SORT_TABS} role="tablist" aria-label="댓글 정렬">
         {COMMENT_SORTS.map((s) => (
           <button
             key={s.value}
             type="button"
             role="tab"
             aria-selected={commentSort === s.value}
+            className={CC.commentSortTabBtn(commentSort === s.value)}
             onClick={() => setCommentSort(s.value)}
           >
             {s.label}
           </button>
         ))}
       </div>
-      <section id="comment-list">
+      <section id="comment-list" className={CC.COMMENT_LIST_SECTION}>
         {renderedComments}
       </section>
       {commentTotalPages > 1 && (
-        <nav className="comment-pagination" aria-label="댓글 페이지">
-          <ul>
+        <nav className={CC.COMMENT_PAGINATION} aria-label="댓글 페이지">
+          <ul className={CC.COMMENT_PAGINATION_UL}>
             {Array.from({ length: commentTotalPages }, (_, i) => i + 1).map((p) => (
               <li key={p}>
                 <button
                   type="button"
-                  className={p === commentPage ? 'active' : ''}
+                  className={CC.commentPaginationBtn(p === commentPage)}
                   data-page={p}
                   onClick={() => setCommentPage(p)}
                 >

@@ -8,6 +8,19 @@ import { safeImageUrl } from '../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE, HEADER_TITLE } from '../config.js';
 import { NotificationBell } from './Notification/NotificationBell.jsx';
 
+/** @see former mypage.css — 헤더 우측(알림+프로필+드롭다운) */
+const HEADER_ACTIONS_CLASS =
+  'absolute right-[25%] top-1/2 z-[160] flex -translate-y-1/2 flex-row items-center gap-[10px] max-md:right-4';
+
+const HEADER_PROFILE_CLASS =
+  'relative right-auto top-auto h-[42px] w-[42px] shrink-0 translate-y-0 cursor-pointer';
+
+const PROFILE_DROPDOWN_CLASS =
+  "absolute right-0 top-[52px] z-[200] flex w-[100px] flex-col border border-[#DDD] bg-[#D9D9D9] p-0 max-md:right-4";
+
+const PROFILE_DROPDOWN_BTN_CLASS =
+  "h-8 border-0 bg-[#D9D9D9] px-[10px] py-[6px] text-center font-['Pretendard'] text-[12px] text-black hover:bg-[#BDBDBD] cursor-pointer";
+
 export function Header({ children, showBackButton = false, backHref = '/posts', showProfile = true }) {
   const { user, isLoggedIn, clearUser } = useAuth();
   const navigate = useNavigate();
@@ -47,25 +60,35 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
 
   return (
     <>
-      <header className="header">
+      <header className="relative z-[150] w-full bg-white pt-[18px] shadow-[0_2px_6px_rgba(0,0,0,0.06)]">
         {showBackButton && (
           <button
             type="button"
-            className="btn-back"
+            className="absolute left-[25%] top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[8px] border-0 bg-transparent p-0 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
             id="header-back-btn"
             aria-label="뒤로 가기"
             onClick={() => navigate(backHref)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              className="h-[22px] w-[22px] text-[#1C1B1F]"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         )}
-        <h1 className="header-title">
-          <Link to="/posts" id="header-title-link">
-            <span className="header-title__brand">
+        <h1 className="mb-5 cursor-default text-center font-['Pretendard',sans-serif] text-[20px] font-normal leading-[100%] text-black">
+          <Link
+            to="/posts"
+            id="header-title-link"
+            className="inline-block cursor-pointer text-black no-underline hover:text-black"
+          >
+            <span className="inline-flex items-center gap-2">
               <svg
-                className="header-title__logo"
+                className="text-[#111827] drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]"
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
@@ -84,15 +107,15 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
                   fill="currentColor"
                 />
               </svg>
-              <span className="header-title__text">{HEADER_TITLE}</span>
+              <span>{HEADER_TITLE}</span>
             </span>
           </Link>
         </h1>
         {showProfile && isLoggedIn && (
-          <div className="header-actions" ref={dropdownRef}>
+          <div className={HEADER_ACTIONS_CLASS} ref={dropdownRef}>
             <NotificationBell />
             <div
-              className="header-profile-wrapper"
+              className={HEADER_PROFILE_CLASS}
               id="header-profile-btn"
               role="button"
               tabIndex={0}
@@ -104,20 +127,42 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
                 }
               }}
             >
-              <div className="profile-avatar">
-                <img src={profileImage} alt="프로필" className="profile-avatar-img" onError={handleProfileImgError} />
+              <div className="h-[42px] w-[42px] overflow-hidden rounded-full">
+                <img
+                  src={profileImage}
+                  alt="프로필"
+                  className="h-full w-full object-cover"
+                  onError={handleProfileImgError}
+                />
               </div>
             </div>
-            <div className={`profile-dropdown ${dropdownOpen ? 'visible' : ''}`} id="profile-dropdown">
-              <button type="button" onClick={() => { setDropdownOpen(false); navigate('/mypage'); }}>
+            <div
+              className={`${PROFILE_DROPDOWN_CLASS} ${dropdownOpen ? 'flex' : 'hidden'}`}
+              id="profile-dropdown"
+            >
+              <button
+                type="button"
+                className={PROFILE_DROPDOWN_BTN_CLASS}
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate('/mypage');
+                }}
+              >
                 마이페이지
               </button>
               {user?.role === 'ADMIN' && (
-                <button type="button" onClick={() => { setDropdownOpen(false); navigate('/admin/dashboard'); }}>
+                <button
+                  type="button"
+                  className={PROFILE_DROPDOWN_BTN_CLASS}
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate('/admin/dashboard');
+                  }}
+                >
                   관리자 페이지
                 </button>
               )}
-              <button type="button" onClick={handleLogout}>
+              <button type="button" className={PROFILE_DROPDOWN_BTN_CLASS} onClick={handleLogout}>
                 로그아웃
               </button>
             </div>
@@ -126,13 +171,12 @@ export function Header({ children, showBackButton = false, backHref = '/posts', 
         {showProfile && !isLoggedIn && (
           <button
             type="button"
-            className="header-login-btn"
+            className="absolute right-[25%] top-1/2 inline-block -translate-y-1/2 rounded-[20px] border-0 bg-[var(--primary)] px-5 py-[6px] font-['Pretendard',sans-serif] text-[12px] font-bold leading-[12px] text-white cursor-pointer hover:bg-[var(--primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[rgba(0,0,0,0.65)] focus-visible:outline-offset-2 focus-visible:rounded-[8px] max-md:right-4"
             onClick={() => navigate('/login')}
           >
             로그인
           </button>
         )}
-        <div className="header-divider" />
       </header>
       {children}
     </>

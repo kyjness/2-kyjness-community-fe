@@ -199,6 +199,8 @@ export function usePostList() {
     } else {
       setPage(1);
       setHasMore(true);
+      setPosts([]);
+      setError(null);
     }
     loadPage(1, false, {
       q: q || null,

@@ -62,9 +62,9 @@ function normalizePost(postData, currentUser) {
     author_representative_dog: author?.representativeDog ?? null,
     created_at: postData?.createdAt ?? postData?.createdat ?? '',
     files: postData?.files ?? (postData?.file ? [postData.file] : []),
-    likes: postData?.likeCount ?? 0,
+    likes: postData?.likeCount ?? postData?.like_count ?? 0,
     views: postData?.viewCount ?? postData?.view_count ?? 0,
-    commentCount: postData?.commentCount ?? 0,
+    commentCount: postData?.commentCount ?? postData?.comment_count ?? 0,
     isLiked: postData?.isLiked ?? false,
     isMine,
   };
@@ -73,24 +73,76 @@ function normalizePost(postData, currentUser) {
 function normalizeComment(c, currentUser) {
   const author = c?.author ?? null;
   const isMine = !!(currentUser && (author?.id === currentUser.userId || author?.userId === currentUser.userId));
+  const repDog = author?.representativeDog ?? author?.representative_dog ?? null;
   const replies = Array.isArray(c?.replies) ? c.replies.map((r) => normalizeComment(r, currentUser)) : [];
+
+  const parentId = c?.parentId ?? c?.parent_id ?? null;
+  const isDeleted = c?.isDeleted ?? c?.is_deleted ?? false;
+  const isEdited = c?.isEdited === true || c?.is_edited === true || c?.isedited === true;
+  const likeCount = c?.likeCount ?? c?.like_count ?? 0;
+  const isLiked = c?.isLiked ?? c?.is_liked ?? false;
+  const createdAt = c?.createdAt ?? c?.created_at ?? '';
+  const updatedAt = c?.updatedAt ?? c?.updated_at ?? '';
+
   return {
     id: c?.id,
     author_nickname: author?.nickname ?? '탈퇴한 사용자',
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
-    author_representative_dog: author?.representativeDog ?? null,
+    author_representative_dog: repDog,
     author_id: author?.id ?? author?.userId ?? null,
-    created_at: c?.createdAt ?? '',
-    updated_at: c?.updatedAt ?? '',
+    created_at: createdAt,
+    updated_at: updatedAt,
     content: c?.content ?? '',
     isMine,
-    likeCount: c?.likeCount ?? 0,
-    isLiked: c?.isLiked ?? false,
-    parentId: c?.parentId ?? null,
+    likeCount,
+    isLiked,
+    parentId,
     replies,
-    isEdited: c?.isEdited === true || c?.isedited === true,
-    isDeleted: c?.isDeleted ?? false,
+    isEdited,
+    isDeleted,
   };
+}
+
+/** ApiResponse 래퍼·페이지 객체 직접 응답 모두 수용 (snake/camel total 필드 호환) */
+function unwrapCommentsPagePayload(res) {
+  if (!res || typeof res !== 'object') return { items: [], totalCount: 0 };
+  const inner = res.data !== undefined ? res.data : res;
+  const items = Array.isArray(inner?.items) ? inner.items : [];
+  const totalCount = inner?.totalCount ?? inner?.total_count ?? 0;
+  return { items, totalCount };
+}
+
+/**
+ * items가 트리(replies)가 아니라 한 배열에 부모·자식이 섞인(flat) 형태일 때 parentId로 재조립.
+ */
+function nestFlatCommentsIfNeeded(normalizedRoots) {
+  if (!Array.isArray(normalizedRoots) || normalizedRoots.length === 0) return normalizedRoots;
+  const anyNestedChild = normalizedRoots.some((c) => Array.isArray(c.replies) && c.replies.length > 0);
+  if (anyNestedChild) return normalizedRoots;
+  const needsNest = normalizedRoots.some((c) => c.parentId != null);
+  if (!needsNest) return normalizedRoots;
+
+  const byId = new Map();
+  for (const c of normalizedRoots) {
+    byId.set(c.id, { ...c, replies: [] });
+  }
+  const roots = [];
+  for (const c of normalizedRoots) {
+    const node = byId.get(c.id);
+    if (!node) continue;
+    const pid = c.parentId;
+    if (pid == null) {
+      roots.push(node);
+    } else {
+      const parent = byId.get(pid);
+      if (parent) {
+        parent.replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+  }
+  return roots;
 }
 
 export function usePostDetail(postId, user, navigate) {
@@ -174,10 +226,9 @@ export function usePostDetail(postId, user, navigate) {
         const res = await api.get(
           `/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}${sortParam}`
         );
-        const payload = res?.data ?? {};
-        const arr = Array.isArray(payload.items) ? payload.items : [];
-        const totalCount = payload.totalCount ?? 0;
-        setComments(arr.map((c) => normalizeComment(c, user)));
+        const { items: arr, totalCount } = unwrapCommentsPagePayload(res);
+        const mapped = arr.map((c) => normalizeComment(c, user));
+        setComments(nestFlatCommentsIfNeeded(mapped));
         setCommentTotalCount(totalCount);
         setCommentTotalPages(Math.max(1, Math.ceil(totalCount / COMMENT_PAGE_SIZE)));
         setCommentPage(1);
@@ -371,14 +422,19 @@ export function usePostDetail(postId, user, navigate) {
           : api.post(`/likes/comments/${commentId}`);
         const res = await req;
         const data = res?.data ?? res;
-        if (data?.likeCount !== undefined || data?.isLiked !== undefined) {
+        if (
+          data?.likeCount !== undefined ||
+          data?.like_count !== undefined ||
+          data?.isLiked !== undefined ||
+          data?.is_liked !== undefined
+        ) {
           setComments((prev) =>
             prev.map((c) =>
               c.id === commentId
                 ? {
                     ...c,
-                    likeCount: data.likeCount ?? c.likeCount,
-                    isLiked: data.isLiked ?? c.isLiked,
+                    likeCount: data.likeCount ?? data.like_count ?? c.likeCount,
+                    isLiked: data.isLiked ?? data.is_liked ?? c.isLiked,
                   }
                 : c
             )

@@ -9,11 +9,13 @@ export function ProfileImageSection({
   onAvatarChangeClick,
 }) {
   return (
-    <div className="form-group mb-6">
-      <label className="form-label">프로필 사진</label>
-      <div className="flex flex-col items-start gap-2.5 mb-6">
+    <div className="mb-3 flex w-full flex-col gap-1">
+      <label className="mb-0 w-full text-left font-['Pretendard'] text-[12px] font-bold leading-[12px] text-black">
+        프로필 사진
+      </label>
+      <div className="mb-0 flex w-full flex-col items-center gap-2.5">
         <div
-          className="w-[149px] aspect-square rounded-full bg-gray-800/55 relative flex items-center justify-center overflow-hidden shadow-md cursor-default"
+          className="relative flex aspect-square w-[149px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gray-800/55 shadow-md"
           id="avatar-area"
           onClick={onAvatarClick}
           role="button"
@@ -25,13 +27,13 @@ export function ProfileImageSection({
             }
           }}
         >
-          <div className="absolute inset-0 w-full h-full">
-            <img id="avatar-img" src={profileImageDisplay} alt="프로필 이미지" className="w-full h-full object-cover rounded-full" />
+          <div className="absolute inset-0 h-full w-full">
+            <img id="avatar-img" src={profileImageDisplay} alt="프로필 이미지" className="h-full w-full rounded-full object-cover" />
           </div>
-          <div className="absolute inset-0 rounded-full bg-black/35 pointer-events-none" aria-hidden />
+          <div className="pointer-events-none absolute inset-0 rounded-full bg-black/35" aria-hidden />
           <button
             type="button"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[52px] h-[27px] rounded-[25px] border border-white bg-black/35 text-white text-[13px] font-semibold flex items-center justify-center cursor-pointer z-10"
+            className="absolute left-1/2 top-1/2 z-10 flex h-[27px] w-[52px] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[25px] border border-white bg-black/35 text-[13px] font-semibold text-white"
             id="avatar-change-btn"
             onClick={onAvatarChangeClick}
           >
@@ -42,7 +44,7 @@ export function ProfileImageSection({
           {canClearProfileImage && (
             <button
               type="button"
-              className="p-0 text-[13px] text-gray-600 bg-transparent border-none cursor-pointer underline hover:text-gray-800 transition-colors"
+              className="cursor-pointer border-none bg-transparent p-0 text-[13px] text-gray-600 underline transition-colors hover:text-gray-800"
               onClick={(e) => {
                 e.preventDefault();
                 onClearProfile();
