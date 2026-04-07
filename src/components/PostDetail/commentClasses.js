@@ -66,7 +66,7 @@ export const commentItemLikeIconBtn = (isLiked) =>
   [
     'inline-flex items-center justify-center rounded-lg border-0 bg-transparent p-[5px] transition-colors duration-150',
     isLiked
-      ? 'text-[#f43f5e]'
+      ? 'cursor-pointer text-[#f43f5e] hover:bg-[#fff1f2] hover:text-rose-600'
       : 'cursor-pointer text-[#94a3b8] hover:bg-[#fff1f2] hover:text-[#f43f5e]',
   ].join(' ');
 

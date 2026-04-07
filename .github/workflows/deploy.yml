@@ -11,6 +11,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC (AssumeRoleWithWebIdentity)
+      contents: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -32,17 +35,18 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-deployment
           aws-region: ap-northeast-2
 
       - name: Deploy to S3
         run: |
           # 빌드 결과물인 dist/ 폴더 내용을 S3 버킷으로 동기화합니다.
           # 버킷 이름은 테라폼에서 설정한 값(puppytalk-frontend-bucket)과 맞춰야 합니다.
-          aws s3 sync dist/ s3://puppytalk-frontend-bucket --delete 
+          aws s3 sync dist/ s3://puppytalk-v2-frontend-bucket --delete 
 
-      - name: CloudFront Invalidation
+      - name: Invalidate CloudFront cache
         run: |
-          # 배포 후 사용자가 즉시 새 버전을 볼 수 있게 캐시를 초기화합니다.
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"

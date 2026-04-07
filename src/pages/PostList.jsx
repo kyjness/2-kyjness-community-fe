@@ -149,7 +149,7 @@ export function PostList() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={[
-                    "h-9 w-full rounded-[12px] border border-[rgba(15,23,42,0.12)] bg-[rgba(255,255,255,0.75)] py-0 pl-[38px] font-['Pretendard',sans-serif] text-[14px] text-[#0f172a] backdrop-blur-[10px] outline-none focus:border-[rgba(15,23,42,0.28)] placeholder:text-[rgba(15,23,42,0.45)]",
+                    "h-9 w-full rounded-[12px] border border-[rgba(15,23,42,0.12)] bg-white py-0 pl-[38px] font-['Pretendard',sans-serif] text-[14px] text-[#0f172a] outline-none focus:border-[rgba(15,23,42,0.28)] placeholder:text-[rgba(15,23,42,0.45)]",
                     searchTerm.trim() !== '' ? 'pr-9' : 'pr-3',
                   ].join(' ')}
                   aria-label="게시글 검색"

@@ -1,5 +1,5 @@
 // 게시글 상세 로직: 로드·조회수·좋아요·댓글 CRUD·모달 상태·normalize.
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { api } from '../api/client.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -112,22 +112,35 @@ function unwrapCommentsPagePayload(res) {
   return { items, totalCount };
 }
 
+function flattenCommentForest(items) {
+  const out = [];
+  const seen = new Set();
+  const walk = (c) => {
+    if (!c || c.id == null || seen.has(c.id)) return;
+    seen.add(c.id);
+    out.push(c);
+    for (const r of Array.isArray(c.replies) ? c.replies : []) walk(r);
+  };
+  for (const c of items) walk(c);
+  return out;
+}
+
 /**
- * items가 트리(replies)가 아니라 한 배열에 부모·자식이 섞인(flat) 형태일 때 parentId로 재조립.
+ * flat 목록이거나 트리+루트에 섞인 parentId 항목이 있을 때 parentId 기준으로 한 번 더 조립.
+ * (일부만 replies가 있으면 조기 return 하면 답글이 전부 최상위로 보이는 문제가 생김)
  */
 function nestFlatCommentsIfNeeded(normalizedRoots) {
   if (!Array.isArray(normalizedRoots) || normalizedRoots.length === 0) return normalizedRoots;
-  const anyNestedChild = normalizedRoots.some((c) => Array.isArray(c.replies) && c.replies.length > 0);
-  if (anyNestedChild) return normalizedRoots;
-  const needsNest = normalizedRoots.some((c) => c.parentId != null);
+  const flat = flattenCommentForest(normalizedRoots);
+  const needsNest = flat.some((c) => c.parentId != null);
   if (!needsNest) return normalizedRoots;
 
   const byId = new Map();
-  for (const c of normalizedRoots) {
+  for (const c of flat) {
     byId.set(c.id, { ...c, replies: [] });
   }
   const roots = [];
-  for (const c of normalizedRoots) {
+  for (const c of flat) {
     const node = byId.get(c.id);
     if (!node) continue;
     const pid = c.parentId;
@@ -231,7 +244,7 @@ export function usePostDetail(postId, user, navigate) {
         setComments(nestFlatCommentsIfNeeded(mapped));
         setCommentTotalCount(totalCount);
         setCommentTotalPages(Math.max(1, Math.ceil(totalCount / COMMENT_PAGE_SIZE)));
-        setCommentPage(1);
+        setCommentPage(page);
       } catch (err) {
         setMessage(
           getApiErrorMessage(err?.code ?? err?.message, '댓글 목록을 불러오지 못했습니다.')
@@ -253,10 +266,15 @@ export function usePostDetail(postId, user, navigate) {
     void loadPost();
   }, [postId, loadPost, isRestored]);
 
+  useLayoutEffect(() => {
+    if (!postId) return;
+    setCommentPage(1);
+  }, [postId, commentSort]);
+
   useEffect(() => {
     if (!postId || !isRestored) return;
-    loadComments(1);
-  }, [postId, commentSort, loadComments, isRestored]);
+    void loadComments(commentPage);
+  }, [postId, commentSort, commentPage, loadComments, isRestored]);
 
   const handleLike = useCallback(async () => {
     if (!postId) return;
@@ -505,15 +523,6 @@ export function usePostDetail(postId, user, navigate) {
     [user?.userId, user?.id]
   );
 
-  const displayedComments = useMemo(
-    () =>
-      comments.slice(
-        (commentPage - 1) * COMMENT_PAGE_SIZE,
-        commentPage * COMMENT_PAGE_SIZE
-      ),
-    [comments, commentPage]
-  );
-
   const uniqueFiles = useMemo(() => {
     const files = (post?.files ?? []).filter((f) => safeImageUrl(f.fileUrl, ''));
     const seen = new Set();
@@ -529,7 +538,7 @@ export function usePostDetail(postId, user, navigate) {
     loading,
     error,
     post,
-    comments: displayedComments,
+    comments,
     commentPage,
     commentTotalPages,
     commentTotalCount,
