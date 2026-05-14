@@ -72,8 +72,20 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       .filter((x): x is Record<string, unknown> => x != null && typeof x === 'object')
       .map((x) => normalizeChatMessage(x));
     const asc = [...mapped].reverse();
+    const prev = get().messagesByRoom[roomId] ?? [];
+    const pending = prev.filter((m) => String(m.id).startsWith('pending-'));
+    const pendingKept = pending.filter(
+      (p) => !asc.some((s) => s.senderId === p.senderId && s.content === p.content),
+    );
+    const merged = dedupeById([...asc, ...pendingKept]);
+    merged.sort((a, b) => {
+      const ta = Date.parse(a.createdAt) || 0;
+      const tb = Date.parse(b.createdAt) || 0;
+      if (ta !== tb) return ta - tb;
+      return String(a.id).localeCompare(String(b.id));
+    });
     set((s) => ({
-      messagesByRoom: { ...s.messagesByRoom, [roomId]: dedupeById(asc) },
+      messagesByRoom: { ...s.messagesByRoom, [roomId]: merged },
       nextCursorByRoom: { ...s.nextCursorByRoom, [roomId]: nextCursor ?? null },
     }));
   },
@@ -95,11 +107,23 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   appendMessage: (roomId, message) =>
     set((s) => {
       const prev = s.messagesByRoom[roomId] ?? [];
-      if (message.id && prev.some((m) => m.id === message.id)) {
+      let base = prev;
+      if (message.id && !String(message.id).startsWith('pending-')) {
+        base = prev.filter(
+          (m) =>
+            !(
+              String(m.id).startsWith('pending-') &&
+              m.senderId === message.senderId &&
+              m.content === message.content &&
+              m.roomId === roomId
+            ),
+        );
+      }
+      if (message.id && base.some((m) => m.id === message.id)) {
         return s;
       }
       return {
-        messagesByRoom: { ...s.messagesByRoom, [roomId]: [...prev, message] },
+        messagesByRoom: { ...s.messagesByRoom, [roomId]: [...base, message] },
       };
     }),
 

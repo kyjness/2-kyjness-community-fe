@@ -12,6 +12,7 @@
     "generate-api": "node scripts/transform-and-generate.mjs"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.9",
     "axios": "^1.13.6",
     "event-source-polyfill": "^1.0.31",
     "lucide-react": "^0.577.0",

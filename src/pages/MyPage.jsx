@@ -53,7 +53,7 @@ export function MyPage() {
 
   return (
     <Header showBackButton backHref="/posts">
-      <main className="flex w-full flex-1 flex-col items-center justify-start bg-[var(--app-bg)] px-[16px] py-[8px] min-h-[calc(100dvh-6.5rem)]">
+      <main className="flex w-full flex-1 flex-col items-center justify-start bg-[var(--app-bg)] px-[16px] py-[8px] min-h-[calc(100dvh-5rem)]">
         <div className="flex w-full max-w-[1100px] flex-1 items-stretch justify-center max-md:flex-col max-md:px-4 max-md:items-start">
           <div className="flex flex-1 min-w-0 flex-col self-start justify-end pr-6 max-md:flex-none max-md:w-full max-md:justify-start max-md:pr-0 md:flex-row md:justify-end">
             <div
@@ -63,7 +63,7 @@ export function MyPage() {
             />
             <nav
               ref={navRef}
-              className="w-[160px] shrink-0 self-start text-left md:sticky md:top-[72px] max-md:fixed max-md:left-0 max-md:right-0 max-md:top-[72px] max-md:z-[25] max-md:w-full max-md:bg-[var(--app-bg)] max-md:px-8"
+              className="w-[160px] shrink-0 self-start text-left md:sticky md:top-[var(--header-sidebar-offset)] max-md:fixed max-md:left-0 max-md:right-0 max-md:top-[var(--header-sidebar-offset)] max-md:z-[25] max-md:w-full max-md:bg-[var(--app-bg)] max-md:px-8"
               aria-label="마이페이지 메뉴"
             >
               <ul className="m-0 flex list-none flex-col gap-1 p-0">

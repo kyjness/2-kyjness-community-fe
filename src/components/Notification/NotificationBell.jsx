@@ -15,7 +15,7 @@ function ToastLine({ message, toastId, removeToast }) {
   }, [toastId, removeToast]);
   return (
     <div
-      className="pointer-events-auto rounded-lg border border-stone-200/90 bg-white px-3 py-2 text-[13px] text-stone-800 shadow-lg shadow-stone-900/15"
+      className="pointer-events-auto rounded-lg border border-stone-200/90 bg-white px-3 py-2 text-[13px] text-stone-800"
       style={{ animation: 'notif-slide 0.35s ease-out' }}
     >
       {message}
@@ -128,7 +128,7 @@ export function NotificationBell() {
             ref={popoverRef}
             role="dialog"
             aria-label="알림 목록"
-            className="min-w-[240px] rounded-xl border border-stone-200/90 bg-white p-2 shadow-xl shadow-stone-900/15"
+            className="min-w-[240px] rounded-xl border border-stone-200/90 bg-white p-2"
             style={popoverStyle}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}

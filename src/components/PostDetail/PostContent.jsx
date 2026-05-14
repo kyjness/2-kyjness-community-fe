@@ -39,6 +39,7 @@ export function PostContent({
 
   const authorId = post.authorId ?? post.author_id;
   const nickname = post.authorNickname ?? post.author_nickname ?? '';
+  const authorProfileImage = post?.author_profile_image || DEFAULT_PROFILE_IMAGE;
 
   // 타인 글이면(작성자 탈퇴/파기 포함) 신고 노출. 차단은 로그인 + author_id 존재 시에만.
   const showPostReport = Boolean(!post.isMine);
@@ -90,7 +91,7 @@ export function PostContent({
                   disabled={dmBusy}
                   aria-label="메시지 보내기"
                   className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0.5 text-[#64748b] shadow-none outline-none transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={() => goToDirectChat(authorId, nickname)}
+                  onClick={() => goToDirectChat(authorId, nickname, authorProfileImage)}
                 >
                   <MessageCircle
                     size={18}
@@ -136,7 +137,7 @@ export function PostContent({
                     disabled={dmBusy}
                     aria-label="메시지 보내기"
                     className="absolute top-0 right-0 inline-flex cursor-pointer items-center justify-center border-0 bg-transparent p-0.5 text-[#64748b] shadow-none outline-none transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
-                    onClick={() => goToDirectChat(authorId, nickname)}
+                    onClick={() => goToDirectChat(authorId, nickname, authorProfileImage)}
                   >
                     <MessageCircle
                       size={18}

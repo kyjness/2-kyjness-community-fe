@@ -1,243 +1,179 @@
-// 게시글 목록 로직: 무한 스크롤, 검색(debounce 500ms), loadPage, 목록 정규화·정렬, ref 기반 effect.
-import { useState, useEffect, useCallback, useRef } from 'react';
+// 게시글 목록: TanStack Query useInfiniteQuery + 커서 페이지네이션 + useInView 무한 스크롤.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { api } from '../api/client.js';
+import { useInView } from 'react-intersection-observer';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchPostsFeedPage } from '../api/posts.js';
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 500;
-
-function _makeCacheKey(searchQ, categoryId) {
-  const q = (searchQ ?? '').trim();
-  const cat = categoryId ?? 'all';
-  return `${cat}::${q}`;
-}
 
 function _qFromSearch(search) {
   return new URLSearchParams(search).get('q') ?? '';
 }
 
+function _normalizePageFromEnvelope(envelope) {
+  const payload = envelope?.data ?? envelope ?? {};
+  const list = Array.isArray(payload.items) ? payload.items : [];
+  const normalized = list.map((p) => {
+    const rawAuthor = p?.author ?? p?.user ?? null;
+    const authorNorm =
+      rawAuthor && typeof rawAuthor === 'object'
+        ? {
+            ...rawAuthor,
+            userId: rawAuthor.id ?? rawAuthor.userId,
+            nickname: rawAuthor.nickname ?? '',
+          }
+        : null;
+    return { ...p, author: authorNorm };
+  });
+  const hasMore = Boolean(payload.hasMore ?? payload.has_more);
+  return { items: normalized, hasMore };
+}
+
+function _postsQueryKey(qTrimmed, categoryId) {
+  return ['posts', 'feed', { q: qTrimmed, categoryId: categoryId ?? 'all' }];
+}
+
+function _getNextCursorFromPage(page) {
+  if (!page?.hasMore || !Array.isArray(page.items) || page.items.length === 0) {
+    return undefined;
+  }
+  const last = page.items[page.items.length - 1];
+  const id = last?.id;
+  if (id == null || id === '') return undefined;
+  return id;
+}
+
 export function usePostList() {
   const location = useLocation();
   const initialQ = _qFromSearch(location.search);
-  const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState(initialQ);
   const [debouncedSearch, setDebouncedSearch] = useState(initialQ.trim());
-  const [categoryId, setCategoryId] = useState('all'); // 'all' | number(string)
-
-  const loadingMoreRef = useRef(false);
-  const hasMoreRef = useRef(hasMore);
-  const loadingRef = useRef(loading);
-  const loadingMoreStateRef = useRef(loadingMore);
-  const pageRef = useRef(page);
+  const [categoryId, setCategoryId] = useState('all');
+  const queryClient = useQueryClient();
   const debouncedSearchRef = useRef(debouncedSearch);
-  const categoryRef = useRef(categoryId);
-  const bottomRef = useRef(null);
-  const cacheRef = useRef(new Map());
-  const prefetchInFlightRef = useRef(new Map());
-  hasMoreRef.current = hasMore;
-  loadingRef.current = loading;
-  loadingMoreStateRef.current = loadingMore;
-  pageRef.current = page;
-  debouncedSearchRef.current = debouncedSearch;
-  categoryRef.current = categoryId;
 
-  const prefetchCategory = useCallback(async (nextCategoryId) => {
-    const q = (debouncedSearchRef.current ?? '').trim();
-    const cat = nextCategoryId ?? 'all';
-    const cacheKey = _makeCacheKey(q, cat);
+  useEffect(() => {
+    debouncedSearchRef.current = debouncedSearch;
+  }, [debouncedSearch]);
 
-    if (cacheRef.current.has(cacheKey)) return;
-    if (prefetchInFlightRef.current.has(cacheKey)) return;
+  const qTrimmed = debouncedSearch.trim();
+  const queryKey = _postsQueryKey(qTrimmed, categoryId);
 
-    const qs = new URLSearchParams();
-    qs.set('page', '1');
-    qs.set('size', String(PAGE_SIZE));
-    if (q) qs.set('q', q);
-    if (cat && cat !== 'all') qs.set('category_id', String(cat));
-
-    const p = (async () => {
-      try {
-        const res = await api.get(`/posts?${qs.toString()}`);
-        const payload = res?.data ?? {};
-        const list = Array.isArray(payload.items) ? payload.items : [];
-        const normalized = list.map((item) => {
-          const rawAuthor = item?.author ?? item?.user ?? null;
-          const authorNorm =
-            rawAuthor && typeof rawAuthor === 'object'
-              ? {
-                  ...rawAuthor,
-                  userId: rawAuthor.id ?? rawAuthor.userId,
-                  nickname: rawAuthor.nickname ?? '',
-                }
-              : null;
-          return { ...item, author: authorNorm };
-        });
-        const hasMoreFromApi = payload.hasMore ?? (list.length >= PAGE_SIZE);
-        cacheRef.current.set(cacheKey, {
-          posts: normalized,
-          page: 2,
-          hasMore: hasMoreFromApi,
-        });
-      } catch (_) {
-        // Prefetch는 UX 최적화용: 실패해도 무시(Fail-silent).
-      } finally {
-        prefetchInFlightRef.current.delete(cacheKey);
-      }
-    })();
-
-    prefetchInFlightRef.current.set(cacheKey, p);
-    await p;
-  }, []);
-
-  const loadPage = useCallback(async (pageNum, append = false, params = null) => {
-    const searchQ = (params?.q ?? debouncedSearchRef.current?.trim()) || null;
-    const cat = params?.categoryId ?? categoryRef.current;
-    const cacheKey = _makeCacheKey(searchQ || '', cat);
-    if (pageNum === 1) {
-      setLoading(true);
-      setError(null);
-    } else {
-      if (loadingMoreRef.current) return;
-      loadingMoreRef.current = true;
-      setLoadingMore(true);
-    }
-    const qs = new URLSearchParams();
-    qs.set('page', String(pageNum));
-    qs.set('size', String(PAGE_SIZE));
-    if (searchQ) qs.set('q', searchQ);
-    // 백엔드 Query 이름은 snake_case `category_id` (camelCase categoryId는 무시됨).
-    if (cat && cat !== 'all') qs.set('category_id', String(cat));
-    try {
-      const res = await api.get(`/posts?${qs.toString()}`);
-      const payload = res?.data ?? {};
-      const list = Array.isArray(payload.items) ? payload.items : [];
-      const normalized = list.map((p) => {
-        // author가 null(탈퇴/파기)일 수 있으므로 null을 보존한다.
-        const rawAuthor = p?.author ?? p?.user ?? null;
-        const authorNorm =
-          rawAuthor && typeof rawAuthor === 'object'
-            ? {
-                ...rawAuthor,
-                userId: rawAuthor.id ?? rawAuthor.userId,
-                nickname: rawAuthor.nickname ?? '',
-              }
-            : null;
-        return { ...p, author: authorNorm };
+  const infinite = useInfiniteQuery({
+    queryKey,
+    initialPageParam: undefined,
+    queryFn: async ({ pageParam }) => {
+      const raw = await fetchPostsFeedPage({
+        cursor: pageParam,
+        q: qTrimmed || null,
+        categoryId,
+        size: PAGE_SIZE,
       });
-      const sorted = normalized;
-      const hasMoreFromApi =
-        payload.hasMore ?? (list.length >= PAGE_SIZE);
+      return _normalizePageFromEnvelope(raw);
+    },
+    getNextPageParam: (lastPage) => _getNextCursorFromPage(lastPage),
+  });
 
-      if (append) {
-        setPosts((prev) => {
-          const ids = new Set(prev.map((p) => p.id));
-          const newOnes = sorted.filter((p) => !ids.has(p.id));
-          const merged = [...prev, ...newOnes];
-          cacheRef.current.set(cacheKey, {
-            posts: merged,
-            page: pageNum + 1,
-            hasMore: hasMoreFromApi,
-          });
-          return merged;
-        });
-      } else {
-        setPosts(sorted);
-        cacheRef.current.set(cacheKey, {
-          posts: sorted,
-          page: pageNum + 1,
-          hasMore: hasMoreFromApi,
-        });
-      }
-      setPage(pageNum + 1);
-      setHasMore(hasMoreFromApi);
-    } catch (err) {
-      if (pageNum === 1) {
-        const msg =
-          err?.message && err.message !== 'Failed to fetch'
-            ? err.message
-            : '게시글을 불러올 수 없습니다. (연결을 확인해 주세요.)';
-        setError(msg);
-        // SWR: 새 응답이 오기 전까지는 기존(stale) 데이터를 유지한다.
-      }
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      loadingMoreRef.current = false;
-    }
-  }, []);
+  const {
+    data,
+    error,
+    isPending,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = infinite;
+
+  const posts = useMemo(() => {
+    const flat = data?.pages?.flatMap((p) => p?.items ?? []) ?? [];
+    const seen = new Set();
+    return flat.filter((p) => {
+      const id = p?.id;
+      if (id == null || id === '') return true;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [data]);
+
+  const { ref: bottomRef, inView } = useInView({
+    rootMargin: '100px',
+    threshold: 0,
+    skip: !hasNextPage,
+  });
+
+  useEffect(() => {
+    if (!inView || !hasNextPage || isFetchingNextPage) return;
+    if (isPending) return;
+    if (isFetching && !isFetchingNextPage) return;
+    fetchNextPage();
+  }, [
+    inView,
+    hasNextPage,
+    isFetchingNextPage,
+    isPending,
+    isFetching,
+    fetchNextPage,
+  ]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // URL `?q=` ↔ 검색어 동기화 (인기 태그 클릭·공유 링크). 쿼리 변경 시 debounce 없이 즉시 반영.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = params.get('q') ?? '';
-    setSearchTerm((prev) => (prev === q ? prev : q));
     const trimmed = q.trim();
-    setDebouncedSearch((prev) => (prev === trimmed ? prev : trimmed));
+    queueMicrotask(() => {
+      setSearchTerm((prev) => (prev === q ? prev : q));
+      setDebouncedSearch((prev) => (prev === trimmed ? prev : trimmed));
+    });
   }, [location.search]);
 
-  useEffect(() => {
-    const q = debouncedSearch.trim() || '';
-    const key = _makeCacheKey(q, categoryId);
-    const cached = cacheRef.current.get(key);
-    if (cached) {
-      // 즉시 표시: 캐시된 데이터(또는 직전 방문 데이터)를 먼저 보여준다.
-      setPosts(cached.posts);
-      setPage(cached.page);
-      setHasMore(cached.hasMore);
-      setError(null);
-    } else {
-      setPage(1);
-      setHasMore(true);
-      setPosts([]);
-      setError(null);
-    }
-    loadPage(1, false, {
-      q: q || null,
-      categoryId,
-    });
-  }, [debouncedSearch, categoryId, loadPage]);
-
-  useEffect(() => {
-    const el = bottomRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (
-          !entries[0]?.isIntersecting ||
-          !hasMoreRef.current ||
-          loadingRef.current ||
-          loadingMoreStateRef.current
-        )
-          return;
-        loadPage(pageRef.current, true, {
-          q: debouncedSearchRef.current?.trim() || null,
-          categoryId: categoryRef.current,
+  const prefetchCategory = useCallback(
+    async (nextCategoryId) => {
+      const q = (debouncedSearchRef.current ?? '').trim();
+      const cat = nextCategoryId ?? 'all';
+      const key = _postsQueryKey(q, cat);
+      if (queryClient.getQueryData(key) != null) return;
+      try {
+        await queryClient.prefetchInfiniteQuery({
+          queryKey: key,
+          initialPageParam: undefined,
+          queryFn: async ({ pageParam }) => {
+            const raw = await fetchPostsFeedPage({
+              cursor: pageParam,
+              q: q || null,
+              categoryId: cat,
+              size: PAGE_SIZE,
+            });
+            return _normalizePageFromEnvelope(raw);
+          },
+          getNextPageParam: (lastPage) => _getNextCursorFromPage(lastPage),
         });
-      },
-      { root: null, rootMargin: '100px', threshold: 0 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loading, posts.length, loadPage]);
+      } catch {
+        // prefetch 실패는 무시
+      }
+    },
+    [queryClient]
+  );
+
+  const errorMessage =
+    error?.message && error.message !== 'Failed to fetch'
+      ? error.message
+      : error
+        ? '게시글을 불러올 수 없습니다. (연결을 확인해 주세요.)'
+        : null;
 
   return {
     posts,
-    loading,
-    loadingMore,
-    hasMore,
-    error,
-    loadPage,
+    loading: isPending,
+    loadingMore: isFetchingNextPage,
+    hasMore: Boolean(hasNextPage),
+    error: errorMessage,
     prefetchCategory,
     searchTerm,
     setSearchTerm,

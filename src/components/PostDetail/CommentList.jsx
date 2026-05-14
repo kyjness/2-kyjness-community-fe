@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Heart, MoreHorizontal, UserX, AlertTriangle } from 'lucide-react';
+import { Heart, MoreHorizontal, UserX, AlertTriangle, MessageCircle } from 'lucide-react';
 import { escapeHtml, formatDateTime, calculateDogAge, formatDogGenderLabel } from '../../utils/index.js';
 import { DEFAULT_PROFILE_IMAGE } from '../../config.js';
+import { useNavigateToDirectChat } from '../../hooks/useNavigateToDirectChat.js';
 import * as CC from './commentClasses.js';
 
 function didCommentChange(prevC, nextC) {
@@ -80,6 +81,14 @@ const CommentItem = React.memo(function CommentItem({
   const isTopLevel = depth === 0;
   const isMyComment = c.isMine || (currentUserId != null && c.author_id === currentUserId);
 
+  const { go: goToDirectChat, busy: dmBusy } = useNavigateToDirectChat();
+  const showDmButton =
+    currentUserId != null &&
+    !isMyComment &&
+    c.author_id != null &&
+    String(c.author_id) !== String(currentUserId);
+  const hasRepresentativeDog = Boolean(c.author_representative_dog?.name);
+
   const adjustReplyHeight = useCallback(() => {
     const el = replyTextareaRef.current;
     if (!el) return;
@@ -145,31 +154,106 @@ const CommentItem = React.memo(function CommentItem({
       <div className={CC.COMMENT_ITEM_BODY}>
         <div className={CC.COMMENT_ITEM_HEADER}>
           <div className={CC.COMMENT_ITEM_AUTHOR_WRAP}>
-            <span className={CC.COMMENT_ITEM_AUTHOR}>{escapeHtml(c.author_nickname ?? '')}</span>
-            {c.author_representative_dog?.name && (
-              <span className={CC.COMMENT_ITEM_DOG}>
-                {' '}
-                {(() => {
-                  const d = c.author_representative_dog;
-                  const genderLabel = d.gender ? (
-                    <span className="inline bg-transparent text-[1em] text-inherit">
-                      {formatDogGenderLabel(d.gender)}
-                    </span>
-                  ) : null;
-                  const parts = [
-                    escapeHtml(d.name),
-                    escapeHtml(d.breed || ''),
-                    genderLabel,
-                    calculateDogAge(d.birthDate),
-                  ].filter(Boolean);
-                  return parts.map((p, i) => (
-                    <span key={i}>
-                      {i > 0 && ' / '}
-                      {p}
-                    </span>
-                  ));
-                })()}
-              </span>
+            {showDmButton && !hasRepresentativeDog ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-[3px]">
+                <span className={CC.COMMENT_ITEM_AUTHOR}>{escapeHtml(c.author_nickname ?? '')}</span>
+                <button
+                  type="button"
+                  disabled={dmBusy}
+                  aria-label="메시지 보내기"
+                  className="inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0.5 text-[#64748b] shadow-none outline-none transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() =>
+                    goToDirectChat(
+                      c.author_id,
+                      c.author_nickname ?? '',
+                      c.author_profile_image || DEFAULT_PROFILE_IMAGE,
+                    )
+                  }
+                >
+                  <MessageCircle
+                    size={18}
+                    strokeWidth={2}
+                    className="block shrink-0 -translate-y-0.5"
+                    aria-hidden
+                  />
+                </button>
+              </div>
+            ) : showDmButton && hasRepresentativeDog ? (
+              <div className="relative min-w-0 max-w-full pr-8">
+                <span className={CC.COMMENT_ITEM_AUTHOR}>{escapeHtml(c.author_nickname ?? '')}</span>
+                <span className={CC.COMMENT_ITEM_DOG}>
+                  {' '}
+                  {(() => {
+                    const d = c.author_representative_dog;
+                    const genderLabel = d.gender ? (
+                      <span className="inline bg-transparent text-[1em] text-inherit">
+                        {formatDogGenderLabel(d.gender)}
+                      </span>
+                    ) : null;
+                    const parts = [
+                      escapeHtml(d.name),
+                      escapeHtml(d.breed || ''),
+                      genderLabel,
+                      calculateDogAge(d.birthDate),
+                    ].filter(Boolean);
+                    return parts.map((p, i) => (
+                      <span key={i}>
+                        {i > 0 && ' / '}
+                        {p}
+                      </span>
+                    ));
+                  })()}
+                </span>
+                <button
+                  type="button"
+                  disabled={dmBusy}
+                  aria-label="메시지 보내기"
+                  className="absolute top-0 right-0 inline-flex cursor-pointer items-center justify-center border-0 bg-transparent p-0.5 text-[#64748b] shadow-none outline-none transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() =>
+                    goToDirectChat(
+                      c.author_id,
+                      c.author_nickname ?? '',
+                      c.author_profile_image || DEFAULT_PROFILE_IMAGE,
+                    )
+                  }
+                >
+                  <MessageCircle
+                    size={18}
+                    strokeWidth={2}
+                    className="block shrink-0 -translate-y-0.5"
+                    aria-hidden
+                  />
+                </button>
+              </div>
+            ) : (
+              <>
+                <span className={CC.COMMENT_ITEM_AUTHOR}>{escapeHtml(c.author_nickname ?? '')}</span>
+                {c.author_representative_dog?.name && (
+                  <span className={CC.COMMENT_ITEM_DOG}>
+                    {' '}
+                    {(() => {
+                      const d = c.author_representative_dog;
+                      const genderLabel = d.gender ? (
+                        <span className="inline bg-transparent text-[1em] text-inherit">
+                          {formatDogGenderLabel(d.gender)}
+                        </span>
+                      ) : null;
+                      const parts = [
+                        escapeHtml(d.name),
+                        escapeHtml(d.breed || ''),
+                        genderLabel,
+                        calculateDogAge(d.birthDate),
+                      ].filter(Boolean);
+                      return parts.map((p, i) => (
+                        <span key={i}>
+                          {i > 0 && ' / '}
+                          {p}
+                        </span>
+                      ));
+                    })()}
+                  </span>
+                )}
+              </>
             )}
           </div>
           <div className={CC.COMMENT_ITEM_ACTIONS(isReply)}>

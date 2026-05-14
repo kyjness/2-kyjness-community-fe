@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
+import { useChatUiStore } from '../store/useChatUiStore';
+
 const STORAGE_KEY = 'user';
 
 const AuthContext = createContext(null);
@@ -27,6 +29,10 @@ export function AuthProvider({ children }) {
     setUserState(null);
     try {
       localStorage.removeItem(STORAGE_KEY);
+    } catch (_) {}
+    try {
+      useChatUiStore.getState().closeFloatingRoom();
+      useChatUiStore.getState().closeChatInbox();
     } catch (_) {}
   }, []);
 

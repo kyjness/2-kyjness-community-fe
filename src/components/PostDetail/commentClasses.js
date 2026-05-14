@@ -16,7 +16,7 @@ export const COMMENT_FORM_SUBMIT =
 
 export const COMMENT_ITEM = (isTopLevel, isReply) =>
   [
-    'flex items-start gap-3 rounded-[12px] bg-transparent px-[18px]',
+    'flex items-start gap-3 rounded-[12px] bg-transparent px-[14px]',
     isTopLevel ? 'pt-1 pb-[6px]' : 'pt-[6px] pb-2',
     isReply ? 'mt-1 ml-5' : '',
   ]

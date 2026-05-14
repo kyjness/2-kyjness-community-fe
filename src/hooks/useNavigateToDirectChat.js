@@ -1,16 +1,16 @@
-// 상대 공개 ID로 1:1 방 조회·생성 후 /chat/:roomId?peer&title 이동.
+// 상대 공개 ID로 1:1 방 조회·생성 후 플로팅 채팅창 오픈.
 import { useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { api } from '../api/client.js';
 import { getApiErrorMessage, getClientErrorCode } from '../utils/index.js';
+import { useChatUiStore } from '../store/useChatUiStore';
 
 export function useNavigateToDirectChat() {
-  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const openFloatingRoom = useChatUiStore((s) => s.openFloatingRoom);
 
   const go = useCallback(
-    async (peerUserId, title) => {
+    async (peerUserId, title, peerProfileImageUrl) => {
       const peer = peerUserId != null ? String(peerUserId).trim() : '';
       if (!peer) return false;
       setBusy(true);
@@ -30,11 +30,16 @@ export function useNavigateToDirectChat() {
           window.alert('채팅방 정보를 받지 못했습니다. (서버 응답 오류)');
           return false;
         }
-        const q = new URLSearchParams();
-        q.set('peer', peer);
-        q.set('title', (title != null && String(title).trim()) || '채팅');
-        // 경로 세그먼트는 RR이 처리하도록 pathname + search 분리(이중 인코딩·roomId 불일치 방지)
-        navigate({ pathname: `/chat/${roomIdStr}`, search: `?${q.toString()}` });
+        // openFloatingRoom이 헤더 DM 목록도 함께 닫음
+        openFloatingRoom({
+          roomId: roomIdStr,
+          peerUserId: peer,
+          title: (title != null && String(title).trim()) || '채팅',
+          peerProfileImageUrl:
+            peerProfileImageUrl != null && String(peerProfileImageUrl).trim()
+              ? String(peerProfileImageUrl).trim()
+              : undefined,
+        });
         return true;
       } catch (err) {
         window.alert(
@@ -48,7 +53,7 @@ export function useNavigateToDirectChat() {
         setBusy(false);
       }
     },
-    [navigate],
+    [openFloatingRoom],
   );
 
   return { go, busy };

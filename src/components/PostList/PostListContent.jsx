@@ -47,7 +47,11 @@ export function PostListContent({
         </div>
       )}
 
-      {loadingMore && <div className="app-skeleton-bar" aria-label="추가 로딩" />}
+      {loadingMore && (
+        <div className="flex w-full justify-center py-6" aria-live="polite" aria-label="추가 게시글 로딩 중">
+          <div className="app-skeleton-bar w-[min(280px,80%)]" />
+        </div>
+      )}
     </>
   );
 }
