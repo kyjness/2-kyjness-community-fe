@@ -4,6 +4,8 @@ import { useLocation } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPostsFeedPage } from '../api/posts.js';
+import { getApiErrorMessage } from '../utils/index.js';
+import { validateSearchQueryForFeed } from '../utils/postSearch.js';
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 500;
@@ -58,16 +60,23 @@ export function usePostList() {
     debouncedSearchRef.current = debouncedSearch;
   }, [debouncedSearch]);
 
-  const qTrimmed = debouncedSearch.trim();
-  const queryKey = _postsQueryKey(qTrimmed, categoryId);
+  const searchValidation = useMemo(
+    () => validateSearchQueryForFeed(debouncedSearch),
+    [debouncedSearch]
+  );
+  const qForApi = searchValidation.ok ? (searchValidation.q ?? '') : '';
+  const queryKey = searchValidation.ok
+    ? _postsQueryKey(qForApi, categoryId)
+    : ['posts', 'feed', 'blocked', debouncedSearch.trim(), categoryId ?? 'all'];
 
   const infinite = useInfiniteQuery({
     queryKey,
     initialPageParam: undefined,
+    enabled: searchValidation.ok,
     queryFn: async ({ pageParam }) => {
       const raw = await fetchPostsFeedPage({
         cursor: pageParam,
-        q: qTrimmed || null,
+        q: qForApi || null,
         categoryId,
         size: PAGE_SIZE,
       });
@@ -80,6 +89,7 @@ export function usePostList() {
     data,
     error,
     isPending,
+    isLoading,
     isFetching,
     isFetchingNextPage,
     fetchNextPage,
@@ -87,6 +97,7 @@ export function usePostList() {
   } = infinite;
 
   const posts = useMemo(() => {
+    if (!searchValidation.ok) return [];
     const flat = data?.pages?.flatMap((p) => p?.items ?? []) ?? [];
     const seen = new Set();
     return flat.filter((p) => {
@@ -96,12 +107,14 @@ export function usePostList() {
       seen.add(id);
       return true;
     });
-  }, [data]);
+  }, [data, searchValidation.ok]);
+
+  const searchHint = !searchValidation.ok ? searchValidation.message : null;
 
   const { ref: bottomRef, inView } = useInView({
     rootMargin: '100px',
     threshold: 0,
-    skip: !hasNextPage,
+    skip: !hasNextPage || Boolean(searchHint),
   });
 
   useEffect(() => {
@@ -135,7 +148,9 @@ export function usePostList() {
 
   const prefetchCategory = useCallback(
     async (nextCategoryId) => {
-      const q = (debouncedSearchRef.current ?? '').trim();
+      const validation = validateSearchQueryForFeed(debouncedSearchRef.current ?? '');
+      if (!validation.ok) return;
+      const q = validation.q ?? '';
       const cat = nextCategoryId ?? 'all';
       const key = _postsQueryKey(q, cat);
       if (queryClient.getQueryData(key) != null) return;
@@ -161,22 +176,28 @@ export function usePostList() {
     [queryClient]
   );
 
-  const errorMessage =
-    error?.message && error.message !== 'Failed to fetch'
-      ? error.message
-      : error
-        ? '게시글을 불러올 수 없습니다. (연결을 확인해 주세요.)'
-        : null;
+  const errorMessage = useMemo(() => {
+    if (!error) return null;
+    const code = error?.code ?? error?.message;
+    const msg = error?.message;
+    if (msg && code && msg !== code && msg !== 'Failed to fetch') return msg;
+    return getApiErrorMessage(
+      code,
+      '게시글을 불러올 수 없습니다. (연결을 확인해 주세요.)'
+    );
+  }, [error]);
 
   return {
     posts,
-    loading: isPending,
+    loading: searchValidation.ok && isLoading,
     loadingMore: isFetchingNextPage,
-    hasMore: Boolean(hasNextPage),
+    hasMore: searchValidation.ok && Boolean(hasNextPage),
+    searchHint,
     error: errorMessage,
     prefetchCategory,
     searchTerm,
     setSearchTerm,
+    debouncedSearch,
     categoryId,
     setCategoryId,
     bottomRef,

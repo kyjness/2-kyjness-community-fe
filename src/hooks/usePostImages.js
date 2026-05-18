@@ -1,7 +1,8 @@
 // 게시글 이미지 상태: 기존/신규 목록, 추가·삭제·업로드, Object URL revoke.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api/client.js';
-import { getImageUploadData, revokeObjectUrlSafely } from '../utils/index.js';
+import { uploadImageFile } from '../api/media.js';
+import { revokeObjectUrlSafely } from '../utils/index.js';
 
 /** @typedef {import('../api/api-types.js').ExistingImageItem} ExistingUrlItem */
 /** @typedef {import('../api/api-types.js').NewImageItem} NewImageItem */
@@ -26,7 +27,10 @@ export function usePostImages(initialExisting, maxImages = 5) {
   const [newImages, setNewImages] = useState([]);
   const appliedRef = useRef(false);
   const newImagesRef = useRef([]);
-  newImagesRef.current = newImages;
+
+  useEffect(() => {
+    newImagesRef.current = newImages;
+  }, [newImages]);
 
   const totalCount = existingUrls.length + newImages.length;
 
@@ -89,13 +93,10 @@ export function usePostImages(initialExisting, maxImages = 5) {
     const current = newImagesRef.current.map((item) => ({ ...item }));
     for (let i = 0; i < current.length; i++) {
       if (current[i].imageId != null) continue;
-      const fd = new FormData();
-      fd.append('image', current[i].file);
-      const res = await api.postFormData('/media/images?purpose=post', fd);
-      const data = getImageUploadData(res);
+      const data = await uploadImageFile(current[i].file, { purpose: 'post' });
       const id = data?.imageId ?? null;
       if (id == null) {
-        console.error('[usePostImages] 이미지 업로드 응답에 imageId 없음:', res);
+        console.error('[usePostImages] 이미지 업로드 응답에 imageId 없음:', data);
         throw new Error('이미지 업로드에 실패했습니다. 응답 형식을 확인해 주세요.');
       }
       current[i].imageId = id;

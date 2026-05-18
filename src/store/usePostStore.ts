@@ -8,9 +8,9 @@ import type {
   PostResponse,
 } from '../api/api-types.js';
 import { api } from '../api/client.js';
+import { uploadImageFile } from '../api/media.js';
 import {
   getApiErrorMessage,
-  getImageUploadData,
   revokeObjectUrlSafely,
   validatePostTitle,
   validatePostContent,
@@ -170,10 +170,12 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
     if (entry.imageId != null) {
       try {
         await api.delete(`/media/images/${entry.imageId}`);
-      } catch (_: unknown) {}
+      } catch {
+        /* ignore delete failure */
+      }
     }
     revokeObjectUrlSafely(entry.objectUrl);
-    set({ newImages: newImages.filter((_: NewImageItem, i: number) => i !== index) });
+    set({ newImages: newImages.filter((_item, i) => i !== index) });
   },
 
   uploadNewImages: async () => {
@@ -181,10 +183,7 @@ export const usePostStore = create<PostEditState & PostEditActions>((set, get) =
     const current = [...newImages];
     for (let i = 0; i < current.length; i++) {
       if (current[i].imageId != null) continue;
-      const fd = new FormData();
-      fd.append('image', current[i].file);
-      const res = await api.postFormData('/media/images?purpose=post', fd);
-      const data = getImageUploadData(res as { data?: unknown; [k: string]: unknown });
+      const data = await uploadImageFile(current[i].file, { purpose: 'post' });
       current[i] = { ...current[i], imageId: data.imageId };
     }
     set({ newImages: current });

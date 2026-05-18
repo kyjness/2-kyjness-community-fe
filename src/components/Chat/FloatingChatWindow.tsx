@@ -182,7 +182,7 @@ export function FloatingChatWindow() {
 
   return createPortal(
     <div
-      className="fixed bottom-5 right-5 z-[1000] flex h-[520px] w-[360px] flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white"
+      className="fixed bottom-2 right-2 z-[1000] flex h-[520px] w-[372px] flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white"
       role="dialog"
       aria-label="플로팅 채팅창"
     >

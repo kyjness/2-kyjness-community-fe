@@ -1,16 +1,17 @@
-// 게시글 상세 로직: 로드·조회수·좋아요·댓글 CRUD·모달 상태·normalize.
-import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
+// 게시글 상세: React Query(게시글·댓글) + 모달·댓글 CRUD.
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client.js';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   getApiErrorMessage,
+  getClientErrorCode,
   getProfileImageUrl,
   safeImageUrl,
 } from '../utils/index.js';
 
 const COMMENT_PAGE_SIZE = 10;
-
 const POST_EDIT_MERGE_KEY = (id) => `pt_post_edit_merge_${id}`;
 
 function updateCommentInTree(comments, commentId, patch) {
@@ -29,11 +30,12 @@ function updateCommentInTree(comments, commentId, patch) {
 
 function normalizePost(postData, currentUser) {
   const author = postData?.author ?? null;
-  const isMine = !!(currentUser && (author?.id === currentUser.userId || author?.userId === currentUser.userId));
+  const isMine = !!(
+    currentUser &&
+    (author?.id === currentUser.userId || author?.userId === currentUser.userId)
+  );
   const hashtagsRaw = postData?.hashtags;
-  const hashtags = Array.isArray(hashtagsRaw)
-    ? hashtagsRaw.map((t) => String(t))
-    : [];
+  const hashtags = Array.isArray(hashtagsRaw) ? hashtagsRaw.map((t) => String(t)) : [];
   const categoryId =
     postData?.categoryId ?? postData?.categoryid ?? postData?.category_id ?? null;
 
@@ -72,17 +74,14 @@ function normalizePost(postData, currentUser) {
 
 function normalizeComment(c, currentUser) {
   const author = c?.author ?? null;
-  const isMine = !!(currentUser && (author?.id === currentUser.userId || author?.userId === currentUser.userId));
+  const isMine = !!(
+    currentUser &&
+    (author?.id === currentUser.userId || author?.userId === currentUser.userId)
+  );
   const repDog = author?.representativeDog ?? author?.representative_dog ?? null;
-  const replies = Array.isArray(c?.replies) ? c.replies.map((r) => normalizeComment(r, currentUser)) : [];
-
-  const parentId = c?.parentId ?? c?.parent_id ?? null;
-  const isDeleted = c?.isDeleted ?? c?.is_deleted ?? false;
-  const isEdited = c?.isEdited === true || c?.is_edited === true || c?.isedited === true;
-  const likeCount = c?.likeCount ?? c?.like_count ?? 0;
-  const isLiked = c?.isLiked ?? c?.is_liked ?? false;
-  const createdAt = c?.createdAt ?? c?.created_at ?? '';
-  const updatedAt = c?.updatedAt ?? c?.updated_at ?? '';
+  const replies = Array.isArray(c?.replies)
+    ? c.replies.map((r) => normalizeComment(r, currentUser))
+    : [];
 
   return {
     id: c?.id,
@@ -90,20 +89,19 @@ function normalizeComment(c, currentUser) {
     author_profile_image: getProfileImageUrl(currentUser, author, isMine, DEFAULT_PROFILE_IMAGE),
     author_representative_dog: repDog,
     author_id: author?.id ?? author?.userId ?? null,
-    created_at: createdAt,
-    updated_at: updatedAt,
+    created_at: c?.createdAt ?? c?.created_at ?? '',
+    updated_at: c?.updatedAt ?? c?.updated_at ?? '',
     content: c?.content ?? '',
     isMine,
-    likeCount,
-    isLiked,
-    parentId,
+    likeCount: c?.likeCount ?? c?.like_count ?? 0,
+    isLiked: c?.isLiked ?? c?.is_liked ?? false,
+    parentId: c?.parentId ?? c?.parent_id ?? null,
     replies,
-    isEdited,
-    isDeleted,
+    isEdited: c?.isEdited === true || c?.is_edited === true || c?.isedited === true,
+    isDeleted: c?.isDeleted ?? c?.is_deleted ?? false,
   };
 }
 
-/** ApiResponse 래퍼·페이지 객체 직접 응답 모두 수용 (snake/camel total 필드 호환) */
 function unwrapCommentsPagePayload(res) {
   if (!res || typeof res !== 'object') return { items: [], totalCount: 0 };
   const inner = res.data !== undefined ? res.data : res;
@@ -125,10 +123,6 @@ function flattenCommentForest(items) {
   return out;
 }
 
-/**
- * flat 목록이거나 트리+루트에 섞인 parentId 항목이 있을 때 parentId 기준으로 한 번 더 조립.
- * (일부만 replies가 있으면 조기 return 하면 답글이 전부 최상위로 보이는 문제가 생김)
- */
 function nestFlatCommentsIfNeeded(normalizedRoots) {
   if (!Array.isArray(normalizedRoots) || normalizedRoots.length === 0) return normalizedRoots;
   const flat = flattenCommentForest(normalizedRoots);
@@ -148,26 +142,81 @@ function nestFlatCommentsIfNeeded(normalizedRoots) {
       roots.push(node);
     } else {
       const parent = byId.get(pid);
-      if (parent) {
-        parent.replies.push(node);
-      } else {
-        roots.push(node);
-      }
+      if (parent) parent.replies.push(node);
+      else roots.push(node);
     }
   }
   return roots;
 }
 
+async function fetchPostNormalized(postId, user) {
+  const res = await api.get(`/posts/${postId}`);
+  const data = res?.data ?? null;
+  if (!data) return null;
+
+  let merge = null;
+  try {
+    const raw = sessionStorage.getItem(POST_EDIT_MERGE_KEY(postId));
+    if (raw) {
+      merge = JSON.parse(raw);
+      sessionStorage.removeItem(POST_EDIT_MERGE_KEY(postId));
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const normalized = normalizePost(data, user);
+  if (merge && merge.postId === postId) {
+    return {
+      ...normalized,
+      title: merge.title ?? normalized.title,
+      content: merge.content ?? normalized.content,
+      category_id: merge.categoryId ?? normalized.category_id,
+      hashtags: Array.isArray(merge.hashtags) ? merge.hashtags : normalized.hashtags,
+      isEdited: true,
+    };
+  }
+  return normalized;
+}
+
+async function fetchCommentsPage(postId, commentSort, page, user) {
+  const sortParam =
+    commentSort && commentSort !== 'latest' ? `&sort=${encodeURIComponent(commentSort)}` : '';
+  const res = await api.get(
+    `/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}${sortParam}`
+  );
+  const { items: arr, totalCount } = unwrapCommentsPagePayload(res);
+  const mapped = arr.map((c) => normalizeComment(c, user));
+  return {
+    comments: nestFlatCommentsIfNeeded(mapped),
+    totalCount,
+    totalPages: Math.max(1, Math.ceil(totalCount / COMMENT_PAGE_SIZE)),
+  };
+}
+
 export function usePostDetail(postId, user, navigate) {
   const { isRestored } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [commentPage, setCommentPage] = useState(1);
-  const [commentTotalPages, setCommentTotalPages] = useState(1);
-  const [commentTotalCount, setCommentTotalCount] = useState(0);
-  const [commentSort, setCommentSort] = useState('latest');
+  const queryClient = useQueryClient();
+  const [commentSort, setCommentSortState] = useState('latest');
+  const listIdentity = `${postId ?? ''}\0${commentSort}`;
+  const [pagesByList, setPagesByList] = useState({});
+  const commentPage = pagesByList[listIdentity] ?? 1;
+
+  const setCommentPage = useCallback(
+    (page) => {
+      setPagesByList((prev) => ({ ...prev, [listIdentity]: page }));
+    },
+    [listIdentity]
+  );
+
+  const setCommentSort = useCallback(
+    (sort) => {
+      setCommentSortState(sort);
+      setPagesByList((prev) => ({ ...prev, [`${postId ?? ''}\0${sort}`]: 1 }));
+    },
+    [postId]
+  );
+
   const [message, setMessage] = useState('');
   const [modalState, setModalState] = useState({
     postDeleteOpen: false,
@@ -181,100 +230,47 @@ export function usePostDetail(postId, user, navigate) {
   const [commentEdit, setCommentEdit] = useState({ editingId: null, content: '' });
   const [replyToCommentId, setReplyToCommentId] = useState(null);
   const [replyForm, setReplyForm] = useState({ content: '', submitting: false });
+  const [commentsOverride, setCommentsOverride] = useState(null);
 
   const isLikingRef = useRef(false);
   const pendingCommentLikeIdsRef = useRef(new Set());
 
-  // 조회수는 GET /posts/{id} 한 번으로 처리(백엔드가 Redis NX + 증가 시 응답에 viewCount+1 반영).
-  // POST /view 를 먼저 호출하면 Redis 키만 소비되고 GET 에서는 증가·낙관적 반영이 스킵되어,
-  // slave 읽기 시 화면 조회수가 안 오르는 것처럼 보임.
-  const loadPost = useCallback(
-    async () => {
-      if (!postId) return;
-      setLoading(true);
-      setError('');
-      try {
-        const res = await api.get(`/posts/${postId}`);
-        const data = res?.data ?? null;
-        if (data) {
-          let merge = null;
-          try {
-            const raw = sessionStorage.getItem(POST_EDIT_MERGE_KEY(postId));
-            if (raw) {
-              merge = JSON.parse(raw);
-              sessionStorage.removeItem(POST_EDIT_MERGE_KEY(postId));
-            }
-          } catch {
-            /* ignore */
-          }
-          const normalized = normalizePost(data, user);
-          if (merge && merge.postId === postId) {
-            setPost({
-              ...normalized,
-              title: merge.title ?? normalized.title,
-              content: merge.content ?? normalized.content,
-              category_id: merge.categoryId ?? normalized.category_id,
-              hashtags: Array.isArray(merge.hashtags) ? merge.hashtags : normalized.hashtags,
-              isEdited: true,
-            });
-          } else {
-            setPost(normalized);
-          }
-        }
-      } catch (err) {
-        setError(getApiErrorMessage(err?.code ?? err?.message, '게시글을 불러오지 못했습니다.'));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [postId, user]
-  );
+  const userKey = user?.userId ?? user?.id ?? null;
+
+  const postQuery = useQuery({
+    queryKey: ['post', postId, userKey],
+    queryFn: () => fetchPostNormalized(postId, user),
+    enabled: Boolean(postId && isRestored),
+  });
+
+  const commentsQuery = useQuery({
+    queryKey: ['post', postId, 'comments', commentSort, commentPage, userKey],
+    queryFn: () => fetchCommentsPage(postId, commentSort, commentPage, user),
+    enabled: Boolean(postId && isRestored),
+  });
+
+  const post = postQuery.data ?? null;
+  const loading = postQuery.isPending;
+  const error = postQuery.isError
+    ? getApiErrorMessage(getClientErrorCode(postQuery.error), '게시글을 불러오지 못했습니다.')
+    : '';
+
+  const comments = commentsOverride ?? commentsQuery.data?.comments ?? [];
+  const commentTotalCount = commentsQuery.data?.totalCount ?? 0;
+  const commentTotalPages = commentsQuery.data?.totalPages ?? 1;
+
+  const loadPost = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['post', postId] });
+  }, [queryClient, postId]);
 
   const loadComments = useCallback(
     async (page = 1) => {
-      if (!postId) return;
-      setMessage('');
-      try {
-        const sortParam = commentSort && commentSort !== 'latest' ? `&sort=${encodeURIComponent(commentSort)}` : '';
-        const res = await api.get(
-          `/posts/${postId}/comments?page=${page}&size=${COMMENT_PAGE_SIZE}${sortParam}`
-        );
-        const { items: arr, totalCount } = unwrapCommentsPagePayload(res);
-        const mapped = arr.map((c) => normalizeComment(c, user));
-        setComments(nestFlatCommentsIfNeeded(mapped));
-        setCommentTotalCount(totalCount);
-        setCommentTotalPages(Math.max(1, Math.ceil(totalCount / COMMENT_PAGE_SIZE)));
-        setCommentPage(page);
-      } catch (err) {
-        setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '댓글 목록을 불러오지 못했습니다.')
-        );
-      }
+      setCommentsOverride(null);
+      setCommentPage(page);
+      await queryClient.invalidateQueries({ queryKey: ['post', postId, 'comments'] });
     },
-    [postId, user, commentSort]
+    [queryClient, postId, setCommentPage]
   );
-
-  // localStorage 복원 전에 로드하면 isMine=false로 고정됨 → isRestored 후 로드, user·postId 변경 시 재로드.
-  useEffect(() => {
-    if (!postId) {
-      setLoading(false);
-      return;
-    }
-    if (!isRestored) {
-      return;
-    }
-    void loadPost();
-  }, [postId, loadPost, isRestored]);
-
-  useLayoutEffect(() => {
-    if (!postId) return;
-    setCommentPage(1);
-  }, [postId, commentSort]);
-
-  useEffect(() => {
-    if (!postId || !isRestored) return;
-    void loadComments(commentPage);
-  }, [postId, commentSort, commentPage, loadComments, isRestored]);
 
   const handleLike = useCallback(async () => {
     if (!postId) return;
@@ -296,24 +292,22 @@ export function usePostDetail(postId, user, navigate) {
       const likeCount = data?.likeCount;
       const isLiked = data?.isLiked;
       if (likeCount !== undefined || isLiked !== undefined) {
-        setPost((p) =>
-          p
+        queryClient.setQueryData(['post', postId, userKey], (prev) =>
+          prev
             ? {
-                ...p,
-                likes: typeof likeCount === 'number' ? likeCount : p.likes,
-                isLiked: typeof isLiked === 'boolean' ? isLiked : p.isLiked,
+                ...prev,
+                likes: typeof likeCount === 'number' ? likeCount : prev.likes,
+                isLiked: typeof isLiked === 'boolean' ? isLiked : prev.isLiked,
               }
-            : p
+            : prev
         );
       }
     } catch (err) {
-      setMessage(
-        getApiErrorMessage(err?.code ?? err?.message, '좋아요 처리에 실패했습니다.')
-      );
+      setMessage(getApiErrorMessage(getClientErrorCode(err), '좋아요 처리에 실패했습니다.'));
     } finally {
       isLikingRef.current = false;
     }
-  }, [postId, user, navigate, post]);
+  }, [postId, user, navigate, post, queryClient, userKey]);
 
   const handleCommentSubmit = useCallback(
     async (e) => {
@@ -331,16 +325,16 @@ export function usePostDetail(postId, user, navigate) {
       try {
         await api.post(`/posts/${postId}/comments`, { content });
         setCommentForm((prev) => ({ ...prev, content: '', submitting: false }));
-        setPost((p) => (p ? { ...p, commentCount: (p.commentCount ?? 0) + 1 } : p));
+        queryClient.setQueryData(['post', postId, userKey], (prev) =>
+          prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev
+        );
         await loadComments(1);
       } catch (err) {
-        setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '댓글 등록에 실패했습니다.')
-        );
+        setMessage(getApiErrorMessage(getClientErrorCode(err), '댓글 등록에 실패했습니다.'));
         setCommentForm((prev) => ({ ...prev, submitting: false }));
       }
     },
-    [postId, user, commentForm.content, navigate, loadComments]
+    [postId, user, commentForm.content, navigate, loadComments, queryClient, userKey]
   );
 
   const handleReplySubmit = useCallback(
@@ -355,16 +349,16 @@ export function usePostDetail(postId, user, navigate) {
         await api.post(`/posts/${postId}/comments`, { content, parentId });
         setReplyForm((prev) => ({ ...prev, content: '', submitting: false }));
         setReplyToCommentId(null);
-        setPost((p) => (p ? { ...p, commentCount: (p.commentCount ?? 0) + 1 } : p));
+        queryClient.setQueryData(['post', postId, userKey], (prev) =>
+          prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev
+        );
         await loadComments(1);
       } catch (err) {
-        setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '답글 등록에 실패했습니다.')
-        );
+        setMessage(getApiErrorMessage(getClientErrorCode(err), '답글 등록에 실패했습니다.'));
         setReplyForm((prev) => ({ ...prev, submitting: false }));
       }
     },
-    [postId, user, replyForm.content, loadComments]
+    [postId, user, replyForm.content, loadComments, queryClient, userKey]
   );
 
   const handleCommentDelete = useCallback(
@@ -374,15 +368,15 @@ export function usePostDetail(postId, user, navigate) {
       try {
         await api.delete(`/posts/${postId}/comments/${commentId}`);
         setModalState((prev) => ({ ...prev, commentDeleteId: null }));
-        setPost((p) => (p ? { ...p, commentCount: Math.max(0, (p.commentCount ?? 0) - 1) } : p));
+        queryClient.setQueryData(['post', postId, userKey], (prev) =>
+          prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount ?? 0) - 1) } : prev
+        );
         await loadComments(commentPage);
       } catch (err) {
-        setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '댓글 삭제에 실패했습니다.')
-        );
+        setMessage(getApiErrorMessage(getClientErrorCode(err), '댓글 삭제에 실패했습니다.'));
       }
     },
-    [postId, commentPage, loadComments]
+    [postId, commentPage, loadComments, queryClient, userKey]
   );
 
   const handleCommentEdit = useCallback(
@@ -394,19 +388,17 @@ export function usePostDetail(postId, user, navigate) {
           content: newContent.trim(),
         });
         setCommentEdit({ editingId: null, content: '' });
-        setComments((prev) =>
-          updateCommentInTree(prev, commentId, {
+        setCommentsOverride((prev) =>
+          updateCommentInTree(prev ?? commentsQuery.data?.comments ?? [], commentId, {
             content: newContent.trim(),
             isEdited: true,
           })
         );
       } catch (err) {
-        setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '댓글 수정에 실패했습니다.')
-        );
+        setMessage(getApiErrorMessage(getClientErrorCode(err), '댓글 수정에 실패했습니다.'));
       }
     },
-    [postId]
+    [postId, commentsQuery.data?.comments]
   );
 
   const handleCommentLike = useCallback(
@@ -421,10 +413,12 @@ export function usePostDetail(postId, user, navigate) {
       }
       setMessage('');
       pendingCommentLikeIdsRef.current.add(commentId);
-      const comment = comments.find((c) => c.id === commentId);
+      const baseComments = commentsOverride ?? commentsQuery.data?.comments ?? [];
+      const comment = baseComments.find((c) => c.id === commentId);
       const isCurrentlyLiked = comment?.isLiked ?? false;
-      setComments((prev) =>
-        prev.map((c) => {
+
+      setCommentsOverride((prev) =>
+        (prev ?? baseComments).map((c) => {
           if (c.id !== commentId) return c;
           const nextLiked = !c.isLiked;
           return {
@@ -434,6 +428,7 @@ export function usePostDetail(postId, user, navigate) {
           };
         })
       );
+
       try {
         const req = isCurrentlyLiked
           ? api.delete(`/likes/comments/${commentId}`)
@@ -446,8 +441,8 @@ export function usePostDetail(postId, user, navigate) {
           data?.isLiked !== undefined ||
           data?.is_liked !== undefined
         ) {
-          setComments((prev) =>
-            prev.map((c) =>
+          setCommentsOverride((prev) =>
+            (prev ?? baseComments).map((c) =>
               c.id === commentId
                 ? {
                     ...c,
@@ -465,8 +460,8 @@ export function usePostDetail(postId, user, navigate) {
           navigate('/login');
           return;
         }
-        setComments((prev) =>
-          prev.map((c) => {
+        setCommentsOverride((prev) =>
+          (prev ?? baseComments).map((c) => {
             if (c.id !== commentId) return c;
             return {
               ...c,
@@ -476,13 +471,13 @@ export function usePostDetail(postId, user, navigate) {
           })
         );
         setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '댓글 좋아요 처리에 실패했습니다.')
+          getApiErrorMessage(getClientErrorCode(err), '댓글 좋아요 처리에 실패했습니다.')
         );
       } finally {
         pendingCommentLikeIdsRef.current.delete(commentId);
       }
     },
-    [postId, user, navigate, comments]
+    [postId, user, navigate, commentsOverride, commentsQuery.data?.comments]
   );
 
   const handlePostDelete = useCallback(async () => {
@@ -493,9 +488,7 @@ export function usePostDetail(postId, user, navigate) {
       setModalState((prev) => ({ ...prev, postDeleteOpen: false }));
       navigate('/posts');
     } catch (err) {
-      setMessage(
-        getApiErrorMessage(err?.code ?? err?.message, '게시글 삭제에 실패했습니다.')
-      );
+      setMessage(getApiErrorMessage(getClientErrorCode(err), '게시글 삭제에 실패했습니다.'));
     }
   }, [postId, navigate]);
 
@@ -515,9 +508,7 @@ export function usePostDetail(postId, user, navigate) {
         await api.post(`/users/${targetUserId}/block`);
         window.location.reload();
       } catch (err) {
-        setMessage(
-          getApiErrorMessage(err?.code ?? err?.message, '차단 처리에 실패했습니다.')
-        );
+        setMessage(getApiErrorMessage(getClientErrorCode(err), '차단 처리에 실패했습니다.'));
       }
     },
     [user?.userId, user?.id]

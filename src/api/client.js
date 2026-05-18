@@ -185,9 +185,14 @@ instance.interceptors.response.use(
     const refreshTry = Number(originalRequest?._refreshRetry || 0);
 
     if (status !== 401) {
-      const err = new Error(
-        body?.code ?? (typeof body?.detail === 'string' ? body.detail : null) ?? body?.detail?.code ?? `HTTP ${status}`
-      );
+      const serverMessage =
+        typeof body?.message === 'string' && body.message.trim() ? body.message.trim() : null;
+      const code =
+        body?.code ??
+        (typeof body?.detail === 'string' ? body.detail : null) ??
+        body?.detail?.code ??
+        `HTTP ${status}`;
+      const err = new Error(serverMessage ?? code);
       err.code = body?.code ?? body?.detail?.code ?? null;
       err.status = status;
       return Promise.reject(err);

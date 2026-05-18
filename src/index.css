@@ -55,20 +55,20 @@
     --header-sidebar-offset: 60px;
   }
 
-  /* 게시글 목록 레일: 기본은 전역 헤더 오프셋, lg에서만 헤더와 추가 간격 */
+  /* 게시글 목록 레일: 피드·3열 전체 폭 토큰 */
   .post-list-rail-anchor {
     --postlist-rail-top: var(--header-sidebar-offset);
+    --postlist-feed-max: min(620px, 92vw);
+    --postlist-inner-w: min(1120px, calc(100vw - 2rem));
   }
 
-  /* 게시글 목록 lg: max-w 1170(피드 620 + 레일) + main px 16px 기준 fixed 레일 좌표 */
+  /* 게시글 목록 lg: inner 1120(레일 260+640+220) + main px 16px 기준 fixed 레일 좌표 */
   @media (min-width: 1024px) {
     .post-list-rail-anchor {
-      /* 헤더 sticky 아래 여백(카테고리·검색 레일) */
-      --postlist-rail-top: calc(var(--header-sidebar-offset) + 14px);
-      --postlist-inner-w: min(1170px, calc(100vw - 2rem));
-      --postlist-rail-left: max(1rem, calc((100vw - var(--postlist-inner-w)) / 2 - 1.5rem));
-      /* 검색 패널만 피드 쪽으로 당김(right 증가 = 왼쪽 이동), 카드·좌측 레일 수치는 유지 */
-      --postlist-rail-right: max(1rem, calc((100vw - var(--postlist-inner-w)) / 2 + 22px));
+      --postlist-rail-top: calc(var(--header-sidebar-offset) + 4px);
+      --postlist-rail-left: max(1rem, calc((100vw - var(--postlist-inner-w)) / 2 - 0.25rem));
+      /* right 값을 키울수록 검색 레일이 피드 쪽(왼쪽)으로 이동 */
+      --postlist-rail-right: max(1rem, calc((100vw - var(--postlist-inner-w)) / 2 + 6px));
     }
   }
 

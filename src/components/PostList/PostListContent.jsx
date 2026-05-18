@@ -1,8 +1,17 @@
 // 게시글 목록 본문: 로딩·에러·빈 목록·카드 리스트·loadingMore.
 import { PostCard } from '../PostCard.jsx';
 
+function FeedCenterMessage({ children }) {
+  return (
+    <div className="flex min-h-[50vh] w-full flex-col items-center justify-center px-4">
+      <p className="max-w-md text-center text-[16px] leading-relaxed text-black">{children}</p>
+    </div>
+  );
+}
+
 export function PostListContent({
   loading,
+  searchHint,
   error,
   posts,
   loadingMore,
@@ -10,15 +19,14 @@ export function PostListContent({
 }) {
   const hasPosts = Array.isArray(posts) && posts.length > 0;
   const showInitialSkeleton = !hasPosts && loading;
+  const blocked = Boolean(searchHint || error);
   return (
     <>
-      {!loading && error && (
-        <p className="mt-6 flex w-full justify-center self-center text-center text-[16px] text-black">
-          {error}
-        </p>
-      )}
+      {searchHint && <FeedCenterMessage>{searchHint}</FeedCenterMessage>}
 
-      {showInitialSkeleton && !error && (
+      {!loading && error && !searchHint && <FeedCenterMessage>{error}</FeedCenterMessage>}
+
+      {showInitialSkeleton && !blocked && (
         <div className="flex w-full flex-col gap-6 pb-10" aria-label="게시글 로딩">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -29,10 +37,8 @@ export function PostListContent({
         </div>
       )}
 
-      {!loading && !error && !hasPosts && (
-        <div className="flex min-h-[50vh] w-full flex-col items-center justify-center px-4">
-          <p className="text-center text-[16px] text-black">게시글이 없습니다.</p>
-        </div>
+      {!loading && !blocked && !hasPosts && (
+        <FeedCenterMessage>게시글이 없습니다.</FeedCenterMessage>
       )}
 
       {hasPosts && (

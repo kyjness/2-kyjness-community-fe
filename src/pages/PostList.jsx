@@ -5,6 +5,7 @@ import { Pencil, Search, X } from 'lucide-react';
 import { Header } from '../components/Header.jsx';
 import { DogProfileBanner } from '../components/DogProfileBanner.jsx';
 import { TrendingHashtags } from '../components/TrendingHashtags.jsx';
+import { TrendingPosts } from '../components/TrendingPosts.jsx';
 import { usePostList } from '../hooks/usePostList.js';
 import {
   PostListContent,
@@ -35,9 +36,11 @@ export function PostList() {
     loading,
     loadingMore,
     error,
+    searchHint,
     prefetchCategory,
     searchTerm,
     setSearchTerm,
+    debouncedSearch,
     categoryId,
     setCategoryId,
     bottomRef,
@@ -61,6 +64,9 @@ export function PostList() {
     navigate(`/posts/${postId}`);
   };
 
+  const showPopular =
+    categoryId === 'all' && debouncedSearch.trim() === '' && !searchHint;
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -71,7 +77,7 @@ export function PostList() {
         <DogProfileBanner user={user} />
       </div>
       <main className="relative flex min-h-[calc(100dvh-5rem)] flex-1 items-stretch justify-center bg-[var(--app-bg)] px-[16px] pt-[8px] [overflow-anchor:none]">
-        <div className="post-list-rail-anchor relative mx-auto w-full max-w-[1170px]">
+        <div className="post-list-rail-anchor relative mx-auto w-full max-w-[var(--postlist-inner-w)]">
           <aside
             className={`${RAIL_ASIDE_LEFT_FIXED} top-[var(--postlist-rail-top)] w-[260px] lg:left-[var(--postlist-rail-left)]`}
             aria-label="카테고리"
@@ -119,7 +125,7 @@ export function PostList() {
           </aside>
 
           <aside
-            className={`${RAIL_ASIDE_RIGHT_FIXED} top-[var(--postlist-rail-top)] w-[240px] lg:right-[var(--postlist-rail-right)] px-2`}
+            className={`${RAIL_ASIDE_RIGHT_FIXED} top-[var(--postlist-rail-top)] w-[220px] lg:right-[var(--postlist-rail-right)] px-1`}
             aria-label="게시글 검색"
           >
             <div className="relative w-full">
@@ -162,18 +168,20 @@ export function PostList() {
             </div>
           </aside>
 
-          <div className="flex w-full items-start justify-center gap-4">
-            <div className="hidden lg:block w-[260px] shrink-0 -ml-6" aria-hidden="true" />
-            <div className="w-full max-w-[min(620px,92vw)] flex-none shrink-0 self-stretch mx-auto lg:mx-0 lg:px-4">
-              <div className="mx-auto flex w-full max-w-[min(620px,92vw)] flex-col items-center justify-start">
+          <div className="flex w-full items-start justify-center gap-2 lg:gap-0">
+            <div className="hidden lg:block w-[260px] shrink-0" aria-hidden="true" />
+            <div className="w-full max-w-[var(--postlist-feed-max)] flex-none shrink-0 self-stretch mx-auto lg:mx-0 lg:px-2">
+              <div className="mx-auto flex w-full max-w-[var(--postlist-feed-max)] flex-col items-center justify-start">
                 <div
                   className={[
                     'w-full min-h-[50vh] transition-opacity duration-200 ease-in-out',
                     loading ? 'opacity-50 pointer-events-none' : '',
                   ].join(' ')}
                 >
+                  {showPopular && <TrendingPosts />}
                   <PostListContent
                     loading={loading}
+                    searchHint={searchHint}
                     error={error}
                     posts={posts}
                     loadingMore={loadingMore}
@@ -183,7 +191,7 @@ export function PostList() {
                 <div ref={bottomRef} style={{ height: '20px' }} aria-hidden="true" />
               </div>
             </div>
-            <div className="hidden lg:block w-[240px] shrink-0" aria-hidden="true" />
+            <div className="hidden lg:block w-[220px] shrink-0" aria-hidden="true" />
           </div>
         </div>
       </main>

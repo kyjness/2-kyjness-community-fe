@@ -18,3 +18,10 @@ export async function fetchPostsFeedPage({ cursor, q, categoryId, size }) {
   }
   return api.get(`/posts?${qs.toString()}`);
 }
+
+/**
+ * @returns {Promise<unknown>} ApiResponse `{ data: TrendingPost[] }`
+ */
+export async function fetchTrendingPosts() {
+  return api.get('/posts/trending');
+}

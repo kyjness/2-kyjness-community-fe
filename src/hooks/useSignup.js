@@ -2,16 +2,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { uploadImageFile, PRESIGNED_ALLOWED_IMAGE_TYPES } from '../api/media.js';
 import {
   getApiErrorMessage,
   isValidEmail,
   validatePassword,
   validateNickname,
-  getImageUploadData,
   revokeObjectUrlSafely,
 } from '../utils/index.js';
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
+const ALLOWED_IMAGE_TYPES = PRESIGNED_ALLOWED_IMAGE_TYPES;
 
 const INITIAL_FORM_DATA = {
   email: '',
@@ -138,10 +138,7 @@ export function useSignup() {
         let signupToken = null;
 
         if (profileFile) {
-          const fd = new FormData();
-          fd.append('image', profileFile);
-          const res = await api.postFormData('/media/images/signup', fd);
-          const uploadData = getImageUploadData(res);
+          const uploadData = await uploadImageFile(profileFile, { purpose: 'signup' });
           const id = uploadData.imageId;
           const token = uploadData.signupToken;
           if (id == null || token == null || String(token).trim() === '') {
@@ -179,6 +176,9 @@ export function useSignup() {
             'FILE_SIZE_EXCEEDED',
             'INVALID_FILE_TYPE',
             'RATE_LIMIT_EXCEEDED',
+            'S3_UPLOAD_NETWORK_ERROR',
+            'S3_UPLOAD_FAILED',
+            'PRESIGN_INVALID_RESPONSE',
           ].includes(code)
         ) {
           setErrors((prev) => ({ ...prev, profile: msg }));

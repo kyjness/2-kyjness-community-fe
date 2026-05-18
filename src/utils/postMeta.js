@@ -20,6 +20,25 @@ export function getPostCategoryLabel(categoryId) {
   return found?.label ?? '기타';
 }
 
+/** @type {Record<number, string>} 인기게시물 위젯용 짧은 카테고리 라벨 */
+const TRENDING_CATEGORY_SHORT = {
+  1: '자유',
+  2: '질문',
+  3: '강아지',
+  4: '정보',
+  5: '나눔',
+};
+
+/**
+ * @param {unknown} categoryId
+ * @returns {string}
+ */
+export function getTrendingPostCategoryLabel(categoryId) {
+  const n = Number(categoryId);
+  if (!Number.isFinite(n)) return '기타';
+  return TRENDING_CATEGORY_SHORT[n] ?? '기타';
+}
+
 /**
  * 쉼표·공백으로 구분된 입력 → 태그 문자열 배열 (# 접두 제거, 빈 토큰 제거).
  * @param {unknown} raw

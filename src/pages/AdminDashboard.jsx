@@ -1,5 +1,6 @@
 // 관리자 전용: 신고된 게시글 목록·블라인드 해제·유저 정지·글 삭제.
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -37,8 +38,6 @@ export function AdminDashboard() {
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const optimisticRollback = useCallback(async (mutate, request, failMessage) => {
     const prevList = list;
@@ -53,38 +52,45 @@ export function AdminDashboard() {
     }
   }, [list, total]);
 
-  const fetchReportedPosts = useCallback(async (pageNum = 1) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.get(
-        `/admin/reported-posts?page=${pageNum}&size=${PAGE_SIZE}`
-      );
-      const payload = res?.data ?? {};
-      const items = Array.isArray(payload.items) ? payload.items : [];
-      const totalCount = payload.total ?? 0;
-      setList(items);
-      setTotal(Number(totalCount) || 0);
-      setPage(pageNum);
-    } catch (err) {
-      if (err?.status === 403) {
-        navigate('/', { replace: true });
-        return;
-      }
-      setError(err?.message ?? '목록을 불러올 수 없습니다.');
-      setList([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
-    if (user?.role !== 'ADMIN') {
+    if (user != null && user.role !== 'ADMIN') {
       navigate('/', { replace: true });
-      return;
     }
-    fetchReportedPosts(1);
-  }, [user?.role, navigate, fetchReportedPosts]);
+  }, [user, navigate]);
+
+  const reportedQuery = useQuery({
+    queryKey: ['admin', 'reported-posts', page],
+    queryFn: async () => {
+      const res = await api.get(`/admin/reported-posts?page=${page}&size=${PAGE_SIZE}`);
+      const payload = res?.data ?? {};
+      return {
+        items: Array.isArray(payload.items) ? payload.items : [],
+        total: Number(payload.total) || 0,
+      };
+    },
+    enabled: isAdmin,
+  });
+
+  useEffect(() => {
+    if (reportedQuery.data) {
+      setList(reportedQuery.data.items);
+      setTotal(reportedQuery.data.total);
+    }
+  }, [reportedQuery.data]);
+
+  useEffect(() => {
+    if (reportedQuery.isError && reportedQuery.error?.status === 403) {
+      navigate('/', { replace: true });
+    }
+  }, [reportedQuery.isError, reportedQuery.error, navigate]);
+
+  const loading = reportedQuery.isPending;
+  const error =
+    reportedQuery.isError && reportedQuery.error?.status !== 403
+      ? reportedQuery.error?.message ?? '목록을 불러올 수 없습니다.'
+      : null;
 
   const handleUnblind = async (postId) => {
     if (!window.confirm('이 글의 블라인드를 해제(복구)하시겠습니까?')) return;
@@ -477,7 +483,7 @@ export function AdminDashboard() {
                     type="button"
                     className="cursor-pointer inline-flex h-[33px] items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50"
                     disabled={page <= 1}
-                    onClick={() => fetchReportedPosts(page - 1)}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
                     이전
                   </button>
@@ -488,7 +494,7 @@ export function AdminDashboard() {
                     type="button"
                     className="cursor-pointer inline-flex h-[33px] items-center justify-center rounded-[4px] border-0 bg-[var(--primary)] px-5 text-[13px] font-bold leading-[13px] text-white no-underline transition-all duration-200 hover:bg-[var(--primary-hover)] active:bg-[var(--primary-hover)] disabled:opacity-50"
                     disabled={page * PAGE_SIZE >= total}
-                    onClick={() => fetchReportedPosts(page + 1)}
+                    onClick={() => setPage((p) => p + 1)}
                   >
                     다음
                   </button>

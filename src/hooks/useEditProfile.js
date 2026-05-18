@@ -2,12 +2,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { uploadImageFile } from '../api/media.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DEFAULT_PROFILE_IMAGE } from '../config.js';
 import {
   getApiErrorMessage,
   validateNickname,
-  getImageUploadData,
   safeImageUrl,
   revokeObjectUrlSafely,
   unwrapApiData,
@@ -146,10 +146,8 @@ export function useEditProfile() {
       try {
         let profileImageId = null;
         if (profileFile) {
-          const formData = new FormData();
-          formData.append('image', profileFile);
-          const uploadRes = await api.postFormData('/media/images?purpose=profile', formData);
-          profileImageId = getImageUploadData(uploadRes).imageId;
+          const uploadRes = await uploadImageFile(profileFile, { purpose: 'profile' });
+          profileImageId = uploadRes.imageId;
         }
 
         const payload = { nickname: nickTrim };
